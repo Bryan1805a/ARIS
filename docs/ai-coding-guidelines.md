@@ -3,7 +3,7 @@
 
 **Version:** 1.0  
 **Target:** All Team Members & AI Assistants (ChatGPT, Claude, GitHub Copilot, Cursor, Gemini, etc.)  
-**Single Source of Truth:** [`doc.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/doc.md) · [`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md) · [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)
+**Single Source of Truth:** [`srs.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/srs.md) · [`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md) · [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)
 
 ---
 
@@ -12,7 +12,7 @@
 When developers use AI coding assistants independently, AIs tend to:
 1. **Hallucinate legacy schema fields** (e.g., using `Citizen.HouseholdId` or `Household.CurrentAddressId` from obsolete v1 designs).
 2. **Violate database triggers** (e.g., executing in-place `UPDATE` on `Role` or `StartDate`, causing trigger exceptions 51001/51011).
-3. **Pollute UI with business logic** (e.g., writing EF Core or SQL queries directly inside WPF/WinForms event handlers).
+3. **Pollute UI with business logic** (e.g., writing EF Core or SQL queries directly inside WinForms event handlers).
 4. **Invent conflicting patterns** (e.g., one AI uses raw exceptions, another uses `Result<T>`, a third uses out-parameters).
 
 **Rule for all developers:** Whenever prompting an AI assistant, include the **System Prompt Header** from Section 2 to ground the AI in this project's real constraints.
@@ -25,11 +25,11 @@ When developers use AI coding assistants independently, AIs tend to:
 
 ```text
 [PROJECT CONTEXT & CONSTRAINTS]
-Project: Residence Information Management System (.NET C#, SQL Server 2019+, EF Core).
+Project: Residence Information Management System (.NET 10 C#, WinForms desktop app, Visual Studio 2026, SQL Server 2019+ via Docker, EF Core).
 Architecture: Strict 4-Layer (UI -> Application -> Domain -> Infrastructure).
 Single Sources of Truth:
 - Schema v2 (residence_schema_v2.sql)
-- SRS v2 (doc.md)
+- SRS v2 (srs.md)
 - Design Decisions D1-D14 (database_design_v2.md)
 
 STRICT RULES (DO NOT DEVIATE):

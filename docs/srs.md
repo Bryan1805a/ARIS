@@ -107,7 +107,7 @@ The system follows a strict layered architecture:
 
 ```text
 +-------------------------------------------------+
-|      Presentation Layer (Windows Forms / WPF)   |
+|      Presentation Layer (WinForms)              |
 +------------------------+------------------------+
                          |
                          v
@@ -129,9 +129,9 @@ The system follows a strict layered architecture:
 > **Rule:** Business invariants and transaction boundaries must never be written inside UI event handlers (e.g., no direct SQL logic inside `button_Click`).
 
 ### 4.2. Technical Constraints
-- **CON-PROJ-01:** Built with .NET (C#) and Microsoft SQL Server 2019+.
+- **CON-PROJ-01:** Built with .NET 10 (C#) and a Windows Forms (WinForms) desktop UI, developed in Microsoft Visual Studio 2026, using Entity Framework Core and Microsoft SQL Server 2019+.
 - **CON-PROJ-02:** Self-contained academic prototype with no dependencies on real-world government registries.
-- **CON-SYS-01:** SQL Server database deployed as a centralized relational data store.
+- **CON-SYS-01:** SQL Server database deployed as a centralized relational data store, running in a Docker container for local development.
 - **CON-SYS-02:** Client application targets Windows desktop environments.
 - **CON-SEC-01:** User passwords must never be stored in plaintext; secure salted password hashing is required.
 - **CON-SEC-02:** Secrets and connection strings must not be hardcoded in application source code.
@@ -139,6 +139,19 @@ The system follows a strict layered architecture:
 - **CON-AUTH-02:** Role-based access control (`OFFICER` vs. `ADMIN`) governs functional authorization.
 - **CON-TRANS-01:** Every state transition affecting multiple tables must execute within an atomic Database Transaction (`IsolationLevel.Serializable` for transfers).
 - **CON-CONC-01:** All mutable tables include a `RowVersion` (`rowversion`) column to support optimistic concurrency conflict detection (`DbUpdateConcurrencyException`).
+
+### 4.3. Development Environment & Tooling
+
+| Component | Version / Choice |
+|---|---|
+| Language / Runtime | .NET 10 (C#) |
+| SDK | .NET SDK `10.0.401` |
+| IDE | Microsoft Visual Studio 2026 |
+| UI Framework | Windows Forms (WinForms) |
+| ORM | Entity Framework Core |
+| Database | Microsoft SQL Server 2019+ |
+| DB Hosting (local dev) | Docker container |
+| Version Control | Git (workflow defined in `work-breakdown.md` §7) |
 
 ---
 

@@ -4,13 +4,13 @@
 **Version:** 2.0  
 **Status:** Implementation Baseline  
 **Phase:** Work Breakdown → Active Implementation  
-**Target Platform:** .NET (C#) Desktop Application (WPF / Windows Forms) · SQL Server 2019+ · Entity Framework Core  
+**Target Platform:** .NET 10 (C#) WinForms Desktop Application · Visual Studio 2026 · SQL Server 2019+ (Docker container) · Entity Framework Core  
 
 ---
 
 ## 1. Purpose & Strategy
 
-This document translates the Domain Model, Business Rules ([`doc.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/doc.md)), and Database Schema v2 ([`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md), [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)) into a structured, actionable execution roadmap for the development team.
+This document translates the Domain Model, Business Rules ([`srs.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/srs.md)), and Database Schema v2 ([`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md), [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)) into a structured, actionable execution roadmap for the development team.
 
 ### Core Implementation Strategy: Vertical Feature Ownership
 We reject the anti-pattern of horizontal slicing ("one developer writes all UI, one writes all SQL"). Instead, developers own **vertical feature slices end-to-end**:
@@ -98,7 +98,7 @@ The Team Leader maintains overall system integrity, establishes development guid
 The Database Designer acts as the bridge between relational storage and EF Core persistence, ensuring strict constraint enforcement.
 
 #### Specific Responsibilities
-- **Database Deployment:** Execute and verify `residence_schema_v2.sql` on a dedicated SQL Server 2019+ instance.
+- **Database Deployment:** Execute and verify `residence_schema_v2.sql` on a dedicated SQL Server 2019+ instance (run as a Docker container for local development).
 - **Trigger & Constraint Verification:** Verify that database triggers compile and fire correctly:
   - `trg_Residence_Guard` (Append-only + temporal non-overlap, error 51001/51002)
   - `trg_Membership_Guard` (Append-only + temporal non-overlap, error 51011/51012)
@@ -397,12 +397,12 @@ main (Production / Submission Baseline)
 
 ```text
 Team Leader:
-  [ ] Create Visual Studio Solution and 4 core project layers
+  [ ] Create Visual Studio 2026 Solution and 4 core project layers
   [ ] Configure Dependency Injection setup and base service abstractions
   [ ] Publish PR review checklist and Git branch policies
 
 Database Designer:
-  [ ] Execute residence_schema_v2.sql on SQL Server instance
+  [ ] Execute residence_schema_v2.sql on SQL Server instance (Docker container)
   [ ] Verify all 5 triggers and 3 views
   [ ] Generate EF Core DbContext and entity configurations with HasTrigger() and IsRowVersion()
 
