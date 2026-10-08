@@ -1,0 +1,21 @@
+# Normalize line endings so the repo is consistent across machines.
+# https://git-scm.com/docs/gitattributes
+
+* text=auto
+
+*.cs       text diff=csharp
+*.csproj   text
+*.sln      text eol=crlf
+*.slnx     text
+*.json     text
+*.md       text
+*.yml      text
+*.yaml     text
+*.sql      text
+
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.svg      text
