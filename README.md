@@ -26,6 +26,7 @@ workflows with an append-only historical audit trail.
 - [`docs/database_design_v2.md`](docs/database_design_v2.md) — database rationale & decision log (D1–D14)
 - [`docs/residence_schema_v2.sql`](docs/residence_schema_v2.sql) — database creation script
 - [`docs/ai-coding-guidelines.md`](docs/ai-coding-guidelines.md) — anti-hallucination rules & prompt header
+- [`docs/pr-review-checklist.md`](docs/pr-review-checklist.md) — PR review & merge checklist
 - [`docs/work-breakdown.md`](docs/work-breakdown.md) — WBS, roles, phases, RACI
 
 ## Repository Layout
@@ -95,10 +96,9 @@ develop
   └── feature/<module-name>
 ```
 
-Open a PR into `develop`; the Team Leader reviews. See
-[`docs/work-breakdown.md`](docs/work-breakdown.md) §7 for the full workflow and
-[`docs/ai-coding-guidelines.md`](docs/ai-coding-guidelines.md) §5 for the PR
-review checklist.
+Open a PR into `develop`; the Team Leader reviews using
+[`docs/pr-review-checklist.md`](docs/pr-review-checklist.md). See
+[`docs/work-breakdown.md`](docs/work-breakdown.md) §7 for the full workflow.
 
 ## Golden Invariant
 
