@@ -1,0 +1,19 @@
+# Local SQL Server for development.
+#   1. Copy .env.example to .env and set a strong MSSQL_SA_PASSWORD.
+#   2. docker compose up -d
+# Connection (from the host):  Server=localhost,1433;User Id=sa;Password=<your .env password>;TrustServerCertificate=True
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: residence-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in a .env file}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+volumes:
+  mssql-data:
