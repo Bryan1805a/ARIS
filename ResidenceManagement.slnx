@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/ResidenceManagement.Application/ResidenceManagement.Application.csproj" />
-    <Project Path="src/ResidenceManagement.Domain/ResidenceManagement.Domain.csproj" />
-    <Project Path="src/ResidenceManagement.Infrastructure/ResidenceManagement.Infrastructure.csproj" />
-    <Project Path="src/ResidenceManagement.UI/ResidenceManagement.UI.csproj" />
-  </Folder>
-</Solution>

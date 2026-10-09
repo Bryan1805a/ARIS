@@ -1,4 +1,4 @@
-namespace ResidenceManagement.Application.Common;
+namespace Aris.Application.Common;
 
 /// <summary>
 /// Outcome of an application operation that carries no payload.

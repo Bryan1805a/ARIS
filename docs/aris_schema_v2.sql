@@ -1,5 +1,5 @@
 /* =====================================================================
-   Residence Management System - DATABASE SCHEMA v2 (final)
+   Administrative Residence Information System (ARIS) - DATABASE SCHEMA v2 (final)
    Target : SQL Server 2019+  (uses rowversion, filtered indexes, CONCAT_WS, ISJSON)
    Run on : an EMPTY database. Batches are separated by GO (SSMS / Azure Data
             Studio / sqlcmd -I). File is ASCII-only on purpose (no encoding issues).
@@ -649,14 +649,14 @@ GO
 
 /* =====================================================================
    SECURITY  (D12) - role for the application's login
-   Add the app's database user with:  ALTER ROLE residence_app ADD MEMBER [your_app_user];
+   Add the app's database user with:  ALTER ROLE aris_app ADD MEMBER [your_app_user];
    ===================================================================== */
-IF DATABASE_PRINCIPAL_ID('residence_app') IS NULL
-    CREATE ROLE residence_app;
+IF DATABASE_PRINCIPAL_ID('aris_app') IS NULL
+    CREATE ROLE aris_app;
 GO
-GRANT SELECT, INSERT, UPDATE ON SCHEMA::dbo TO residence_app;
-DENY  DELETE ON SCHEMA::dbo TO residence_app;      -- history is never deleted
-DENY  UPDATE ON dbo.AuditLog TO residence_app;     -- audit log is append-only (INSERT + SELECT only)
+GRANT SELECT, INSERT, UPDATE ON SCHEMA::dbo TO aris_app;
+DENY  DELETE ON SCHEMA::dbo TO aris_app;           -- history is never deleted
+DENY  UPDATE ON dbo.AuditLog TO aris_app;          -- audit log is append-only (INSERT + SELECT only)
 GO
 
 

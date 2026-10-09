@@ -1,5 +1,5 @@
 #nullable enable
-namespace ResidenceManagement.UI;
+namespace Aris.UI;
 
 partial class MainForm
 {
@@ -32,7 +32,7 @@ partial class MainForm
         components = new System.ComponentModel.Container();
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1024, 700);
-        Text = "Residence Information Management System";
+        Text = "Administrative Residence Information System (ARIS)";
         StartPosition = FormStartPosition.CenterScreen;
     }
 

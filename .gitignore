@@ -19,6 +19,9 @@
 # Mono auto generated files
 mono_crash.*
 
+# Local scratch, safety-net backups, and parked files (never commit)
+.local/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

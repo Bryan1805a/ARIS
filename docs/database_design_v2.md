@@ -1,6 +1,6 @@
-# Database Design v2 (Final) — Residence Information Management System
+# Database Design v2 (Final) — Administrative Residence Information System (ARIS)
 
-> **Companion Files:** `residence_schema_v2.sql` (DB creation script, SQL Server 2019+) · `erd_v2.png` / `erd_v2.svg` (ERD) · this document (rationale and rules).  
+> **Companion Files:** `aris_schema_v2.sql` (DB creation script, SQL Server 2019+) · `erd_v2.png` / `erd_v2.svg` (ERD) · this document (rationale and rules).  
 > **Status:** Draft v2.0 — pending team review and execution verification on SQL Server (see Section 8).
 
 ---
@@ -54,7 +54,7 @@ Golden Rule when coding: **every business state transition must run within a sin
 | **D9** | Address records are not updated in place when administrative boundaries change: create a new address; old address becomes `INACTIVE` + points to `ReplacedByAddressId`. Existing residence and household records are **not** migrated. Supports N→1 merges only; 1→N splits are out of scope. In-place typo corrections are permitted but must audit `before/after`. | Prevents artificial "relocation" records in historical data. | — |
 | **D10** | `UserAccount` adds `FullName`, `FailedLoginCount`, `LockedUntil`, `MustChangePassword`, `PasswordChangedAt`, `CreatedAt`. Authorization scope = role-based (`OFFICER` / `ADMIN`), **without** geographic subdivisions. | Satisfies account lockout and password rotation requirements (ACC-01, SYS-01); geographic partitioning is beyond MVP scope. | — |
 | **D11** | Key-value table `SystemConfiguration` (pre-seeded with 4 system parameters). | Satisfies SYS-01. | — |
-| **D12** | Triggers: `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard` (append-only + non-overlapping), `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly`. Role `residence_app`: `SELECT/INSERT/UPDATE`, **`DENY DELETE`** on schema, `DENY UPDATE` on `AuditLog`. | Final line of defense against application-level bugs. | — |
+| **D12** | Triggers: `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard` (append-only + non-overlapping), `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly`. Role `aris_app`: `SELECT/INSERT/UPDATE`, **`DENY DELETE`** on schema, `DENY UPDATE` on `AuditLog`. | Final line of defense against application-level bugs. | — |
 | **D13** | Views: `vw_AddressCanonical`, `vw_HouseholdCurrent`, `vw_GoldenInvariantViolations` (9 validation checks C1–C5, H1–H4). | Transforms the Golden Invariant into an auditable, deterministic query. | — |
 | **D14** | `RowVersion rowversion` on all mutable tables; EF Core mapped via `IsRowVersion()`; throws `DbUpdateConcurrencyException` matching error E3 in SRS. | Fulfills SRS requirement for concurrency conflict detection. | — |
 
@@ -161,7 +161,7 @@ To ensure complete consistency across documentation and implementation:
 
 ## 8. Limitations & Verification Notes
 
-1. **Physical SQL Server Execution:** Validated against grammar parsers: tables, indexes, views, and trigger SELECT logic parse cleanly. Trigger procedural bodies (`THROW`) and `GRANT ... ON SCHEMA::` are verified manually against SQL Server specifications. Execute `residence_schema_v2.sql` on an empty database and run the test suite below.
+1. **Physical SQL Server Execution:** Validated against grammar parsers: tables, indexes, views, and trigger SELECT logic parse cleanly. Trigger procedural bodies (`THROW`) and `GRANT ... ON SCHEMA::` are verified manually against SQL Server specifications. Execute `aris_schema_v2.sql` on an empty database and run the test suite below.
 2. Minimum required integration tests (each must be **rejected**):
    - Two ACTIVE residences for the same citizen.
    - Two ACTIVE heads in the same household.
