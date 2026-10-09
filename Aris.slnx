@@ -5,4 +5,7 @@
     <Project Path="src/Aris.Infrastructure/Aris.Infrastructure.csproj" />
     <Project Path="src/Aris.UI/Aris.UI.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Aris.Tests/Aris.Tests.csproj" />
+  </Folder>
 </Solution>

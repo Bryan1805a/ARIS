@@ -34,12 +34,15 @@ workflows with an append-only historical audit trail.
 ```
 Aris.slnx
 Directory.Build.props          # shared MSBuild settings
+global.json                    # pinned .NET SDK + MTP test runner
 docker-compose.yml             # local SQL Server container
 src/
   Aris.Domain/          # entities, enums, invariants
   Aris.Application/     # use cases, DTOs, validators, Result<T>
   Aris.Infrastructure/  # EF Core DbContext, mappings, security
   Aris.UI/              # WinForms shell, views, view models
+tests/
+  Aris.Tests/           # xUnit v3 integration tests (golden invariant)
 docs/                                 # specifications and database scripts
 ```
 
@@ -86,6 +89,35 @@ Connection strings and secrets are **never** committed (`CON-SEC-02`). Use .NET
 user-secrets or environment variables for local development. See
 `src/Aris.UI/appsettings.json` for the expected key
 (`ConnectionStrings:ArisDb`).
+
+## Testing
+
+`tests/Aris.Tests` holds the database integration tests. The golden-invariant
+test asserts that [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql)'s view
+`vw_GoldenInvariantViolations` returns **zero rows**, and a negative-control test
+proves the view actually detects a violation.
+
+Tests need a live database and **skip** (never fail) when one is not configured:
+
+```powershell
+# Point the tests at your SQL Server (use the password from your .env file)
+$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<password>;TrustServerCertificate=True"
+dotnet test Aris.slnx
+```
+
+Without `ARIS_TEST_CONNECTION` the run reports the tests as skipped — that is a
+pass, not a failure.
+
+> **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test`
+> through Microsoft.Testing.Platform (see `global.json`), which forwards
+> unrecognised flags to the test executable. The xUnit app then rejects them and
+> the whole run fails with `Zero tests ran` / exit code 5 — a misleading message
+> that hides the real cause. Run the test executable directly to see the actual
+> error:
+>
+> ```powershell
+> .\tests\Aris.Tests\bin\Debug\net10.0\Aris.Tests.exe --help   # lists valid options
+> ```
 
 ## Branching
 
