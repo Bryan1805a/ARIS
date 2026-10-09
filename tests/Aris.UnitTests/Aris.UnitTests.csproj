@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- No external dependency: these run anywhere, on every build, in milliseconds. -->
+    <ArisTestKind>Unit</ArisTestKind>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aris.Application\Aris.Application.csproj" />
+    <ProjectReference Include="..\..\src\Aris.Infrastructure\Aris.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- In-memory EF Core provider, pinned to match the repo's Microsoft.Extensions.*
+         version (10.0.12) and the provider the Database Designer will add to
+         Aris.Infrastructure. See docs/team-standards-phase1.md for what an in-memory
+         provider does and does NOT enforce. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

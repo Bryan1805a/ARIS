@@ -1,0 +1,39 @@
+﻿<Project>
+
+  <!--
+    Shared settings for every project under tests/.
+    Set here rather than repeated in each .csproj, so a new test project is correct
+    by default.
+
+    The root Directory.Build.props already applies LangVersion/Nullable/analyzers;
+    this file merges with it (both are imported).
+
+    ArisTestKind separates fast unit tests from tests that need a real database:
+      Unit        - no external dependency; always run
+      Integration - needs ARIS_TEST_CONNECTION; skips when unset
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- xUnit v3 test projects are self-contained executables on Microsoft.Testing.Platform. -->
+    <OutputType>Exe</OutputType>
+
+    <!-- Replace the default xUnit-native entry point with the Microsoft.Testing.Platform
+         one. Required for `dotnet test` on .NET 10: without it the app starts the xUnit
+         in-proc runner, ignores the MTP node argument, and the run reports
+         "Zero tests ran" (exit code 5).
+         The runner itself is selected in global.json ("test": { "runner": ... }). -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- xUnit v3 runs on Microsoft.Testing.Platform (MTP). Microsoft.NET.Test.Sdk is
+         deliberately NOT referenced: it targets VSTest, which the .NET 10 SDK dropped. -->
+    <PackageReference Include="xunit.v3" Version="4.0.1" />
+  </ItemGroup>
+
+</Project>

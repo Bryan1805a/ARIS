@@ -86,6 +86,36 @@ for expected failures; exceptions only for the unexpected.
 roll back and write the failure audit on an independent connection. Coder 1's slice becomes the
 reference the whole team copies.
 
+### Audit logging — non-negotiable, and already specified
+
+**Every business mutation writes an audit row** (`BR-AUD-01`), and a failed one writes its own row
+on an **independent connection** after rollback (`BR-AUD-03`). The contract is written and merged —
+do not invent your own or skip it:
+
+- [`IAuditService`](../src/Aris.Application/Auditing/IAuditService.cs) — the interface
+- [`AuditEntryValidator`](../src/Aris.Application/Auditing/AuditEntryValidator.cs) — validates
+  entries against the real `dbo.AuditLog` constraints before they reach SQL Server
+
+The full pattern, including the exact call order and a copy-ready example, is
+[**team-standards-phase1.md §1**](team-standards-phase1.md). Read it before writing your first
+service. Retrofitting audit calls into already-written services is the specific waste this
+standard exists to prevent.
+
+### Unit tests are now possible — use them
+
+The repo has **two** test projects and you are expected to use the right one:
+
+| Project | Needs database | Use for |
+|---|---|---|
+| `tests/Aris.UnitTests` | No | Your business logic, validation, mapping |
+| `tests/Aris.Tests` | Yes | Database-enforced rules only |
+
+Derive from `InMemoryDatabaseTestBase<TContext>` in the unit project. **But read
+[team-standards-phase1.md §2](team-standards-phase1.md) first:** an in-memory provider has no
+triggers, no CHECK constraints and no filtered indexes, so it will accept data that `ARIS-DB`
+rejects. Never re-implement a database constraint in C# to make an in-memory test pass — that hides
+the divergence instead of catching it.
+
 ---
 
 ## 2. Sequence — who is blocked on whom
@@ -161,6 +191,14 @@ entity. `dotnet build` clean. A test proving the context connects.
    unique constraints. Configure them explicitly; EF's conventions will not infer these.
 5. **Table names are singular** (`dbo.Citizen`) while `DbSet` properties are plural
    (`context.Citizens`). Map that explicitly.
+
+**Also yours: implement `AuditService`.** The interface already exists
+([`IAuditService`](../src/Aris.Application/Auditing/IAuditService.cs)); the implementation is raw
+ADO.NET in `Aris.Infrastructure`, because `LogFailureIndependentAsync` must open its **own**
+connection after a rollback — an `ArisDbContext` bound to a rolled-back transaction cannot be
+reused. Use `SqlResilience.OpenAsync` and the exact `INSERT` column list in
+[team-standards-phase1.md §1](team-standards-phase1.md). Nothing else can safely write audit rows
+until this exists, and Coder 1 is blocked on it in practice.
 
 **One consequence of the least-privilege role worth planning for:** `aris_officer` has
 `DENY DELETE ON SCHEMA::dbo`. If a `DbContext` operation tries to delete a row, it will fail at
@@ -295,10 +333,13 @@ the Application layer — hiding a menu item is not access control.
 | Task | What it is |
 |---|---|
 | P1-TL1 ✅ | Solution structure, layers, repository — done |
+| P1-TL1 ✅ | **Audit logging standard** — `IAuditService`, `AuditEntryValidator`, and the call pattern. See [team-standards-phase1.md §1](team-standards-phase1.md) |
+| P1-TL1 ✅ | **Test harness** — `tests/Aris.UnitTests` plus the unit/integration split |
+| P1-TL1 ✅ | **Remaining conventions** — DTOs, the `Result<T>` vs `ValidationException` ruling, DI registration, naming ([team-standards-phase1.md](team-standards-phase1.md)) |
 | P2-TL1 | Architectural review of Coder 1's slice — the standard-setting review |
 | P3-TL1 | Checkpoint 2: verify the golden invariant after household operations |
 | P4-TL1 | Transfer transaction review, concurrency edge cases |
-| P5-TL1 | Standardize cross-cutting audit logging across all services |
+| P5-TL1 | Standardize cross-cutting audit logging across all services — **the contract is now fixed; this becomes enforcement at review** |
 
 ---
 
