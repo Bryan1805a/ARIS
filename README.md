@@ -43,6 +43,8 @@ src/
   Aris.UI/              # WinForms shell, views, view models
 tests/
   Aris.Tests/           # xUnit v3 integration tests (golden invariant)
+scripts/
+  deploy-database.ps1   # deploy schema + app user to Azure SQL
 docs/                                 # specifications and database scripts
 ```
 
@@ -56,7 +58,16 @@ SQL in UI code.
 
 - .NET SDK **10.0.401** (`dotnet --version`)
 - Visual Studio 2026 (or the .NET CLI)
-- Docker Desktop
+- Docker Desktop (for the local database path)
+- **sqlcmd** (only needed to deploy the schema to Azure SQL):
+
+  ```powershell
+  winget install Microsoft.Sqlcmd
+  ```
+
+  Note it installs to `C:\Program Files\SqlCmd\` — open a new terminal afterwards,
+  or call it by full path. [`scripts/deploy-database.ps1`](scripts/deploy-database.ps1)
+  finds it either way.
 
 ## Getting Started
 
@@ -111,20 +122,40 @@ add a firewall rule for each developer's client IP.
 
 ### 3. Create the application user, and deploy the schema
 
-Use the **server admin** login only for setup. Do not give it to the team and do not
-put it in the app.
-
-First deploy the schema to the empty database (the script expects an **empty**
-database). Azure SQL requires an encrypted connection; `-C` trusts the server
-certificate, which is valid for `*.database.windows.net`:
+Use [`scripts/deploy-database.ps1`](scripts/deploy-database.ps1). It applies the
+schema, creates a team login, adds it to the least-privilege role, and then
+**verifies** the result — including that the audit log really rejects updates. It
+is safe to re-run (every step checks existence first) and it prompts for the admin
+password, so the password never appears on the command line or in your shell history.
 
 ```powershell
-sqlcmd -S "<your-server>.database.windows.net" -d ArisDb -U <admin> -P "<admin password>" -N -C -i docs/aris_schema_v2.sql
+# See what it would do, without touching the database or being asked for a password
+.\scripts\deploy-database.ps1 -WhatIf
+
+# Do it
+.\scripts\deploy-database.ps1
+```
+
+It prints a generated password for the team login **once** — record it. Give
+teammates that login, **never** the server admin credentials.
+
+<details>
+<summary>Doing it manually instead</summary>
+
+The script wraps these two commands. Azure SQL requires an encrypted connection;
+`-N` enforces it and `-C` trusts the server certificate (valid for
+`*.database.windows.net`).
+
+Deploy the schema to the empty database:
+
+```powershell
+sqlcmd -S "aris-demo-b1805.database.windows.net" -d ArisDb -U <admin> -P "<admin password>" -N -C -i docs/aris_schema_v2.sql
 ```
 
 The script's final section creates the least-privilege role `aris_app`
 (`SELECT/INSERT/UPDATE` on `dbo`, `DENY DELETE`, `DENY UPDATE` on `AuditLog`).
-Now create a login for the team and put it in that role:
+Now create a login for the team and put it in that role. The user and the role must
+have **different** names:
 
 ```sql
 -- Connect to the ArisDb database as the server admin, then:
@@ -132,19 +163,24 @@ CREATE USER aris_officer WITH PASSWORD = '<a strong password>';
 ALTER ROLE aris_app ADD MEMBER aris_officer;
 ```
 
-Give teammates the `aris_officer` password, **not** the server admin credentials.
+</details>
 
 > `DENY` beats `GRANT`, so `aris_officer` genuinely cannot delete history or rewrite
-> the audit log, no matter what the application code does.
+> the audit log, no matter what the application code does. The deploy script asserts
+> this rather than assuming it.
 
 ### 4. Connection string
 
 Azure presents a valid certificate, so `TrustServerCertificate` is not needed (unlike
-the local Docker setup, which uses a self-signed cert):
+the local Docker setup, which uses a self-signed cert). For this project's server:
 
 ```
-Server=tcp:<your-server>.database.windows.net,1433;Database=ArisDb;User Id=aris_officer;Password=<password>;Encrypt=True;
+Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ArisDb;User Id=aris_officer;Password=<password>;Encrypt=True;
 ```
+
+The server hostname is not a secret — it still requires credentials — so it is fine
+in the README. The password never goes in the repo: see
+[Configuration & Secrets](#configuration--secrets).
 
 ### 5. Auto-pause and retry
 
