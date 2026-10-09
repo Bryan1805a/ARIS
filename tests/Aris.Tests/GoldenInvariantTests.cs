@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Aris.Infrastructure.Resilience;
 using Xunit;
 
 namespace Aris.Tests;
@@ -23,15 +24,14 @@ public sealed class GoldenInvariantTests
     [Fact]
     public async Task GoldenInvariant_HasNoViolations()
     {
-        var connectionString = TestDatabase.ConnectionString;
-        if (connectionString is null)
+        if (TestDatabase.ConnectionString is null)
         {
             Assert.Skip(
                 $"Set {TestDatabase.ConnectionVariable} to run this test, e.g. {TestDatabase.SetupHint}");
         }
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(Token);
+        await using var connection = await SqlResilience.OpenAsync(
+            TestDatabase.ConnectionString, cancellationToken: Token);
 
         if (!await TestDatabase.SchemaIsDeployedAsync(connection, Token))
         {
@@ -57,14 +57,13 @@ public sealed class GoldenInvariantTests
     [Fact]
     public async Task GoldenInvariant_DetectsDeliberateViolation()
     {
-        var connectionString = TestDatabase.ConnectionString;
-        if (connectionString is null)
+        if (TestDatabase.ConnectionString is null)
         {
             Assert.Skip($"Set {TestDatabase.ConnectionVariable} to run this test.");
         }
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(Token);
+        await using var connection = await SqlResilience.OpenAsync(
+            TestDatabase.ConnectionString, cancellationToken: Token);
 
         if (!await TestDatabase.SchemaIsDeployedAsync(connection, Token))
         {

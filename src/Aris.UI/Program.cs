@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Aris.Application;
@@ -18,6 +19,15 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         using var host = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                // Load user-secrets explicitly. CreateDefaultBuilder only does this
+                // when the environment is Development, which a WinForms launch does
+                // not set by default - so without this the documented secret path
+                // would silently not apply. Secrets stay outside the repository
+                // (CON-SEC-02); see README > Configuration & Secrets.
+                config.AddUserSecrets(typeof(Program).Assembly, optional: true);
+            })
             .ConfigureServices((context, services) =>
             {
                 // Composition root: UI -> Application -> Domain; Infrastructure wired here.
