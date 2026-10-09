@@ -30,4 +30,10 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Reuse the production transient-fault retry helper (Azure SQL serverless
+         auto-resume) instead of duplicating retry logic in the tests. -->
+    <ProjectReference Include="..\..\src\Aris.Infrastructure\Aris.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
