@@ -108,7 +108,9 @@ bills per second, so a team that works in bursts does not pay for an idle databa
 A provisioned always-on database will consume a student credit quickly. Set a
 **budget alert** under Cost Management on the day you create it.
 
-Name the database `ArisDb` — the tests assert that name.
+Name the database `ARIS-DB` to match the connection strings used below. (The name is
+not load-bearing: the tests assert the *schema*, not the database name, so `ArisDb`
+in the local Docker path is fine too.)
 
 ### 2. Allow your team through the firewall
 
@@ -149,7 +151,7 @@ The script wraps these two commands. Azure SQL requires an encrypted connection;
 Deploy the schema to the empty database:
 
 ```powershell
-sqlcmd -S "aris-demo-b1805.database.windows.net" -d ArisDb -U <admin> -P "<admin password>" -N -C -i docs/aris_schema_v2.sql
+sqlcmd -S "aris-demo-b1805.database.windows.net" -d ARIS-DB -U <admin> -P "<admin password>" -N -C -i docs/aris_schema_v2.sql
 ```
 
 The script's final section creates the least-privilege role `aris_app`
@@ -158,7 +160,7 @@ Now create a login for the team and put it in that role. The user and the role m
 have **different** names:
 
 ```sql
--- Connect to the ArisDb database as the server admin, then:
+-- Connect to the ARIS-DB database as the server admin, then:
 CREATE USER aris_officer WITH PASSWORD = '<a strong password>';
 ALTER ROLE aris_app ADD MEMBER aris_officer;
 ```
@@ -175,7 +177,7 @@ Azure presents a valid certificate, so `TrustServerCertificate` is not needed (u
 the local Docker setup, which uses a self-signed cert). For this project's server:
 
 ```
-Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ArisDb;User Id=aris_officer;Password=<password>;Encrypt=True;
+Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;
 ```
 
 The server hostname is not a secret — it still requires credentials — so it is fine
@@ -214,7 +216,7 @@ Stop a shared Azure password from reaching Git:
 ```powershell
 cd src/Aris.UI
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=tcp:<server>.database.windows.net,1433;Database=ArisDb;User Id=aris_officer;Password=<password>;Encrypt=True;"
+dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;"
 ```
 
 User-secrets are stored outside the repository, per developer. Never paste a real
@@ -233,7 +235,7 @@ Tests need a live database and **skip** (never fail) when one is not configured.
 **Against the shared Azure database** (validates what the team actually uses):
 
 ```powershell
-$env:ARIS_TEST_CONNECTION = "Server=tcp:<server>.database.windows.net,1433;Database=ArisDb;User Id=aris_officer;Password=<password>;Encrypt=True;"
+$env:ARIS_TEST_CONNECTION = "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;"
 dotnet test Aris.slnx
 ```
 
@@ -251,7 +253,7 @@ pass, not a failure. The suite includes:
 |---|---|
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows. |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control — inserts an invalid citizen in a rolled-back transaction and proves the view reports it, so a broken view cannot pass the test above. |
-| `Database_IsReachable_And_IsArisDb` | Diagnoses firewall / auto-pause problems, which otherwise only show up as "skipped". |
+| `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses firewall, wrong database, and auto-pause problems, which otherwise only show up as "skipped". |
 | `SqlResilienceTests` | The retry policy: transient errors (40613 etc.) are retried; constraint and trigger violations are not. |
 
 > **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test`

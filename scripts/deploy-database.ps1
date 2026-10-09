@@ -42,8 +42,8 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string] $Server      = 'aris-demo-b1805.database.windows.net',
-    [string] $Database    = 'ArisDb',
-    [string] $AdminLogin  = 'arisadmin',
+    [string] $Database    = 'ARIS-DB',
+    [string] $AdminLogin  = 'Bryan',
     [string] $AppUser     = 'aris_officer',
     [string] $AppRole     = 'aris_app',
     [string] $AppPassword,
@@ -115,10 +115,6 @@ if (-not $tcp.TcpTestSucceeded) {
     throw "Cannot reach $Server on port 1433. Add your client IP under the server's Networking page in the Azure portal."
 }
 Write-Ok "reachable: $Server port 1433"
-
-if ($Database -ne 'ArisDb') {
-    Write-Warn "Database is '$Database', but the integration tests assert 'ArisDb'."
-}
 
 # -WhatIf: report the plan and stop before asking for any secret.
 if (-not $PSCmdlet.ShouldProcess("$Server/$Database", 'Deploy schema and application user')) {

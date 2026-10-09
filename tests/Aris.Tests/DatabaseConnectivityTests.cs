@@ -14,7 +14,7 @@ public sealed class DatabaseConnectivityTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Database_IsReachable_And_IsArisDb()
+    public async Task Database_IsReachable_And_SchemaIsDeployed()
     {
         if (TestDatabase.ConnectionString is null)
         {
@@ -27,13 +27,15 @@ public sealed class DatabaseConnectivityTests
         var server = await ScalarAsync(connection, "SELECT CAST(SERVERPROPERTY('ServerName') AS nvarchar(256));");
         var edition = await ScalarAsync(connection, "SELECT CAST(SERVERPROPERTY('Edition') AS nvarchar(256));");
         var database = connection.Database;
-        var version = connection.ServerVersion;
 
-        Assert.Equal("ArisDb", database);
+        // Deliberately NOT asserting the database name: the name is a deployment choice
+        // (this project uses 'ARIS-DB' on Azure and 'ArisDb' in docker-compose), and
+        // hardcoding it made the test fail for a purely cosmetic reason. What matters is
+        // that the schema is deployed and readable.
         Assert.True(
             await TestDatabase.SchemaIsDeployedAsync(connection, Token),
-            $"Connected to '{server}' ({edition}) database '{database}', but the schema is not deployed. " +
-            "Run docs/aris_schema_v2.sql against it.");
+            $"Connected to '{server}' ({edition}), database '{database}', but the schema is not deployed. " +
+            "Run scripts/deploy-database.ps1 or docs/aris_schema_v2.sql against it.");
     }
 
     private static async Task<string> ScalarAsync(SqlConnection connection, string sql)
