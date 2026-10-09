@@ -101,6 +101,39 @@ function Get-ConnectionString {
     "Server=tcp:$Server,1433;Database=$Database;User Id=$Login;Password=$Password;Encrypt=True;TrustServerCertificate=False;Connect Timeout=60;"
 }
 
+<#
+    Azure has TWO independent gates:
+      1. TCP reachability (Test-NetConnection) - almost always passes.
+      2. The SQL-layer firewall rule for your client IP - returns error 40615.
+    Gate 2 fails AFTER the password has been sent and validated, so a firewall block
+    is easily mistaken for a wrong password or a wrong database name. This
+    distinguishes them, and extracts the blocked IP so the fix is unambiguous.
+#>
+function Test-FirewallBlock {
+    param([string[]] $Output)
+
+    $text = $Output -join "`n"
+    $blocked = $text -match 'is not allowed to access the server'
+    if (-not $blocked) { return $false }
+
+    $ip = 'your client IP'
+    if ($text -match "Client with IP address '([^']+)'") { $ip = $Matches[1] }
+
+    Write-Host ''
+    Write-Fail 'BLOCKED BY THE AZURE FIREWALL - this is NOT a wrong password or database name.'
+    Write-Host "  Your password was accepted; Azure refused the connection for IP $ip." -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  Fix it in the Azure Portal:' -ForegroundColor Yellow
+    Write-Host "    1. SQL server 'aris-demo-b1805' -> Security -> Networking" -ForegroundColor Yellow
+    Write-Host '    2. Under Firewall rules choose "Add your client IPv4 address"' -ForegroundColor Yellow
+    Write-Host "    3. Confirm the rule is $ip (change networks and the IP changes)" -ForegroundColor Yellow
+    Write-Host '    4. Save, wait up to 5 minutes, then re-run this script' -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  Do NOT enable "Allow Azure services and resources to access this server" -' -ForegroundColor DarkGray
+    Write-Host '  your client is a laptop, not an Azure service, so it would not help.' -ForegroundColor DarkGray
+    return $true
+}
+
 # ---------------------------------------------------------------- pre-flight
 Write-Step 'Pre-flight'
 
@@ -112,9 +145,10 @@ Write-Ok "schema: $schemaFile"
 
 $tcp = Test-NetConnection -ComputerName $Server -Port 1433 -WarningAction SilentlyContinue
 if (-not $tcp.TcpTestSucceeded) {
-    throw "Cannot reach $Server on port 1433. Add your client IP under the server's Networking page in the Azure portal."
+    throw "Cannot reach $Server on port 1433 at all. Check the server name and your network."
 }
-Write-Ok "reachable: $Server port 1433"
+Write-Ok "tcp reachable: $Server port 1433"
+Write-Host "  [note] TCP reachability does not imply Azure's SQL firewall allows you." -ForegroundColor DarkGray
 
 # -WhatIf: report the plan and stop before asking for any secret.
 if (-not $PSCmdlet.ShouldProcess("$Server/$Database", 'Deploy schema and application user')) {
@@ -132,8 +166,11 @@ if ([string]::IsNullOrWhiteSpace($adminPassword)) { throw 'No admin password sup
 $probe = Invoke-Sql -Sqlcmd $Sqlcmd -Login $AdminLogin -Password $adminPassword `
     -Query "SELECT DB_NAME(); SELECT CAST(SERVERPROPERTY('Edition') AS nvarchar(128));"
 if ($probe.ExitCode -ne 0) {
+    if (Test-FirewallBlock -Output $probe.Output) {
+        throw 'Azure firewall blocked this client IP. Add the rule described above, then re-run.'
+    }
     Write-Fail ($probe.Output -join "`n")
-    throw "Could not connect to '$Database' as '$AdminLogin'. Check the database name, login and password."
+    throw "Could not connect to '$Database' as '$AdminLogin'. The password was rejected, or the database/login name is wrong."
 }
 $probe.Output | Where-Object { $_ -and $_ -notmatch '^\s*$' } | ForEach-Object { Write-Ok $_.ToString().Trim() }
 
@@ -188,6 +225,9 @@ ELSE
     Write-Step "Creating application user '$AppUser'"
     $created = Invoke-Sql -Sqlcmd $Sqlcmd -Login $AdminLogin -Password $adminPassword -Query $createUser
     if ($created.ExitCode -ne 0) {
+        if (Test-FirewallBlock -Output $created.Output) {
+            throw 'Azure firewall blocked this client IP. Add the rule described above, then re-run.'
+        }
         Write-Fail ($created.Output -join "`n")
         throw 'Could not create the application user.'
     }
@@ -203,8 +243,11 @@ if ($connectProbe.ExitCode -eq 0) {
     Write-Ok "connects as '$AppUser'"
 }
 else {
+    if (Test-FirewallBlock -Output $connectProbe.Output) {
+        throw 'Azure firewall blocked this client IP. Add the rule described above, then re-run.'
+    }
     Write-Fail ($connectProbe.Output -join "`n")
-    throw "The application user could not connect. Check the password and that the user is a member of '$AppRole'."
+    throw "The application user could not connect. Check the password and that '$AppUser' is a member of '$AppRole'."
 }
 
 # 2. The append-only guarantee: aris_app has DENY UPDATE on AuditLog, so this MUST fail.
