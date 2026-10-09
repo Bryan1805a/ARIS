@@ -1,7 +1,7 @@
-# Residence Information Management System
+# Administrative Residence Information System (ARIS)
 ## Software Requirements Specification & Domain Model — v2.0
 
-> **Document Purpose:** Foundational document defining overall software requirements, domain model, business rules, and technical constraints. This document serves as the "Single Source of Truth" aligned with Database Design v2 (`database_design_v2.md` and `residence_schema_v2.sql`) to ensure consistency before and during application development.
+> **Document Purpose:** Foundational document defining overall software requirements, domain model, business rules, and technical constraints. This document serves as the "Single Source of Truth" aligned with Database Design v2 (`database_design_v2.md` and `aris_schema_v2.sql`) to ensure consistency before and during application development.
 > 
 > **Academic Note:** This project is an academic prototype for a Windows Programming course, not a production national population registry, and does not connect directly to the National Population Database or the VNeID / Digital ID application.
 
@@ -10,7 +10,7 @@
 ## 1. Project Overview & Vision
 
 ### 1.1. Project Vision
-The Residence Information Management System is a desktop application designed for local residence management officers, aimed at centralizing the administration and lookup of citizen residency data.
+The Administrative Residence Information System (ARIS) is a desktop application designed for local residence management officers, aimed at centralizing the administration and lookup of citizen residency data.
 
 The system supports officers in receiving, verifying physical documentation against digital records, and recording verified residency changes into the database. All critical residency transitions are formally reviewed and authorized while maintaining an append-only historical audit trail and immutable audit logs.
 
@@ -157,7 +157,7 @@ The system follows a strict layered architecture:
 
 ## 5. Domain Entities
 
-Aligned with Database Schema v2 (`residence_schema_v2.sql`):
+Aligned with Database Schema v2 (`aris_schema_v2.sql`):
 
 ### 5.1. Citizen
 - `CitizenId` (PK, int, IDENTITY)

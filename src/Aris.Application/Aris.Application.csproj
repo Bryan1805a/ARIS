@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ResidenceManagement.Domain\ResidenceManagement.Domain.csproj" />
+    <ProjectReference Include="..\Aris.Domain\Aris.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

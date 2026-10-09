@@ -1,4 +1,4 @@
-namespace ResidenceManagement.Application.Common;
+namespace Aris.Application.Common;
 
 /// <summary>
 /// Base class for application services. Provides shared result helpers so

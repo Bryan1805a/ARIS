@@ -1,4 +1,4 @@
-namespace ResidenceManagement.Domain.Common;
+namespace Aris.Domain.Common;
 
 /// <summary>
 /// Base type for persisted domain entities.

@@ -5,7 +5,7 @@
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: residence-sqlserver
+    container_name: aris-sqlserver
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: "Developer"

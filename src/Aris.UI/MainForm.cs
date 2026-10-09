@@ -1,4 +1,4 @@
-namespace ResidenceManagement.UI;
+namespace Aris.UI;
 
 public partial class MainForm : Form
 {

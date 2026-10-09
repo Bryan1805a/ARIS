@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ResidenceManagement.Domain\ResidenceManagement.Domain.csproj" />
-    <ProjectReference Include="..\ResidenceManagement.Application\ResidenceManagement.Application.csproj" />
+    <ProjectReference Include="..\Aris.Domain\Aris.Domain.csproj" />
+    <ProjectReference Include="..\Aris.Application\Aris.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

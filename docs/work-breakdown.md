@@ -1,5 +1,5 @@
 # Work Breakdown Structure & Implementation Plan
-## Residence Information Management System
+## Administrative Residence Information System (ARIS)
 
 **Version:** 2.0  
 **Status:** Implementation Baseline  
@@ -10,7 +10,7 @@
 
 ## 1. Purpose & Strategy
 
-This document translates the Domain Model, Business Rules ([`srs.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/srs.md)), and Database Schema v2 ([`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md), [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)) into a structured, actionable execution roadmap for the development team.
+This document translates the Domain Model, Business Rules ([`srs.md`](srs.md)), and Database Schema v2 ([`database_design_v2.md`](database_design_v2.md), [`aris_schema_v2.sql`](aris_schema_v2.sql)) into a structured, actionable execution roadmap for the development team.
 
 ### Core Implementation Strategy: Vertical Feature Ownership
 We reject the anti-pattern of horizontal slicing ("one developer writes all UI, one writes all SQL"). Instead, developers own **vertical feature slices end-to-end**:
@@ -72,10 +72,10 @@ The Team Leader maintains overall system integrity, establishes development guid
 
 #### Specific Responsibilities
 - **Project Scaffolding:** Create the .NET solution structure enforcing the 4-layer architecture:
-  - `ResidenceManagement.Domain` (Entities, Enums, Invariant interfaces)
-  - `ResidenceManagement.Application` (Service contracts, DTOs, Validators, Use Cases)
-  - `ResidenceManagement.Infrastructure` (EF Core `ResidenceDbContext`, Entity Configurations, Logging, Security)
-  - `ResidenceManagement.UI` (Windows Desktop UI shell, Views, ViewModels / Form controllers)
+  - `Aris.Domain` (Entities, Enums, Invariant interfaces)
+  - `Aris.Application` (Service contracts, DTOs, Validators, Use Cases)
+  - `Aris.Infrastructure` (EF Core `ArisDbContext`, Entity Configurations, Logging, Security)
+  - `Aris.UI` (Windows Desktop UI shell, Views, ViewModels / Form controllers)
 - **Shared Coding Standards:** Define conventions for Dependency Injection (DI), Result/Response patterns, exception handling, and logging.
 - **Cross-Module Workflows:** Oversee integration where multiple domains intersect (e.g., Transfer touching Citizen, Household, Membership, Residence, and AuditLog).
 - **Code Reviews:** Review all Pull Requests into `develop`. Enforce that **no UI code contains direct SQL or business validation logic**.
@@ -98,7 +98,7 @@ The Team Leader maintains overall system integrity, establishes development guid
 The Database Designer acts as the bridge between relational storage and EF Core persistence, ensuring strict constraint enforcement.
 
 #### Specific Responsibilities
-- **Database Deployment:** Execute and verify `residence_schema_v2.sql` on a dedicated SQL Server 2019+ instance (run as a Docker container for local development).
+- **Database Deployment:** Execute and verify `aris_schema_v2.sql` on a dedicated SQL Server 2019+ instance (run as a Docker container for local development).
 - **Trigger & Constraint Verification:** Verify that database triggers compile and fire correctly:
   - `trg_Residence_Guard` (Append-only + temporal non-overlap, error 51001/51002)
   - `trg_Membership_Guard` (Append-only + temporal non-overlap, error 51011/51012)
@@ -115,7 +115,7 @@ The Database Designer acts as the bridge between relational storage and EF Core 
 
 #### Key Deliverables
 1. Verified SQL Server database baseline.
-2. `ResidenceDbContext` and complete EF Core entity configuration classes.
+2. `ArisDbContext` and complete EF Core entity configuration classes.
 3. Seeding scripts / migration configuration for test and development environments.
 4. Unit/Integration test harness for database constraint and trigger validation.
 
@@ -235,8 +235,8 @@ Phase 7: Hardening, Concurrency Testing & Final Acceptance (Days 23–25)
 | Task ID | Task Description | Owner | Dependencies | Definition of Done |
 |---|---|---|---|---|
 | **P1-TL1** | Initialize solution structure (`Domain`, `Application`, `Infrastructure`, `UI`) and configure git repository | Team Leader | — | Solution builds cleanly; project references and architecture layers established. |
-| **P1-DB1** | Deploy `residence_schema_v2.sql` to local/shared SQL Server; verify triggers and views | Database Designer | — | Script executes without errors; all 5 triggers and 3 views exist and compile. |
-| **P1-DB2** | Build `ResidenceDbContext` with Fluent API mappings, `HasTrigger()`, and `RowVersion` | Database Designer | P1-DB1, P1-TL1 | EF Core can connect, read, and write entities against the database. |
+| **P1-DB1** | Deploy `aris_schema_v2.sql` to local/shared SQL Server; verify triggers and views | Database Designer | — | Script executes without errors; all 5 triggers and 3 views exist and compile. |
+| **P1-DB2** | Build `ArisDbContext` with Fluent API mappings, `HasTrigger()`, and `RowVersion` | Database Designer | P1-DB1, P1-TL1 | EF Core can connect, read, and write entities against the database. |
 | **P1-C3** | Implement base UI Shell layout, navigation container, and shared styling assets | Coder 3 | P1-TL1 | Shell loads with placeholder navigation sections; responsive styling. |
 | **P1-C1** | Define Citizen entity contracts, DTOs, and validation rules in Application layer | Coder 1 | P1-TL1 | `CreateCitizenDto`, `CitizenDetailDto`, and FluentValidation rules compile. |
 | **P1-C2** | Define Household and Residence entity contracts, DTOs, and Service interfaces | Coder 2 | P1-TL1 | `IHouseholdService`, `ITransferService` interfaces and DTOs drafted. |
@@ -402,7 +402,7 @@ Team Leader:
   [ ] Publish PR review checklist and Git branch policies
 
 Database Designer:
-  [ ] Execute residence_schema_v2.sql on SQL Server instance (Docker container)
+  [ ] Execute aris_schema_v2.sql on SQL Server instance (Docker container)
   [ ] Verify all 5 triggers and 3 views
   [ ] Generate EF Core DbContext and entity configurations with HasTrigger() and IsRowVersion()
 

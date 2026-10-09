@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ResidenceManagement.Application;
+namespace Aris.Application;
 
 /// <summary>
 /// Composition entry point for the Application layer.

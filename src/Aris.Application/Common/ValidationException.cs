@@ -1,4 +1,4 @@
-namespace ResidenceManagement.Application.Common;
+namespace Aris.Application.Common;
 
 /// <summary>
 /// Thrown when input validation fails before a use case executes.

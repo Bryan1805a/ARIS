@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using ResidenceManagement.Application;
-using ResidenceManagement.Infrastructure;
+using Aris.Application;
+using Aris.Infrastructure;
 
-namespace ResidenceManagement.UI;
+namespace Aris.UI;
 
 internal static class Program
 {

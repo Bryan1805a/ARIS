@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Aris.Application/Aris.Application.csproj" />
+    <Project Path="src/Aris.Domain/Aris.Domain.csproj" />
+    <Project Path="src/Aris.Infrastructure/Aris.Infrastructure.csproj" />
+    <Project Path="src/Aris.UI/Aris.UI.csproj" />
+  </Folder>
+</Solution>

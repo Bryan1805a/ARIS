@@ -1,9 +1,9 @@
 # AI Coding Guidelines & Anti-Delusion Playbook
-## Residence Information Management System
+## Administrative Residence Information System (ARIS)
 
 **Version:** 1.0  
 **Target:** All Team Members & AI Assistants (ChatGPT, Claude, GitHub Copilot, Cursor, Gemini, etc.)  
-**Single Source of Truth:** [`srs.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/srs.md) · [`database_design_v2.md`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/database_design_v2.md) · [`residence_schema_v2.sql`](file:///C:/Users/Bryan/Documents/residence_information_management_system/docs/residence_schema_v2.sql)
+**Single Source of Truth:** [`srs.md`](srs.md) · [`database_design_v2.md`](database_design_v2.md) · [`aris_schema_v2.sql`](aris_schema_v2.sql)
 
 ---
 
@@ -25,10 +25,10 @@ When developers use AI coding assistants independently, AIs tend to:
 
 ```text
 [PROJECT CONTEXT & CONSTRAINTS]
-Project: Residence Information Management System (.NET 10 C#, WinForms desktop app, Visual Studio 2026, SQL Server 2019+ via Docker, EF Core).
+Project: Administrative Residence Information System (ARIS) (.NET 10 C#, WinForms desktop app, Visual Studio 2026, SQL Server 2019+ via Docker, EF Core).
 Architecture: Strict 4-Layer (UI -> Application -> Domain -> Infrastructure).
 Single Sources of Truth:
-- Schema v2 (residence_schema_v2.sql)
+- Schema v2 (aris_schema_v2.sql)
 - SRS v2 (srs.md)
 - Design Decisions D1-D14 (database_design_v2.md)
 
@@ -58,7 +58,7 @@ AI models frequently default to common boilerplate that contradicts this project
 | **3** | Updating `membership.Role = "HEAD";` in-place | Database trigger `trg_Membership_Guard` will abort the transaction with error **51011**. | Close the old `MEMBER` record (`EndDate = E - 1, Status = 'ENDED'`), then insert a new `HEAD` record (`StartDate = E`). |
 | **4** | Creating a citizen directly with `Status = "ACTIVE"` without a household | Violates the Golden Invariant (`vw_GoldenInvariantViolations` violation C1/C2). | New citizens start as `Status = "UNASSIGNED"`. They become `ACTIVE` when `HouseholdService.RegisterHousehold` or `AddMember` commits. |
 | **5** | Performing transfers in multiple separate transactions or via direct UI calls | Orphaned records if network fails; violates ACID atomicity and concurrency control. | Encapsulate entire flow inside `TransferService.ExecuteTransfer` using `IsolationLevel.Serializable`. |
-| **6** | Using `UPDATE` or `DELETE` on `AuditLog` | Database role `residence_app` has `DENY UPDATE` and `DENY DELETE` on `AuditLog`; trigger `51030` blocks changes. | Audit logs are strictly append-only (`INSERT` only). |
+| **6** | Using `UPDATE` or `DELETE` on `AuditLog` | Database role `aris_app` has `DENY UPDATE` and `DENY DELETE` on `AuditLog`; trigger `51030` blocks changes. | Audit logs are strictly append-only (`INSERT` only). |
 | **7** | Logging a `FAILURE` audit entry within the rolled-back transaction | Transaction rollback discards the audit log, losing the trace of the failure. | Catch the exception, execute `transaction.Rollback()`, then log the failure using a **separate, fresh database connection**. |
 | **8** | Self-approving transfers (`DecidedBy == RequestedBy`) | Check constraint `CK_TR_Decision` will abort the transaction. | Ensure approval UI requires a different officer ID than the requester. |
 | **9** | Direct `_context.Citizens.ToList()` in UI Form / View code | Destroys layer boundaries, breaks testability, bypasses validation. | Call `_citizenService.SearchCitizensAsync(queryDto)`. |
@@ -75,11 +75,11 @@ When asking AI to implement a new service or UI component, provide these referen
 ```csharp
 public class HouseholdService : IHouseholdService
 {
-    private readonly ResidenceDbContext _context;
+    private readonly ArisDbContext _context;
     private readonly IAuditService _auditService;
     private readonly IValidator<RegisterHouseholdDto> _validator;
 
-    public HouseholdService(ResidenceDbContext context, IAuditService auditService, IValidator<RegisterHouseholdDto> validator)
+    public HouseholdService(ArisDbContext context, IAuditService auditService, IValidator<RegisterHouseholdDto> validator)
     {
         _context = context;
         _auditService = auditService;
@@ -213,7 +213,7 @@ public class RegisterHouseholdViewModel : BaseViewModel
 
 Before approving any AI-generated PR, the reviewer must check:
 
-- [ ] **No schema hallucinations:** Are all column and table names matching `residence_schema_v2.sql`?
+- [ ] **No schema hallucinations:** Are all column and table names matching `aris_schema_v2.sql`?
 - [ ] **No in-place role or date edits:** Does the code modify `Role` or `StartDate` via `UPDATE` instead of close-and-insert?
 - [ ] **No UI leakage:** Does any UI code contain `using (var context = ...)` or raw SQL queries?
 - [ ] **Transaction isolation:** Are multi-table operations wrapped in `BeginTransactionAsync(IsolationLevel.Serializable)`?
