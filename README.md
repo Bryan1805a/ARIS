@@ -22,12 +22,12 @@ workflows with an append-only historical audit trail.
 
 ## Documentation (Single Sources of Truth)
 
-- [`docs/srs.md`](docs/srs.md) — Software Requirements Specification & Domain Model v2
-- [`docs/database_design_v2.md`](docs/database_design_v2.md) — database rationale & decision log (D1–D14)
-- [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql) — database creation script
-- [`docs/ai-coding-guidelines.md`](docs/ai-coding-guidelines.md) — anti-hallucination rules & prompt header
-- [`docs/pr-review-checklist.md`](docs/pr-review-checklist.md) — PR review & merge checklist
-- [`docs/work-breakdown.md`](docs/work-breakdown.md) — WBS, roles, phases, RACI
+See the central [**Documentation Hub**](docs/README.md) for full documentation, specifications, and navigation.
+
+- **Architecture:** [`docs/architecture/srs.md`](docs/architecture/srs.md) (SRS & Use Cases) · [`docs/architecture/domain-model.md`](docs/architecture/domain-model.md) · [`docs/architecture/golden-invariant.md`](docs/architecture/golden-invariant.md)
+- **Database:** [`docs/database/design-rationale.md`](docs/database/design-rationale.md) (Decisions D1–D14) · [`docs/database/triggers-and-security.md`](docs/database/triggers-and-security.md) · [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql)
+- **Standards:** [`docs/standards/ai-coding-guidelines.md`](docs/standards/ai-coding-guidelines.md) · [`docs/standards/coding-conventions.md`](docs/standards/coding-conventions.md) · [`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md)
+- **Workflow:** [`docs/workflow/onboarding.md`](docs/workflow/onboarding.md) · [`docs/workflow/work-breakdown.md`](docs/workflow/work-breakdown.md) · [`docs/workflow/phase1-tasks.md`](docs/workflow/phase1-tasks.md)
 
 ## Repository Layout
 
@@ -221,7 +221,7 @@ dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=tcp:aris-demo-b1805.d
 
 User-secrets are stored outside the repository, per developer. Never paste a real
 connection string into `appsettings.json` — the PR checklist
-([`docs/pr-review-checklist.md`](docs/pr-review-checklist.md)) explicitly blocks it.
+([`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md)) explicitly blocks it.
 
 ## Testing
 
@@ -277,8 +277,8 @@ develop
 ```
 
 Open a PR into `develop`; the Team Leader reviews using
-[`docs/pr-review-checklist.md`](docs/pr-review-checklist.md). See
-[`docs/work-breakdown.md`](docs/work-breakdown.md) §7 for the full workflow.
+[`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md). See
+[`docs/workflow/work-breakdown.md`](docs/workflow/work-breakdown.md) §7 for the full workflow.
 
 ## Golden Invariant
 
