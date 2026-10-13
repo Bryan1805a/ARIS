@@ -1,27 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <!-- xUnit v3 test projects are self-contained executables on Microsoft.Testing.Platform. -->
-    <OutputType>Exe</OutputType>
-    <!-- Replace the default xUnit-native entry point with the Microsoft.Testing.Platform
-         one. Required for `dotnet test` on .NET 10: without it the app starts the xUnit
-         in-proc runner, ignores the MTP node argument, and the run reports
-         "Zero tests ran" (exit code 5).
-         The runner itself is selected in global.json ("test": { "runner": ... }). -->
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- Needs a live database; skips when ARIS_TEST_CONNECTION is unset. -->
+    <ArisTestKind>Integration</ArisTestKind>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- xUnit v3 runs on Microsoft.Testing.Platform (MTP). Microsoft.NET.Test.Sdk
-         is deliberately NOT referenced: it targets VSTest, which the .NET 10 SDK no
-         longer supports (see global.json "test" runner setting). -->
-    <PackageReference Include="xunit.v3" Version="4.0.1" />
-  </ItemGroup>
 
   <ItemGroup>
     <!-- Raw ADO.NET on purpose: the golden invariant is a DATABASE rule enforced by
