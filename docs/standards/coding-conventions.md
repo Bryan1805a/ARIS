@@ -8,43 +8,72 @@
 
 ## 1. Architectural Layering & Error Handling Policy
 
-### Strict Layering Rule
-```text
-UI ──► Application ──► Domain          Infrastructure ──► Application/Domain
+### 1.1. Strict Layering Dependency Rule
+
+```mermaid
+graph TD
+    UI["Aris.UI (WinForms Views & ViewModels)"]
+    App["Aris.Application (Services, DTOs, Validators)"]
+    Domain["Aris.Domain (Entities, Enums, Invariants)"]
+    Infra["Aris.Infrastructure (EF Core, ADO.NET, Resilience)"]
+
+    UI -->|DTOs & Result<T>| App
+    App --> Domain
+    Infra --> Domain
+    App --> Infra
 ```
+
 - **Zero SQL or `DbContext` in UI:** WinForms controls only invoke Application service interfaces via DTOs and [`Result<T>`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Application/Common/Result.cs).
-- **Error Handling Policy:**
-  - **Expected Business Failures** (validation errors, entity not found, conflicts, authorization rejections): **Return [`Result<T>.Failure(...)`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Application/Common/Result.cs)**. Do not throw exceptions for routine business outcomes.
-  - **Malformed Inputs / Guard Clauses** (programming bugs, illegal internal states): Throw [`ValidationException`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Application/Common/ValidationException.cs).
-  - **Unexpected Errors** (transient network drops, fatal DB crashes): Allow to propagate to the transaction rollback boundary.
+- **No Domain Entities Exposed to UI:** Application services map internal domain entities to lightweight DTO records before returning data to the presentation layer.
+
+### 1.2. Error Handling Policy
+
+| Error Classification | Scenario | Required Handling |
+|---|---|---|
+| **Expected Business Failures** | Validation errors, entity not found, rule conflicts, authorization rejections | **Return [`Result<T>.Failure(...)`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Application/Common/Result.cs)**. Do not throw exceptions for routine business outcomes. |
+| **Malformed Inputs / Guard Violations** | Null arguments, programming bugs, corrupt internal states | Throw [`ValidationException`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Application/Common/ValidationException.cs) or `ArgumentNullException`. |
+| **Unexpected Infrastructure Failures** | Database network disconnection, timeout, OS fault | Propagate to the transaction boundary; execute `RollbackAsync()`. |
 
 ---
 
 ## 2. Cross-Cutting Audit Logging Protocol
 
-Every state-altering business mutation must write an audit entry (`BR-AUD-01`).
+Every state-altering business mutation must write an audit record to `dbo.AuditLog` (`BR-AUD-01`).
 
-### The Two Call Patterns
+### The Two Logging Patterns
 
-| Method | When | Connection Used | Purpose |
+```mermaid
+flowchart TD
+    TxStart["Begin Transaction (Serializable)"] --> Mutate["Execute State Mutations"]
+    Mutate --> LogSuccess["_audit.LogAsync(auditEntry)<br><i>(Shares active transaction)</i>"]
+    LogSuccess --> Commit["CommitAsync()"]
+    Commit --> ReturnSuccess["Return Result<T>.Success()"]
+
+    Mutate -.->|Exception Thrown| Catch["catch (Exception ex)"]
+    Catch --> Rollback["RollbackAsync()<br><i>(Reverts all mutations)</i>"]
+    Rollback --> LogFailure["_audit.LogFailureIndependentAsync()<br><i>(New independent connection via SqlResilience)</i>"]
+    LogFailure --> ReturnFailure["Return Result<T>.Failure()"]
+```
+
+| Method | Invocation Context | Connection Used | Target Outcome |
 |---|---|---|---|
 | **`_audit.LogAsync(...)`** | Inside business transaction, **before** `CommitAsync` | Current caller's transaction | Records `SUCCESS` audit trail |
 | **`_audit.LogFailureIndependentAsync(...)`** | Inside `catch`, **after** `RollbackAsync` | **New, independent connection** via [`SqlResilience`](file:///C:/Users/Bryan/Documents/ARIS/src/Aris.Infrastructure/Resilience/SqlResilience.cs) | Preserves `FAILURE` record post-rollback |
 
 > [!WARNING]
-> If you write a failure audit record using the same transaction and then execute `RollbackAsync()`, the failure record **is discarded along with the transaction**. A separate independent connection is required to survive the rollback.
+> If you log a failure audit record using the same transaction and then execute `RollbackAsync()`, the failure record **is discarded along with the transaction**. A separate independent connection is required to survive the rollback.
 
-### Rules for Audit Records
-1. **`Action`:** Stable uppercase string $\le 50$ chars (e.g., `REGISTER_HOUSEHOLD`, `EXECUTE_TRANSFER`, `LOGIN_SUCCESS`).
-2. **`EntityType`:** Singular table name $\le 50$ chars (e.g., `Household`, `Citizen`).
-3. **`DetailsJson`:** Valid serialized JSON payload. Constraint `CK_Audit_Details` runs `ISJSON(Details) = 1` and rejects invalid strings. Always use `JsonSerializer.Serialize()`.
-4. **`CorrelationId`:** Generate a `Guid` at the start of the use case to correlate all resulting audit entries across entities.
+### Mandatory Audit Record Constraints
+1. **`Action`:** Stable uppercase string $\le 50$ chars (e.g. `REGISTER_HOUSEHOLD`, `EXECUTE_TRANSFER`, `LOGIN_SUCCESS`).
+2. **`EntityType`:** Singular table name $\le 50$ chars (e.g. `Household`, `Citizen`).
+3. **`DetailsJson`:** Valid serialized JSON payload. Constraint `CK_Audit_Details` executes `ISJSON(Details) = 1` and rejects invalid strings. Always use `JsonSerializer.Serialize()`.
+4. **`CorrelationId`:** Generate a `Guid` at use-case entry to correlate all resulting audit entries across entities.
 
 ---
 
 ## 3. Canonical Service Pattern (Reference Implementation)
 
-Copy this canonical pattern when implementing any Application service:
+All Application services must follow this canonical implementation structure:
 
 ```csharp
 public class HouseholdService : IHouseholdService
@@ -68,7 +97,7 @@ public class HouseholdService : IHouseholdService
         int currentUserId,
         CancellationToken ct = default)
     {
-        // 1. Validation BEFORE opening the database transaction
+        // 1. Validation BEFORE opening database transaction
         var valResult = await _validator.ValidateAsync(dto, ct);
         if (!valResult.IsValid)
             return Result<int>.Failure(valResult.Errors.Select(e => e.ErrorMessage));
@@ -127,7 +156,7 @@ public class HouseholdService : IHouseholdService
             };
             _context.Residences.Add(residence);
 
-            // Step E: Update Citizen Status to ACTIVE
+            // Step E: Transition Citizen Status to ACTIVE
             var citizen = await _context.Citizens.FindAsync(new object[] { dto.HeadCitizenId }, ct);
             if (citizen == null)
                 return Result<int>.Failure("Citizen not found.");
@@ -181,8 +210,8 @@ public class HouseholdService : IHouseholdService
 ## 4. UI Presentation Pattern (WinForms & ViewModels)
 
 - UI event handlers delegate work to async ViewModel or Presenter methods.
-- UI never blocks the thread; use `async/await` and set busy states (`IsBusy = true`).
-- Display user-friendly error messages from `result.Errors` rather than throwing raw exception dialogs.
+- UI never blocks the main thread; use `async/await` and display busy indicators.
+- Display user-friendly error dialogs from `result.Errors` rather than unhandled exception stack traces:
 
 ```csharp
 public class RegisterHouseholdViewModel
@@ -201,11 +230,19 @@ public class RegisterHouseholdViewModel
         var result = await _householdService.RegisterHouseholdAsync(dto, _session.CurrentUserId);
         if (!result.IsSuccess)
         {
-            MessageBox.Show(string.Join("\n", result.Errors), "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                string.Join(Environment.NewLine, result.Errors),
+                "Validation Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
             return false;
         }
 
-        MessageBox.Show("Household registered successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(
+            "Household registered successfully.",
+            "Success",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
         return true;
     }
 }
@@ -215,16 +252,16 @@ public class RegisterHouseholdViewModel
 
 ## 5. DTO Conventions & Validation
 
-- DTOs live in `Aris.Application/<Module>/Dtos/`.
-- Use immutable C# `record` types with `init` properties.
-- Use `required` for mandatory fields.
-- Pair each input DTO with a corresponding `AbstractValidator<T>` using FluentValidation.
+- DTOs reside in `src/Aris.Application/<Module>/Dtos/`.
+- Use immutable C# `record` types with `init` property accessors.
+- Use the C# `required` modifier for mandatory properties.
+- Implement an `AbstractValidator<T>` using FluentValidation for each input DTO.
 
 ---
 
 ## 6. Testing Strategy: Unit vs. Integration
 
-The solution contains two test projects serving distinct roles:
+The test suite is partitioned into two distinct projects:
 
 ```text
 tests/
@@ -232,12 +269,12 @@ tests/
 └── Aris.Tests/          # Real SQL Server integration tests (Azure / Docker)
 ```
 
-| Check | Where to test | How to test |
+| Verification Target | Target Test Project | Execution Mechanism |
 |---|---|---|
-| Business logic, input validation, DTO mapping | `Aris.UnitTests` | xUnit tests deriving from `InMemoryDatabaseTestBase` |
-| Triggers, CHECK constraints, filtered unique indexes | `Aris.Tests` | Real SQL Server connection via `$env:ARIS_TEST_CONNECTION` |
-| Golden Invariant verification (`vw_GoldenInvariantViolations`) | `Aris.Tests` | Executes query against real database, asserts 0 rows |
-| Optimistic concurrency (`RowVersion`) | `Aris.Tests` | Simulates concurrent updates, asserts `DbUpdateConcurrencyException` |
+| Business rules, input validation, DTO mapping | `Aris.UnitTests` | In-memory unit tests using xUnit and Moq |
+| Triggers, CHECK constraints, filtered indexes | `Aris.Tests` | Real SQL Server connection via `$env:ARIS_TEST_CONNECTION` |
+| Golden Invariant verification (`vw_GoldenInvariantViolations`) | `Aris.Tests` | Queries live view; asserts 0 rows |
+| Optimistic concurrency (`RowVersion`) | `Aris.Tests` | Simulates concurrent updates; asserts `DbUpdateConcurrencyException` |
 
 > [!CAUTION]
-> **An in-memory database is not SQL Server.** It does not enforce triggers, CHECK constraints, filtered unique indexes, or rowversion generation. Never write C# validation logic to simulate a DB constraint solely to make an in-memory test pass.
+> **In-memory databases do not enforce SQL Server triggers, CHECK constraints, filtered unique indexes, or rowversion tokens.** Never write C# code to emulate a database constraint merely to satisfy an in-memory test.

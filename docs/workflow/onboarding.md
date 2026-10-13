@@ -1,52 +1,64 @@
-# Team Onboarding & 5-Minute Developer Quickstart
+# Developer Onboarding & 5-Minute Quickstart
 
 **Document Code:** `WKF-ONBOARD-v2.0`  
 **Prerequisites:** .NET 10 SDK (`10.0.401`), Visual Studio 2026 or .NET CLI, Docker Desktop (for local DB)  
-**Main Reference:** [`phase1-tasks.md`](phase1-tasks.md) · [`work-breakdown.md`](work-breakdown.md)
+**Companion Documents:** [`work-breakdown.md`](work-breakdown.md) · [`phase1-tasks.md`](phase1-tasks.md)
 
 ---
 
 ## 1. Project Overview & Current Baseline
 
-Before writing code, know what is already built and working:
+Before writing code, understand what is already built and validated:
 - **Solution Architecture:** 4-layer clean architecture (`Aris.UI` $\rightarrow$ `Aris.Application` $\rightarrow$ `Aris.Domain` $\leftarrow$ `Aris.Infrastructure`) compiles cleanly with **0 errors and 0 warnings**.
 - **Base Infrastructure:** `EntityBase`, `Result<T>`, `ValidationException`, `BaseService`, `IAuditService`, `AuditEntryValidator`, and `SqlResilience` are implemented and unit tested.
 - **Shared Azure Database:** Deployed on Azure SQL (`aris-demo-b1805.database.windows.net`, db `ARIS-DB`), schema applied, least-privilege user `aris_officer` configured, and Golden Invariant verified.
 
 ---
 
-## 2. 5-Minute Local Setup
+## 2. 5-Minute Local Setup (Shared Azure SQL)
 
-### Step 1: Whitelist Your Public IP (Azure SQL)
-Azure SQL blocks all client traffic by default.
-1. Find your public IPv4 address at: **https://ipv4.icanhazip.com**
-2. Send this IP address to the Team Leader to add to the Azure SQL Server firewall.
+```mermaid
+flowchart LR
+    Step1["Step 1: Whitelist IP<br><i>(icanhazip.com)</i>"] --> Step2["Step 2: User Secrets<br><i>(dotnet user-secrets)</i>"]
+    Step2 --> Step3["Step 3: Test Verification<br><i>(dotnet test)</i>"]
+```
 
-### Step 2: Configure Application Secrets
+### Step 1: Whitelist Your Public IP Address
+Azure SQL blocks all external client traffic by default:
+1. Identify your public IPv4 address at: **[https://ipv4.icanhazip.com](https://ipv4.icanhazip.com)**
+2. Provide this IP address to the Team Leader to add to the Azure SQL Server firewall.
+
+### Step 2: Configure Local Application Secrets
 Set your local developer user-secrets in PowerShell:
+
 ```powershell
 cd src/Aris.UI
 dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;TrustServerCertificate=False;Connect Timeout=60;"
 ```
-*(Never commit connection strings or passwords to Git).*
+
+> [!NOTE]
+> Replace `<password>` with the team database password provided by your Team Leader. Never commit connection strings or passwords to Git.
 
 ### Step 3: Run the Verification Tests
 From the root directory of the repository:
+
 ```powershell
 $env:ARIS_TEST_CONNECTION = "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;TrustServerCertificate=False;Connect Timeout=60;"
 dotnet test Aris.slnx
 ```
+
 **Expected Result:** All 37 tests pass (34 unit tests + 3 database integration tests).
 
-> [!NOTE]
-> Azure SQL Serverless auto-pauses when idle. If the database was sleeping, the first test connection may take 30–60 seconds while the database resumes. This is expected.
+> [!TIP]
+> **Serverless Cold Start:** Azure SQL Serverless auto-pauses when idle. If the database was paused, the initial connection attempt may take 30–60 seconds while the compute resumes. This is expected behavior.
 
 ---
 
 ## 3. Alternative: Running Local SQL Server via Docker
 
-If you prefer an offline local database:
+For offline or local development without cloud connectivity:
+
 ```powershell
 # 1. Copy environment template and start SQL container
 Copy-Item .env.example .env
@@ -64,12 +76,26 @@ dotnet test Aris.slnx
 
 ---
 
-## 4. Git Workflow Rules
+## 4. Git Workflow & Branching Conventions
 
-1. **Pull the latest `main`:**
+```mermaid
+gitGraph
+    commit id: "Initial Baseline"
+    branch develop
+    checkout develop
+    commit id: "Dev Baseline"
+    branch feature/p1-c1
+    checkout feature/p1-c1
+    commit id: "Add Citizen DTOs"
+    commit id: "Add Validators"
+    checkout develop
+    merge feature/p1-c1 id: "Merge PR"
+```
+
+1. **Pull the latest `develop`:**
    ```powershell
-   git checkout main
-   git pull origin main
+   git checkout develop
+   git pull origin develop
    ```
 2. **Create your feature branch:**
    ```powershell
@@ -77,8 +103,8 @@ dotnet test Aris.slnx
    ```
 3. **Verify locally before pushing:**
    ```powershell
-   dotnet build Aris.slnx               # 0 errors, 0 warnings
+   dotnet build Aris.slnx               # Must be 0 errors, 0 warnings
    dotnet test Aris.slnx                # 0 failures (never pass --nologo)
    ```
 4. **Submit Pull Request:**
-   Submit a PR targeting `main`. Complete the self-check in [`../standards/pr-review-checklist.md`](../standards/pr-review-checklist.md).
+   Submit a PR targeting `develop`. Complete the self-check in [`../standards/pr-review-checklist.md`](../standards/pr-review-checklist.md).

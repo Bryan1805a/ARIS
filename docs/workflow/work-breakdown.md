@@ -1,50 +1,46 @@
 # Work Breakdown Structure (WBS) & Implementation Plan
 
 **Document Code:** `WKF-WBS-v2.0`  
-**Platform:** .NET 10 (C#) WinForms · Visual Studio 2026 · SQL Server 2019+ · EF Core  
+**Platform:** .NET 10 (C#) WinForms · Visual Studio 2026 · Microsoft SQL Server 2019+ · Entity Framework Core  
 **Single Source of Truth:** [`../architecture/srs.md`](../architecture/srs.md) · [`../database/design-rationale.md`](../database/design-rationale.md)
 
 ---
 
 ## 1. Implementation Strategy: Vertical Feature Slicing
 
-ARIS rejects horizontal layering silos ("one person writes all UI, one writes all queries"). Instead, developers own **vertical feature slices end-to-end**:
+ARIS rejects horizontal layer silos ("one developer builds all UI, another builds all queries"). Instead, engineers deliver **complete vertical feature slices end-to-end**:
 
-```text
-Presentation Layer (UI / Views / ViewModels)
-       ↓
-Application Layer (Use Cases / Services / DTOs / FluentValidation)
-       ↓
-Domain Layer (Entities / Invariants / Business Rules)
-       ↓
-Infrastructure Layer (EF Core DbContext / Mappings / ADO.NET)
-       ↓
-Database Layer (SQL Server 2019+ / Constraints / Triggers)
+```mermaid
+flowchart TD
+    subgraph Slice ["Vertical Feature Slice (Owner: Assigned Developer)"]
+        UI["Presentation Layer: WinForms Views & ViewModels"]
+        App["Application Layer: Use Cases, Services, DTOs & Validation"]
+        Domain["Domain Layer: Entities, Enums & Invariants"]
+        Infra["Infrastructure Layer: EF Core Mappings & Resilience"]
+        DB["Database Layer: SQL Server Constraints & Triggers"]
+    end
+
+    UI --> App --> Domain --> Infra --> DB
 ```
 
-Each developer implements their assigned feature vertically from the UI down to the database transaction boundary.
+Each developer implements their assigned feature vertically from the UI controls down to the database transaction boundary.
 
 ---
 
-## 2. Team Structure & Role Distribution
+## 2. Team Organization & Feature Ownership
 
-```text
-                        ┌────────────────────────┐
-                        │      Team Leader       │
-                        │ Architecture & Reviews │
-                        └───────────┬────────────┘
-                                    │
-          ┌─────────────────────────┼─────────────────────────┐
-          │                         │                         │
-┌─────────▼──────────┐    ┌─────────▼──────────┐    ┌─────────▼──────────┐
-│ Database Designer  │    │      Coder 1       │    │      Coder 2       │
-│ Data & Persistence │    │ Citizen & Search   │    │ Household & Move   │
-└────────────────────┘    └────────────────────┘    └────────────────────┘
-                                    │
-                          ┌─────────▼──────────┐
-                          │      Coder 3       │
-                          │ Auth, Shell & Rpts │
-                          └────────────────────┘
+```mermaid
+graph TD
+    TL["<b>Team Leader</b><br>Architecture, Boundaries & PR Gatekeeper"]
+    DBDev["<b>Database Designer</b><br>Schema v2, EF Core Mappings, Seed Data"]
+    C1["<b>Coder 1</b><br>Citizen Slice (CIT-01..04) & Search"]
+    C2["<b>Coder 2</b><br>Household, Residence & Relocations (UC-06)"]
+    C3["<b>Coder 3</b><br>Shell, Auth (AUTH-01), Admin & Reports"]
+
+    TL --> DBDev
+    TL --> C1
+    TL --> C2
+    TL --> C3
 ```
 
 | Role | Primary Feature Ownership | Key Deliverables |
@@ -84,41 +80,35 @@ Each developer implements their assigned feature vertically from the UI down to 
 
 ## 4. 7-Phase Implementation Roadmap
 
-```text
-Phase 1: Foundation & Baseline (Days 1–3)
-   │
-Phase 2: First Vertical Slice - Citizen (Days 4–6)  <-- Reference Architecture
-   │
-Phase 3: Core Household & Residence Domain (Days 7–11)
-   │
-Phase 4: Maker-Checker Transfer Engine (Days 12–16) <-- Critical Path
-   │
-Phase 5: Auth, Admin, Reports & Audit Logging (Days 17–19)
-   │
-Phase 6: End-to-End Integration & Golden Invariant Verification (Days 20–22)
-   │
-Phase 7: Hardening, Concurrency Testing & Final Acceptance (Days 23–25)
+```mermaid
+flowchart TD
+    P1["<b>Phase 1: Foundation & Baseline</b><br>Scaffolding, Schema v2, Base Infrastructure, Contracts"] --> P2["<b>Phase 2: First Vertical Slice - Citizen</b><br>Reference Architecture: DTOs, Service, UI, Invariant"]
+    P2 --> P3["<b>Phase 3: Core Household & Residence Domain</b><br>Register Household, Member Management, Head Changes"]
+    P3 --> P4["<b>Phase 4: Maker-Checker Transfer Engine</b><br>Critical Path: Serializable Dual-Control Relocations"]
+    P4 --> P5["<b>Phase 5: Auth, Admin, Reports & Auditing</b><br>Salted Hashing, Account Lockout, Reports Engine"]
+    P5 --> P6["<b>Phase 6: End-to-End Integration</b><br>Full Golden Invariant Verification, Edge-Case Audits"]
+    P6 --> P7["<b>Phase 7: Hardening & Acceptance</b><br>Optimistic Concurrency Stress Tests, Deployment Verification"]
 ```
 
 ---
 
 ## 5. Definition of Done (DoD)
 
-A user story or task is only marked as **Done** when all of the following criteria are met:
+A user story or feature task is marked as **Done** only when all criteria below are satisfied:
 
 1. **Functional Completeness:**
-   - Happy path functions end-to-end via the UI.
-   - Negative and boundary flows handled (invalid inputs, empty fields, past dates).
-   - Inputs validated using FluentValidation before service dispatch.
-2. **Architectural Compliance:**
-   - UI code contains **zero SQL** and **zero `DbContext` logic**.
+   - Happy path functions end-to-end through the WinForms UI.
+   - Negative and boundary flows are tested (invalid inputs, duplicate entries, past dates).
+   - Input payloads validated using FluentValidation before service execution.
+2. **Architectural Boundary Adherence:**
+   - UI code contains **zero direct SQL** and **zero `DbContext` references**.
    - UI communicates with Application services exclusively via DTOs and `Result<T>`.
-   - All multi-table transitions wrapped in a single database transaction.
+   - All multi-table state changes are wrapped inside an atomic transaction.
 3. **Database & Historical Integrity:**
-   - History records are append-only (never updated in place or deleted).
+   - Historical records are append-only (never updated in place or deleted).
    - Closed records have `EndDate = EffectiveDate - 1`.
    - Overlap check triggers pass without error.
    - `SELECT * FROM dbo.vw_GoldenInvariantViolations;` returns **0 rows**.
-4. **Code Quality:**
+4. **Code Quality & CI Readiness:**
    - `dotnet build Aris.slnx` compiles with **0 errors and 0 warnings**.
-   - Automated tests pass; PR reviewed and approved by the Team Leader against [`../standards/pr-review-checklist.md`](../standards/pr-review-checklist.md).
+   - Automated tests pass; PR reviewed and approved by Team Leader against [`../standards/pr-review-checklist.md`](../standards/pr-review-checklist.md).
