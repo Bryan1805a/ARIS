@@ -24,9 +24,31 @@ flowchart LR
 ```
 
 ### Step 1: Whitelist Your Public IP Address
-Azure SQL blocks all external client traffic by default:
+Azure SQL blocks all external client traffic by default. Your public IP changes
+whenever you switch networks, so re-run this step when a connection starts failing.
+
+**Automated (needs the Azure CLI and permission on the server):**
+
+```powershell
+# Preview the change without signing in or touching Azure:
+.\scripts\update-firewall.ps1 -WhatIf
+
+# Do it:
+.\scripts\update-firewall.ps1
+```
+
+It detects your current public IPv4 and creates or updates a **per-user** rule
+(`dev-<your-windows-username>`) on `aris-demo-b1805` in resource group `ARIS-RG`,
+so teammates never overwrite each other's rule. It reuses your existing `az login`
+session and is safe to re-run. If you have no rule write access, it will say so.
+
+**Manual fallback (no Azure CLI access yet):**
 1. Identify your public IPv4 address at: **[https://ipv4.icanhazip.com](https://ipv4.icanhazip.com)**
 2. Provide this IP address to the Team Leader to add to the Azure SQL Server firewall.
+
+> [!NOTE]
+> Do **not** enable "Allow Azure services and resources to access this server" - your
+> client is a laptop, not an Azure service, so it would not help.
 
 ### Step 2: Configure Local Application Secrets
 Set your local developer user-secrets in PowerShell:
