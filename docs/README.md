@@ -31,10 +31,17 @@ docs/
 │   ├── coding-conventions.md           # Canonical Service Patterns, Auditing & Testing Strategy
 │   └── pr-review-checklist.md          # PR Review Gates, Definition of Done & 12 Auto-Rejections
 │
-└── workflow/                           # Project Management & Implementation Plan
-    ├── onboarding.md                   # 5-Minute Developer Quickstart & Environment Setup
-    ├── work-breakdown.md               # Team Roles, RACI Matrix & 7-Phase Roadmap
-    └── phase1-tasks.md                 # Actionable Phase 1 Task Briefs per Team Member
+├── workflow/                           # Project Management & Implementation Plan
+│   ├── onboarding.md                   # 5-Minute Developer Quickstart & Environment Setup
+│   ├── work-breakdown.md               # Team Roles, RACI Matrix & 7-Phase Roadmap
+│   └── phase1-tasks.md                 # Actionable Phase 1 Task Briefs per Team Member
+│
+└── team/                               # Per-Role Onboarding Briefs (start here, by role)
+    ├── README.md                       # Team Handbook: roster, daily workflow, escalation
+    ├── database-designer.md            # P1-DB2: entities, DbContext mappings, AuditService
+    ├── coder-1.md                      # Module A: Citizen management & directory search
+    ├── coder-2.md                      # Module B: Household, residence & transfer engine
+    └── coder-3.md                      # Module C: Shell, authentication, admin & reports
 ```
 
 ---
@@ -97,6 +104,7 @@ Find the relevant documents based on your current role and responsibilities:
 
 | I am... | What I need | Where to start |
 |---|---|---|
+| **A New Team Member (by role)** | The team handbook + your own step-by-step Phase 1 brief | [`team/README.md`](team/README.md) → your brief: [Database Designer](team/database-designer.md) · [Coder 1](team/coder-1.md) · [Coder 2](team/coder-2.md) · [Coder 3](team/coder-3.md) |
 | **A New Team Member** | Getting local environment and Azure DB running in 5 minutes | [`workflow/onboarding.md`](workflow/onboarding.md) |
 | **Developing a Feature** | Canonical service pattern, auditing protocol, DTO conventions | [`standards/coding-conventions.md`](standards/coding-conventions.md) |
 | **Using AI Coding Assistants** | Prompt header to prevent schema hallucinations & broken triggers | [`standards/ai-coding-guidelines.md`](standards/ai-coding-guidelines.md) |

@@ -28,6 +28,7 @@ See the central [**Documentation Hub**](docs/README.md) for full documentation, 
 - **Database:** [`docs/database/design-rationale.md`](docs/database/design-rationale.md) (Decisions D1–D14) · [`docs/database/triggers-and-security.md`](docs/database/triggers-and-security.md) · [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql)
 - **Standards:** [`docs/standards/ai-coding-guidelines.md`](docs/standards/ai-coding-guidelines.md) · [`docs/standards/coding-conventions.md`](docs/standards/coding-conventions.md) · [`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md)
 - **Workflow:** [`docs/workflow/onboarding.md`](docs/workflow/onboarding.md) · [`docs/workflow/work-breakdown.md`](docs/workflow/work-breakdown.md) · [`docs/workflow/phase1-tasks.md`](docs/workflow/phase1-tasks.md)
+- **Team (by role):** [`docs/team/README.md`](docs/team/README.md) - team handbook + per-role Phase 1 briefs ([Database Designer](docs/team/database-designer.md), [Coder 1](docs/team/coder-1.md), [Coder 2](docs/team/coder-2.md), [Coder 3](docs/team/coder-3.md))
 
 ## Repository Layout
 
