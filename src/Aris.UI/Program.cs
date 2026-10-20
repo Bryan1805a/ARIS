@@ -36,9 +36,10 @@ internal static class Program
 
                 // UI forms and view models.
                 services.AddTransient<MainForm>();
+                services.AddTransient<LoginForm>();
             })
             .Build();
 
-        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<MainForm>());
+        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<LoginForm>());
     }
 }
