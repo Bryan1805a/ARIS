@@ -5,9 +5,9 @@ using Xunit;
 namespace Aris.Tests;
 
 /// <summary>
-/// Reports what the configured database actually is. Useful when the shared Azure
-/// SQL Database is unreachable (firewall, auto-pause) because the golden-invariant
-/// tests only say "skipped" and never explain why.
+/// Reports what the configured database actually is. Useful when the local SQL Server
+/// container is unreachable because the golden-invariant tests only say "skipped" and
+/// never explain why.
 /// </summary>
 public sealed class DatabaseConnectivityTests
 {
@@ -29,9 +29,9 @@ public sealed class DatabaseConnectivityTests
         var database = connection.Database;
 
         // Deliberately NOT asserting the database name: the name is a deployment choice
-        // (this project uses 'ARIS-DB' on Azure and 'ArisDb' in docker-compose), and
-        // hardcoding it made the test fail for a purely cosmetic reason. What matters is
-        // that the schema is deployed and readable.
+        // (the documented local name is 'ArisDb'), and hardcoding it made the test fail
+        // for a purely cosmetic reason. What matters is that the schema is deployed and
+        // readable.
         Assert.True(
             await TestDatabase.SchemaIsDeployedAsync(connection, Token),
             $"Connected to '{server}' ({edition}), database '{database}', but the schema is not deployed. " +
@@ -48,8 +48,7 @@ public sealed class DatabaseConnectivityTests
 
 /// <summary>
 /// Guards the transient-fault classification. If these rules are wrong, retry
-/// silently never happens and an Azure SQL serverless auto-resume surfaces to the
-/// user as a crash.
+/// silently never happens and a container restart surfaces to the user as a crash.
 /// </summary>
 public sealed class SqlResilienceTests
 {
@@ -62,7 +61,7 @@ public sealed class SqlResilienceTests
     private static readonly TimeSpan TestDelay = TimeSpan.Zero;
 
     [Theory]
-    [InlineData(40613)]  // database not currently available (serverless auto-resume)
+    [InlineData(40613)]  // database not currently available (container starting/restarting)
     [InlineData(10928)]  // resource limit reached
     [InlineData(10054)]  // connection reset by peer
     [InlineData(49918)]  // too many operations for the subscription

@@ -16,7 +16,7 @@ namespace Aris.UnitTests.Infrastructure;
 /// <b>Do NOT use this to prove database rules.</b> An in-memory provider has no
 /// triggers, no CHECK constraints, no filtered unique indexes, no computed columns
 /// and no <c>rowversion</c> generation. It will happily accept data that
-/// <c>ARIS-DB</c> rejects. The golden invariant, append-only guards, the
+/// <c>ArisDb</c> rejects. The golden invariant, append-only guards, the
 /// "at most one ACTIVE membership per citizen" index and temporal-overlap rules exist
 /// only in SQL Server - those are covered by <c>tests/Aris.Tests</c> against the real
 /// database. Do not "fix" a constraint here by adding it to C#; that would hide the
