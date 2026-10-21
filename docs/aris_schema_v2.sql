@@ -1,8 +1,8 @@
 /* =====================================================================
    Administrative Residence Information System (ARIS) - DATABASE SCHEMA v2 (final)
-   Target : SQL Server 2019+  (uses rowversion, filtered indexes, CONCAT_WS, ISJSON)
-   Run on : an EMPTY database. Batches are separated by GO (SSMS / Azure Data
-            Studio / sqlcmd -I). File is ASCII-only on purpose (no encoding issues).
+   Target : SQL Server 2019+ (development: SQL Server 2022 Developer in Docker)
+   Run on : an EMPTY database. Batches are separated by GO (SSMS / sqlcmd -I).
+            File is ASCII-only on purpose (no encoding issues).
    Design notes: see database_design_v2.md  (decision log D1..D14)
 
    Layers of protection (cheapest first):

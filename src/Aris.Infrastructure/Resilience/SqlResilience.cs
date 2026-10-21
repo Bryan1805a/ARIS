@@ -6,14 +6,13 @@ namespace Aris.Infrastructure.Resilience;
 /// Retry helpers for transient SQL Server faults.
 /// </summary>
 /// <remarks>
-/// Required when the database is hosted on Azure SQL Database with the
-/// <b>serverless</b> compute tier: an idle database auto-pauses and the next
-/// connection resumes it, which can fail with a transient error (for example
-/// 40613, "Database ... is not currently available"). Microsoft's guidance for
-/// serverless explicitly requires application-level retry logic because those
-/// errors "due to auto-resume are predictable".
+/// ARIS runs against a local SQL Server 2022 container, but connections can still
+/// fail transiently: Docker Desktop or the container may restart, the host may be
+/// under load, or a pooled connection may be dropped. Retrying a small, explicit
+/// set of connection-level errors keeps those moments from surfacing as a crash.
 ///
-/// See https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-overview
+/// Business failures (constraint violations, trigger guard errors, concurrency
+/// conflicts) are never retried. See <see cref="IsTransientErrorNumber"/>.
 /// </remarks>
 public static class SqlResilience
 {
@@ -24,15 +23,15 @@ public static class SqlResilience
     public static readonly TimeSpan DefaultBaseDelay = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// Upper bound for a single backoff wait. Azure SQL serverless can take roughly
-    /// a minute to resume, so the cap is deliberately generous.
+    /// Upper bound for a single backoff wait. A container restart or a slow first
+    /// start can take a while, so the cap is deliberately generous.
     /// </summary>
     public static readonly TimeSpan DefaultMaxDelay = TimeSpan.FromSeconds(20);
 
     /// <summary>
     /// Opens a connection, retrying transient faults. Prefer this over
-    /// <see cref="SqlConnection.OpenAsync(CancellationToken)"/> so an auto-paused
-    /// Azure database does not surface to the user as a crash.
+    /// <see cref="SqlConnection.OpenAsync(CancellationToken)"/> so a restarting
+    /// database container does not surface to the user as a crash.
     /// </summary>
     public static async Task<SqlConnection> OpenAsync(
         string connectionString,
@@ -90,8 +89,9 @@ public static class SqlResilience
     }
 
     /// <summary>
-    /// True when the failure is worth retrying. Azure SQL reports connection-level
-    /// availability problems as specific error numbers; 40613 is the auto-resume case.
+    /// True when the failure is worth retrying. SQL Server reports connection-level
+    /// availability problems as specific error numbers; see
+    /// <see cref="IsTransientErrorNumber"/>.
     /// </summary>
     public static bool IsTransient(Exception exception) => exception switch
     {
@@ -108,16 +108,16 @@ public static class SqlResilience
     /// so testing through one would be impossible.
     /// </summary>
     /// <remarks>
-    /// Error numbers Microsoft documents as transient / retryable for Azure SQL Database.
-    /// Anything not listed (constraint violations, trigger guard errors) is a real bug
-    /// and must fail fast rather than be retried.
+    /// Error numbers that indicate a connection or availability problem rather than a
+    /// defect in the statement. Anything not listed (constraint violations, trigger
+    /// guard errors) is a real bug and must fail fast rather than be retried.
     /// </remarks>
     public static bool IsTransientErrorNumber(int errorNumber) => errorNumber switch
     {
         4060 => true,   // cannot open database requested by the login
         40197 => true,  // service error processing the request
         40501 => true,  // service busy
-        40613 => true,  // database not currently available (serverless auto-resume)
+        40613 => true,  // database not currently available (container starting/restarting)
         10928 or 10929 => true, // resource limit reached
         10053 or 10054 or 10060 => true, // connection dropped / timed out
         49918 or 49919 or 49920 => true, // too many operations for the subscription
@@ -126,7 +126,7 @@ public static class SqlResilience
 
     /// <summary>
     /// Exponential backoff (2s, 4s, 8s ... capped) plus jitter, so several clients
-    /// reconnecting after the same auto-pause do not retry in lockstep.
+    /// reconnecting after the same container restart do not retry in lockstep.
     /// </summary>
     private static TimeSpan Backoff(int attempt, TimeSpan baseDelay)
     {
