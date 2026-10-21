@@ -40,6 +40,6 @@ internal static class Program
             })
             .Build();
 
-        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<LoginForm>());
+        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<MainForm>());
     }
 }
