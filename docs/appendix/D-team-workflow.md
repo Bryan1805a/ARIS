@@ -118,15 +118,22 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 
 **Definition of Done**
 
-- [ ] 11 entities; correct `EntityBase` inheritance.
-- [ ] 11 `DbSet`s; configurations applied.
-- [ ] Five `.HasTrigger(...)` declarations.
-- [ ] `.IsRowVersion()` on the nine mutable tables only.
-- [ ] Computed `AddressText`.
-- [ ] Composite FKs on `TransferRequestItem`.
-- [ ] No cascade deletes.
+- [x] 11 entities; correct `EntityBase` inheritance.
+- [x] 11 `DbSet`s; configurations applied.
+- [x] Five `.HasTrigger(...)` declarations.
+- [x] `.IsRowVersion()` on the nine mutable tables only.
+- [x] Computed `AddressText`.
+- [x] Composite FKs on `TransferRequestItem`.
+- [x] No cascade deletes.
 - [ ] `AuditService` implements both audit paths.
-- [ ] Build and tests clean.
+- [x] Build and tests clean.
+
+**Status (21/10/2026):** entities, context, configurations, DI registration, and the
+model test are in place. `dotnet build Aris.slnx` reports 0 errors and 0 warnings;
+`dotnet test Aris.slnx` reports 42 passed, 0 failed, 3 skipped (the integration tests
+wait for `ARIS_TEST_CONNECTION`). `AuditService` and its `IAuditService` registration are
+the remaining `P1-DB2` item; Coders 1–3 can start against `ArisDbContext` and code
+against `IAuditService` now.
 
 **Traps:** `Citizen.HouseholdId`, `Household.CurrentAddressId`, `IsRowVersion` on
 `AuditLog`/`SystemConfiguration`, missing `HasTrigger`, cascade deletes, EF migrations,
