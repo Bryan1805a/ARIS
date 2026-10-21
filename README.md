@@ -1,285 +1,142 @@
 # ARIS — Administrative Residence Information System
 
-A Windows desktop application for local residence-management officers: citizen
-records, household management, address lineage, and maker-checker relocation
-workflows with an append-only historical audit trail.
+A Windows desktop application for local residence-management officers: citizen records,
+household management, address lineage, and maker-checker relocation workflows with an
+append-only historical audit trail.
 
-> Academic prototype for a Windows Programming course. It is **not** a
-> production population registry and does not integrate with any national
-> database or VNeID.
+> Academic prototype for a Windows Programming course. It is **not** a production
+> population registry and does not integrate with any national database or VNeID.
 
-## Tech Stack
+## Tech stack
 
-| Component | Version / Choice |
+| Component | Version / choice |
 |---|---|
-| Language / Runtime | .NET 10 (C#) |
-| SDK | .NET SDK `10.0.401` |
-| IDE | Microsoft Visual Studio 2026 |
-| UI Framework | Windows Forms (WinForms) |
-| ORM | Entity Framework Core |
-| Database | Microsoft SQL Server 2019+ (Docker for local dev) |
-| Version Control | Git (`feature/*` → `develop` → `main`) |
+| Language / runtime | .NET 10 (C#) |
+| SDK | .NET SDK `10.0.401` (pinned in `global.json`) |
+| IDE | Microsoft Visual Studio 2026 or the .NET CLI |
+| UI framework | Windows Forms (WinForms) |
+| ORM | Entity Framework Core 10 |
+| Database | Microsoft SQL Server 2022 Developer Edition, local Docker container |
+| Database host | `localhost,1433`, database `ArisDb`, persisted in the `mssql-data` volume |
+| Version control | Git (`feature/*` → `develop` → `main`) |
 
-## Documentation (Single Sources of Truth)
+## Documentation
 
-See the central [**Documentation Hub**](docs/README.md) for full documentation, specifications, and navigation.
+The architecture documentation follows the **arc42** template. Start at the
+[**Documentation Hub**](docs/README.md).
 
-- **Architecture:** [`docs/architecture/srs.md`](docs/architecture/srs.md) (SRS & Use Cases) · [`docs/architecture/domain-model.md`](docs/architecture/domain-model.md) · [`docs/architecture/golden-invariant.md`](docs/architecture/golden-invariant.md)
-- **Database:** [`docs/database/design-rationale.md`](docs/database/design-rationale.md) (Decisions D1–D14) · [`docs/database/triggers-and-security.md`](docs/database/triggers-and-security.md) · [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql)
-- **Standards:** [`docs/standards/ai-coding-guidelines.md`](docs/standards/ai-coding-guidelines.md) · [`docs/standards/coding-conventions.md`](docs/standards/coding-conventions.md) · [`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md)
-- **Workflow:** [`docs/workflow/onboarding.md`](docs/workflow/onboarding.md) · [`docs/workflow/work-breakdown.md`](docs/workflow/work-breakdown.md) · [`docs/workflow/phase1-tasks.md`](docs/workflow/phase1-tasks.md)
-- **Team (by role):** [`docs/team/README.md`](docs/team/README.md) - team handbook + per-role Phase 1 briefs ([Database Designer](docs/team/database-designer.md), [Coder 1](docs/team/coder-1.md), [Coder 2](docs/team/coder-2.md), [Coder 3](docs/team/coder-3.md))
+| Section | Document |
+|---|---|
+| 1. Introduction and goals | [`docs/01-introduction-and-goals.md`](docs/01-introduction-and-goals.md) |
+| 2. Constraints | [`docs/02-constraints.md`](docs/02-constraints.md) |
+| 3. Context and scope | [`docs/03-context-and-scope.md`](docs/03-context-and-scope.md) |
+| 4. Solution strategy | [`docs/04-solution-strategy.md`](docs/04-solution-strategy.md) |
+| 5. Building block view | [`docs/05-building-block-view.md`](docs/05-building-block-view.md) |
+| 6. Runtime view | [`docs/06-runtime-view.md`](docs/06-runtime-view.md) |
+| 7. Deployment view | [`docs/07-deployment-view.md`](docs/07-deployment-view.md) |
+| 8. Crosscutting concepts | [`docs/08-crosscutting-concepts.md`](docs/08-crosscutting-concepts.md) |
+| 9. Architecture decisions | [`docs/09-architecture-decisions.md`](docs/09-architecture-decisions.md) |
+| 10. Quality requirements | [`docs/10-quality-requirements.md`](docs/10-quality-requirements.md) |
+| 11. Risks and technical debt | [`docs/11-risks-and-technical-debt.md`](docs/11-risks-and-technical-debt.md) |
+| 12. Glossary | [`docs/12-glossary.md`](docs/12-glossary.md) |
+| Appendices | [Domain model](docs/appendix/A-domain-model.md) · [Database reference](docs/appendix/B-database-reference.md) · [Coding standards](docs/appendix/C-coding-standards.md) · [Team workflow](docs/appendix/D-team-workflow.md) |
+| Canonical schema | [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql) |
+| ERD | [`docs/erd_v2.svg`](docs/erd_v2.svg) |
 
-## Repository Layout
+## Repository layout
 
-```
+```text
 Aris.slnx
 Directory.Build.props          # shared MSBuild settings
-global.json                    # pinned .NET SDK + MTP test runner
-docker-compose.yml             # local SQL Server container
+global.json                    # pinned .NET SDK + test runner
+docker-compose.yml             # local SQL Server 2022 container
+.env.example                   # template for the local sa password
 src/
-  Aris.Domain/          # entities, enums, invariants
-  Aris.Application/     # use cases, DTOs, validators, Result<T>
-  Aris.Infrastructure/  # EF Core DbContext, mappings, security, Resilience/
-  Aris.UI/              # WinForms shell, views, view models
+  Aris.Domain/                 # entities, enums, invariants
+  Aris.Application/            # use cases, DTOs, validators, Result<T>
+  Aris.Infrastructure/         # EF Core DbContext, mappings, auditing, resilience
+  Aris.UI/                     # WinForms shell, views, view models
 tests/
-  Aris.Tests/           # xUnit v3 integration tests (golden invariant)
+  Aris.UnitTests/              # fast tests, no database
+  Aris.Tests/                  # integration tests against real SQL Server
 scripts/
-  deploy-database.ps1   # deploy schema + app user to Azure SQL
-docs/                                 # specifications and database scripts
+  deploy-database.ps1          # create ArisDb, apply schema, create aris_officer
+docs/                          # arc42 documentation + canonical DDL + ERD
 ```
 
-### Layering Rule
+### Layering rule
 
-`UI → Application → Domain` and `Infrastructure → Application/Domain`. The UI
-only talks to the Application layer through DTOs and `Result<T>`. No EF Core or
-SQL in UI code.
+`UI → Application → Domain`, and `Infrastructure → Application/Domain`. The UI talks only
+to Application services through DTOs and `Result<T>`. No EF Core or SQL in UI code.
 
 ## Prerequisites
 
 - .NET SDK **10.0.401** (`dotnet --version`)
-- Visual Studio 2026 (or the .NET CLI)
-- Docker Desktop (for the local database path)
-- **sqlcmd** (only needed to deploy the schema to Azure SQL):
+- Visual Studio 2026 or the .NET CLI
+- Docker Desktop (running, WSL 2 backend, at least 4 GB memory)
+- PowerShell 5.1+
+- Git
 
-  ```powershell
-  winget install Microsoft.Sqlcmd
-  ```
+No Azure account, firewall rule, or host `sqlcmd` installation is required.
 
-  Note it installs to `C:\Program Files\SqlCmd\` — open a new terminal afterwards,
-  or call it by full path. [`scripts/deploy-database.ps1`](scripts/deploy-database.ps1)
-  finds it either way.
-
-## Getting Started
-
-1. **Start SQL Server**
-
-   ```powershell
-   Copy-Item .env.example .env   # then edit .env and set a strong password
-   docker compose up -d
-   ```
-
-2. **Create the database** (deploy the schema to an empty database):
-
-   ```powershell
-   # Using sqlcmd inside the container:
-   docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "<password>" -C -Q "CREATE DATABASE ArisDb"
-   docker cp docs/aris_schema_v2.sql aris-sqlserver:/tmp/schema.sql
-   docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "<password>" -C -d ArisDb -i /tmp/schema.sql
-   ```
-
-3. **Build and run**
-
-   ```powershell
-   dotnet build Aris.slnx
-   dotnet run --project src/Aris.UI
-   ```
-
-## Shared Database on Azure (optional)
-
-The team can point at one shared Azure SQL Database instead of each running a local
-container, so everyone works against the same data. Both paths are supported: use
-Azure as the **shared** target and Docker as the **scratch** target.
-
-### 1. Create the database
-
-In the Azure Portal, create **SQL database** → *Serverless* compute tier (General
-Purpose, Standard-series Gen5). **Serverless matters**: it auto-pauses when idle and
-bills per second, so a team that works in bursts does not pay for an idle database.
-A provisioned always-on database will consume a student credit quickly. Set a
-**budget alert** under Cost Management on the day you create it.
-
-Name the database `ARIS-DB` to match the connection strings used below. (The name is
-not load-bearing: the tests assert the *schema*, not the database name, so `ArisDb`
-in the local Docker path is fine too.)
-
-### 2. Allow your team through the firewall
-
-Azure SQL is closed to the network by default. On the server's **Networking** page,
-add a firewall rule for each developer's client IP.
-
-> Do **not** enable "Allow Azure services and resources to access this server". Your
-> WinForms client runs on laptops, not inside Azure, so that rule grants exposure
-> without solving the problem. Client IPs change when people switch networks — that
-> is the usual cause of "it worked yesterday".
-
-### 3. Create the application user, and deploy the schema
-
-Use [`scripts/deploy-database.ps1`](scripts/deploy-database.ps1). It applies the
-schema, creates a team login, adds it to the least-privilege role, and then
-**verifies** the result — including that the audit log really rejects updates. It
-is safe to re-run (every step checks existence first) and it prompts for the admin
-password, so the password never appears on the command line or in your shell history.
+## Getting started
 
 ```powershell
-# See what it would do, without touching the database or being asked for a password
-.\scripts\deploy-database.ps1 -WhatIf
+# 1. Local database password
+Copy-Item .env.example .env
+# Edit .env and set a strong MSSQL_SA_PASSWORD
 
-# Do it
+# 2. Start SQL Server 2022
+docker compose up -d
+docker logs aris-sqlserver        # wait for "ready for client connections"
+
+# 3. Create ArisDb, apply the schema, create the app login
 .\scripts\deploy-database.ps1
-```
 
-It prints a generated password for the team login **once** — record it. Give
-teammates that login, **never** the server admin credentials.
-
-<details>
-<summary>Doing it manually instead</summary>
-
-The script wraps these two commands. Azure SQL requires an encrypted connection;
-`-N` enforces it and `-C` trusts the server certificate (valid for
-`*.database.windows.net`).
-
-Deploy the schema to the empty database:
-
-```powershell
-sqlcmd -S "aris-demo-b1805.database.windows.net" -d ARIS-DB -U <admin> -P "<admin password>" -N -C -i docs/aris_schema_v2.sql
-```
-
-The script's final section creates the least-privilege role `aris_app`
-(`SELECT/INSERT/UPDATE` on `dbo`, `DENY DELETE`, `DENY UPDATE` on `AuditLog`).
-Now create a login for the team and put it in that role. The user and the role must
-have **different** names:
-
-```sql
--- Connect to the ARIS-DB database as the server admin, then:
-CREATE USER aris_officer WITH PASSWORD = '<a strong password>';
-ALTER ROLE aris_app ADD MEMBER aris_officer;
-```
-
-</details>
-
-> `DENY` beats `GRANT`, so `aris_officer` genuinely cannot delete history or rewrite
-> the audit log, no matter what the application code does. The deploy script asserts
-> this rather than assuming it.
-
-### 4. Connection string
-
-Azure presents a valid certificate, so `TrustServerCertificate` is not needed (unlike
-the local Docker setup, which uses a self-signed cert). For this project's server:
-
-```
-Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;
-```
-
-The server hostname is not a secret — it still requires credentials — so it is fine
-in the README. The password never goes in the repo: see
-[Configuration & Secrets](#configuration--secrets).
-
-### 5. Auto-pause and retry
-
-A paused serverless database resumes on the next connection, which can fail with a
-transient error (typically **40613**) while it wakes up. Microsoft's serverless
-guidance requires application-level retry, so do not connect directly — use
-[`SqlResilience`](src/Aris.Infrastructure/Resilience/SqlResilience.cs), which retries
-opening with exponential backoff and only retries genuinely transient errors:
-
-```csharp
-await using var connection = await SqlResilience.OpenAsync(connectionString);
-```
-
-When `ArisDbContext` is registered, also enable provider-level retry:
-
-```csharp
-options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure());
-```
-
-A cold start can take tens of seconds. That is the database resuming, not a crash.
-
-## Configuration & Secrets
-
-Connection strings and secrets are **never** committed (`CON-SEC-02`). Use .NET
-user-secrets or environment variables for local development. See
-`src/Aris.UI/appsettings.json` for the expected key
-(`ConnectionStrings:ArisDb`).
-
-Stop a shared Azure password from reaching Git:
-
-```powershell
+# 4. Configure the application (secret stays outside Git)
 cd src/Aris.UI
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;"
+dotnet user-secrets set "ConnectionStrings:ArisDb" "Server=localhost,1433;Database=ArisDb;User Id=aris_officer;Password=<generated>;TrustServerCertificate=True;Connect Timeout=30;"
+cd ../..
+
+# 5. Build and run
+dotnet build Aris.slnx
+dotnet run --project src/Aris.UI
 ```
 
-User-secrets are stored outside the repository, per developer. Never paste a real
-connection string into `appsettings.json` — the PR checklist
-([`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md)) explicitly blocks it.
+Full setup, reset, and troubleshooting: [`docs/07-deployment-view.md`](docs/07-deployment-view.md).
+
+## Configuration and secrets
+
+Connection strings and passwords are **never** committed (`CON-SEC-02`).
+
+- The local `sa` password lives in the git-ignored `.env` file.
+- The application connection string lives in .NET user-secrets under
+  `ConnectionStrings:ArisDb`.
+- `src/Aris.UI/appsettings.json` contains only the non-secret key.
+- Tests read `ARIS_TEST_CONNECTION` from the environment.
+
+The application connects as `aris_officer`, a member of the least-privilege role
+`aris_app`. `sa` is used only by the deployment script.
 
 ## Testing
 
-`tests/Aris.Tests` holds the database integration tests. The golden-invariant
-test asserts that [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql)'s view
-`vw_GoldenInvariantViolations` returns **zero rows**, and a negative-control test
-proves the view actually detects a violation.
-
-Tests need a live database and **skip** (never fail) when one is not configured.
-
-**Against the shared Azure database** (validates what the team actually uses):
-
 ```powershell
-$env:ARIS_TEST_CONNECTION = "Server=tcp:aris-demo-b1805.database.windows.net,1433;Database=ARIS-DB;User Id=aris_officer;Password=<password>;Encrypt=True;"
+$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<from .env>;TrustServerCertificate=True"
 dotnet test Aris.slnx
 ```
 
-**Against the local Docker container** (fast, offline, safe to break):
-
-```powershell
-$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<from your .env>;TrustServerCertificate=True"
-dotnet test Aris.slnx
-```
-
-Without `ARIS_TEST_CONNECTION` the run reports the tests as skipped — that is a
-pass, not a failure. The suite includes:
+Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 
 | Test | Purpose |
 |---|---|
-| `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows. |
-| `GoldenInvariant_DetectsDeliberateViolation` | Negative control — inserts an invalid citizen in a rolled-back transaction and proves the view reports it, so a broken view cannot pass the test above. |
-| `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses firewall, wrong database, and auto-pause problems, which otherwise only show up as "skipped". |
-| `SqlResilienceTests` | The retry policy: transient errors (40613 etc.) are retried; constraint and trigger violations are not. |
+| `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
+| `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
+| `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |
+| `SqlResilienceTests` | Transient errors are retried; constraint/trigger errors are not |
 
-> **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test`
-> through Microsoft.Testing.Platform (see `global.json`), which forwards
-> unrecognised flags to the test executable. The xUnit app then rejects them and
-> the whole run fails with `Zero tests ran` / exit code 5 — a misleading message
-> that hides the real cause. Run the test executable directly to see the actual
-> error:
->
-> ```powershell
-> .\tests\Aris.Tests\bin\Debug\net10.0\Aris.Tests.exe --help   # lists valid options
-> ```
-
-## Branching
-
-Never commit directly to `main` or `develop`. Branch from `develop`:
-
-```
-develop
-  └── feature/<module-name>
-```
-
-Open a PR into `develop`; the Team Leader reviews using
-[`docs/standards/pr-review-checklist.md`](docs/standards/pr-review-checklist.md). See
-[`docs/workflow/work-breakdown.md`](docs/workflow/work-breakdown.md) §7 for the full workflow.
+> **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test` through
+> Microsoft.Testing.Platform, which forwards unknown flags to the xUnit executable and
+> produces a misleading `Zero tests ran`.
 
 ## Golden Invariant
 
@@ -288,3 +145,21 @@ After every committed operation, this query must return **0 rows**:
 ```sql
 SELECT * FROM dbo.vw_GoldenInvariantViolations;
 ```
+
+Every `ACTIVE` citizen must have exactly one active membership, exactly one active
+residence, and the residence's canonical address must equal the household's active
+canonical address. See
+[`docs/08-crosscutting-concepts.md`](docs/08-crosscutting-concepts.md#86-the-golden-invariant).
+
+## Branching
+
+Never commit directly to `main` or `develop`. Branch from `develop`:
+
+```text
+develop
+  └── feature/<task-id>
+```
+
+Open a PR into `develop`; the Team Leader reviews against
+[Appendix C §C.10](docs/appendix/C-coding-standards.md#c10-pr-review-checklist). See
+[Appendix D](docs/appendix/D-team-workflow.md) for roles, roadmap, and task briefs.
