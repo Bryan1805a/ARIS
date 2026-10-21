@@ -9,7 +9,8 @@
     <!-- Raw ADO.NET on purpose: the golden invariant is a DATABASE rule enforced by
          views and triggers, so it must be verified against real SQL Server rather
          than through the application or an in-memory provider. -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.6" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
