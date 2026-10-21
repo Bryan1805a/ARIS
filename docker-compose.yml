@@ -1,7 +1,11 @@
 # Local SQL Server for development.
 #   1. Copy .env.example to .env and set a strong MSSQL_SA_PASSWORD.
 #   2. docker compose up -d
-# Connection (from the host):  Server=localhost,1433;User Id=sa;Password=<your .env password>;TrustServerCertificate=True
+#   3. .\scripts\deploy-database.ps1   (creates ArisDb, schema, and aris_officer)
+# Connection (from the host, after deployment):
+#   Server=localhost,1433;Database=ArisDb;User Id=aris_officer;Password=<generated>;TrustServerCertificate=True
+# Administrative connection (schema deployment only):
+#   Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<your .env password>;TrustServerCertificate=True
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
