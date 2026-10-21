@@ -1,151 +1,126 @@
-# ARIS Documentation Hub
+# ARIS — Architecture Documentation
 
-Welcome to the **Administrative Residence Information System (ARIS)** documentation repository. This directory contains the complete specifications, database designs, architectural guidelines, development standards, and project management workflows for the system.
+**Administrative Residence Information System**
 
-> [!NOTE]
-> **Academic Project Notice:** ARIS is an academic prototype designed for a Windows Programming course (.NET 10 WinForms desktop application). It is not a production national population registry and does not interface with real-world national identity databases or VNeID.
+> Academic prototype for a Windows Programming course. ARIS is **not** a production
+> population registry and does not integrate with VNeID or any national database.
 
----
+This documentation follows the **arc42** template: twelve sections that answer the same
+questions in the same order for every architecture. Sections are numbered and are the
+single entry point for design, development, review, and grading.
 
-## 🗺️ Documentation Directory Map
-
-The documentation repository is structured into four functional modules:
-
-```text
-docs/
-├── README.md                           # Central Documentation Hub (this document)
-├── aris_schema_v2.sql                  # Canonical SQL Server 2019+ DDL & Trigger Deployment Script
-├── erd_v2.svg / erd_v2.png             # Visual Entity Relationship Diagrams
-│
-├── architecture/                       # System Specifications & Domain Logic
-│   ├── srs.md                          # Software Requirements Specification (SRS) & Use Cases
-│   ├── domain-model.md                 # Domain Entities, Mental Model & Lifecycle States
-│   └── golden-invariant.md             # The Residency-Household Invariant & Automated Checks
-│
-├── database/                           # Persistence & Data Integrity
-│   ├── design-rationale.md             # Architectural Decision Records (D1–D14) & Defense Rings
-│   └── triggers-and-security.md        # Database Triggers, Error Codes (51001–51040) & Security
-│
-├── standards/                          # Code Quality & Architectural Boundaries
-│   ├── ai-coding-guidelines.md         # Anti-Hallucination Playbook & Prompt Engineering Header
-│   ├── coding-conventions.md           # Canonical Service Patterns, Auditing & Testing Strategy
-│   └── pr-review-checklist.md          # PR Review Gates, Definition of Done & 12 Auto-Rejections
-│
-├── workflow/                           # Project Management & Implementation Plan
-│   ├── onboarding.md                   # 5-Minute Developer Quickstart & Environment Setup
-│   ├── work-breakdown.md               # Team Roles, RACI Matrix & 7-Phase Roadmap
-│   └── phase1-tasks.md                 # Actionable Phase 1 Task Briefs per Team Member
-│
-└── team/                               # Per-Role Onboarding Briefs (start here, by role)
-    ├── README.md                       # Team Handbook: roster, daily workflow, escalation
-    ├── database-designer.md            # P1-DB2: entities, DbContext mappings, AuditService
-    ├── coder-1.md                      # Module A: Citizen management & directory search
-    ├── coder-2.md                      # Module B: Household, residence & transfer engine
-    └── coder-3.md                      # Module C: Shell, authentication, admin & reports
-```
+| | |
+|---|---|
+| **Document version** | 3.0 (arc42 restructure) |
+| **Last updated** | 2026-10-20 |
+| **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
+| **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
+| **ERD** | [`erd_v2.svg`](erd_v2.svg) · [`erd_v2.png`](erd_v2.png) |
 
 ---
 
-## 🏛️ System Architecture Overview
+## 1. The arc42 sections
 
-ARIS enforces a strict 4-layer dependency model designed to guarantee modularity, testability, and enterprise data integrity:
+| # | Section | Question it answers | Document |
+|---|---|---|---|
+| 1 | Introduction and Goals | Why does ARIS exist, who uses it, what must it achieve? | [`01-introduction-and-goals.md`](01-introduction-and-goals.md) |
+| 2 | Constraints | What limits our design freedom? | [`02-constraints.md`](02-constraints.md) |
+| 3 | Context and Scope | What is inside ARIS, and what does it talk to? | [`03-context-and-scope.md`](03-context-and-scope.md) |
+| 4 | Solution Strategy | What are the handful of ideas the whole design rests on? | [`04-solution-strategy.md`](04-solution-strategy.md) |
+| 5 | Building Block View | What are the parts, and how are they structured? | [`05-building-block-view.md`](05-building-block-view.md) |
+| 6 | Runtime View | How do the important scenarios actually execute? | [`06-runtime-view.md`](06-runtime-view.md) |
+| 7 | Deployment View | How does it run on a developer machine? | [`07-deployment-view.md`](07-deployment-view.md) |
+| 8 | Crosscutting Concepts | Which rules apply everywhere? | [`08-crosscutting-concepts.md`](08-crosscutting-concepts.md) |
+| 9 | Architecture Decisions | Why was each significant choice made? | [`09-architecture-decisions.md`](09-architecture-decisions.md) |
+| 10 | Quality Requirements | How good is it, and how is that proven? | [`10-quality-requirements.md`](10-quality-requirements.md) |
+| 11 | Risks and Technical Debt | What could go wrong, and what is unfinished? | [`11-risks-and-technical-debt.md`](11-risks-and-technical-debt.md) |
+| 12 | Glossary | What do these words mean? | [`12-glossary.md`](12-glossary.md) |
 
-```mermaid
-graph TD
-    subgraph UI ["Presentation Layer (WinForms)"]
-        Forms["Views & Form Controls"]
-        VM["ViewModels / Presenters"]
-    end
+Supporting reference material (not part of the twelve sections):
 
-    subgraph App ["Application Layer (Use Cases)"]
-        Services["Application Services (IHouseholdService, etc.)"]
-        DTOs["Request / Response DTOs"]
-        Validators["FluentValidation Validators"]
-        Result["Result<T> Pattern"]
-    end
-
-    subgraph Domain ["Domain Layer (Business Logic)"]
-        Entities["Core Domain Entities"]
-        Invariants["Domain Invariants & Rules"]
-        Enums["Lifecycle Enums"]
-    end
-
-    subgraph Infra ["Infrastructure Layer (Persistence & External)"]
-        DbContext["ArisDbContext (EF Core)"]
-        Mappings["Entity Type Configurations"]
-        Resilience["SqlResilience & ADO.NET Audit"]
-    end
-
-    subgraph DB ["Database Layer (SQL Server 2019+)"]
-        Tables["Relational Schema (9 Mutable Tables)"]
-        Triggers["5 Enforcement Triggers"]
-        Views["Invariant & Canonical Views"]
-        Role["Least-Privilege Role: aris_app"]
-    end
-
-    Forms --> VM
-    VM -->|Calls via DTOs & Result| Services
-    Services --> Validators
-    Services --> Result
-    Services --> Entities
-    Services --> Invariants
-    DbContext --> Entities
-    DbContext --> Mappings
-    Services --> DbContext
-    Resilience --> DB
-    DbContext --> DB
-```
+| Appendix | Content |
+|---|---|
+| [`appendix/A-domain-model.md`](appendix/A-domain-model.md) | Entity catalogue, lifecycle state machines, state-transition matrix |
+| [`appendix/B-database-reference.md`](appendix/B-database-reference.md) | Tables, constraints, triggers, error codes, views, EF Core mapping rules |
+| [`appendix/C-coding-standards.md`](appendix/C-coding-standards.md) | Canonical service pattern, auditing code, UI pattern, AI guardrails, PR checklist |
+| [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md) | Roles, RACI, roadmap, Phase 1 task briefs, local onboarding, Git workflow |
 
 ---
 
-## 🎯 Quick Navigation by Role
+## 2. Reading paths
 
-Find the relevant documents based on your current role and responsibilities:
+Choose the path that matches what you are about to do.
 
-| I am... | What I need | Where to start |
-|---|---|---|
-| **A New Team Member (by role)** | The team handbook + your own step-by-step Phase 1 brief | [`team/README.md`](team/README.md) → your brief: [Database Designer](team/database-designer.md) · [Coder 1](team/coder-1.md) · [Coder 2](team/coder-2.md) · [Coder 3](team/coder-3.md) |
-| **A New Team Member** | Getting local environment and Azure DB running in 5 minutes | [`workflow/onboarding.md`](workflow/onboarding.md) |
-| **Developing a Feature** | Canonical service pattern, auditing protocol, DTO conventions | [`standards/coding-conventions.md`](standards/coding-conventions.md) |
-| **Using AI Coding Assistants** | Prompt header to prevent schema hallucinations & broken triggers | [`standards/ai-coding-guidelines.md`](standards/ai-coding-guidelines.md) |
-| **Working on Database / EF Core** | Schema decisions (D1–D14), trigger mechanics, rowversion mapping | [`database/design-rationale.md`](database/design-rationale.md)<br>[`database/triggers-and-security.md`](database/triggers-and-security.md) |
-| **Working on Relocations** | Two-phase maker-checker flow (`JOIN_EXISTING`, `NEW_HOUSEHOLD`, `HOUSEHOLD_MOVE`) | [`architecture/srs.md`](architecture/srs.md#5-core-use-case-uc-06--transfer-household--residence-hh-05) |
-| **Reviewing a Pull Request** | Definition of Done, 12 automatic rejection traps, verification commands | [`standards/pr-review-checklist.md`](standards/pr-review-checklist.md) |
-| **Checking Team Progress** | WBS, critical path, Phase 1 task briefs, RACI matrix | [`workflow/work-breakdown.md`](workflow/work-breakdown.md)<br>[`workflow/phase1-tasks.md`](workflow/phase1-tasks.md) |
+| You are about to… | Read, in order |
+|---|---|
+| **Join the team** | 01 → 02 → 07 → Appendix D |
+| **Write your first feature** | 05 → 06 → 08 → Appendix C |
+| **Work on the database or EF Core** | Appendix A → Appendix B → 08 → 09 |
+| **Review a pull request** | 08 → 10 → Appendix C (PR checklist) |
+| **Change an architectural rule** | 04 → 09 → 10 → 11 |
+| **Prepare for the course defence** | 01 → 04 → 05 → 06 → 09 → 10 |
 
----
-
-## 🛡️ The 6 Non-Negotiable Invariants
-
-All team members and AI coding assistants must strictly adhere to these core rules:
-
-1. **Strict 4-Layer Architecture:**  
-   `UI → Application → Domain` and `Infrastructure → Application/Domain`. The UI talks only to Application services via DTOs and `Result<T>`. **Zero direct SQL or `DbContext` access in UI forms or event handlers.**
-2. **Decoupled Relational Model:**  
-   - `Citizen` **never** has a static `HouseholdId` or `AddressId`.
-   - `Household` **never** has a static `CurrentAddressId`. Household addresses are tracked chronologically via `HouseholdAddress`.
-3. **The Golden Invariant:**  
-   Every `ACTIVE` Citizen must possess an `ACTIVE` `HouseholdMembership` in Household $H$, and an `ACTIVE` `Residence` at Address $A$, where $A$ matches $H$'s `ACTIVE` `HouseholdAddress`. View `vw_GoldenInvariantViolations` must return **0 rows** after every committed operation.
-4. **Append-Only History:**  
-   `HouseholdMembership`, `Residence`, and `HouseholdAddress` are append-only. **Never** run an in-place `UPDATE` on identity columns (`CitizenId`, `HouseholdId`, `AddressId`, `Role`, `StartDate`). Role change = close old row (`EndDate = E - 1, Status = 'ENDED'`) + open new row (`StartDate = E, Status = 'ACTIVE'`).
-5. **Maker-Checker Dual Control Transfers:**  
-   All relocations (`TransferRequest`) require dual-control verification: Requester $\ne$ Approver (`DecidedBy <> RequestedBy`, enforced by constraint `CK_TR_Decision`). Execution must run inside an atomic transaction at `IsolationLevel.Serializable`.
-6. **Immutable Failure-Resistant Auditing:**  
-   Every business mutation writes an `AuditLog` row. On failure, the transaction is rolled back first, and the failure audit is logged on an **independent database connection** post-rollback so the record is not discarded.
+Do not read all twelve sections front to back on day one. Section 1, section 7, and
+Appendix D are enough to get the application running.
 
 ---
 
-## ⚡ Key Verification Commands
+## 3. The six non-negotiable invariants
 
-Execute these verification commands locally to validate system health:
+These are the rules that the rest of the documentation explains. They are repeated in
+[`08-crosscutting-concepts.md`](08-crosscutting-concepts.md) with their enforcement
+mechanisms.
+
+1. **Strict four-layer architecture.** `UI → Application → Domain`, and
+   `Infrastructure → Application/Domain`. The UI communicates only through DTOs and
+   `Result<T>`. No SQL and no `DbContext` in a WinForms form.
+2. **No static keys for time-varying facts.** `Citizen` has no `HouseholdId` or
+   `AddressId`; `Household` has no `CurrentAddressId`. Membership, residence, and
+   household address live in append-only history tables.
+3. **The Golden Invariant.** Every `ACTIVE` citizen has exactly one active membership
+   and one active residence at the household's active canonical address.
+   `vw_GoldenInvariantViolations` must return **zero rows** after every commit.
+4. **Append-only history.** `HouseholdMembership`, `Residence`, and `HouseholdAddress`
+   are never edited in place. A change closes the old row
+   (`EndDate = E - 1, Status = 'ENDED'`) and opens a new one
+   (`StartDate = E, Status = 'ACTIVE'`).
+5. **Maker-checker relocations.** A `TransferRequest` is approved or rejected by an
+   officer other than its requester (`DecidedBy <> RequestedBy`), inside one
+   `IsolationLevel.Serializable` transaction.
+6. **Immutable, failure-resistant auditing.** Every mutation writes an `AuditLog` row.
+   A failure is logged on an independent connection **after** the rollback.
+
+---
+
+## 4. Documentation rules
+
+- **The DDL is the single source of truth for the schema.** If a document and
+  `aris_schema_v2.sql` disagree, the DDL is correct and the document must be fixed.
+- **Requirement IDs are stable.** `CIT-01`, `HH-04`, `UC-06`, `CON-SEC-02`, `D14`,
+  `C3`, `51011` — do not renumber them. They are referenced by tests, commits, and
+  the PR checklist.
+- **One fact, one home.** Section 8 owns crosscutting rules; Section 9 owns rationale;
+  Appendix A owns entity columns; Appendix B owns database objects. Link instead of
+  copying where possible.
+- **Diagrams are Mermaid** so they render in GitHub, Visual Studio, and the course
+  report without a separate tool.
+
+---
+
+## 5. Verification commands
 
 ```powershell
-# 1. Build Solution (must complete with 0 errors and 0 warnings)
-dotnet build Aris.slnx
-
-# 2. Run Test Suite (never pass --nologo)
-dotnet test Aris.slnx
-
-# 3. Check Golden Invariant in SQL Server (must return 0 rows)
-SELECT * FROM dbo.vw_GoldenInvariantViolations;
+dotnet --version                    # must print 10.0.401 (global.json)
+docker compose up -d                # starts SQL Server 2022 on localhost:1433
+.\scripts\deploy-database.ps1       # creates ArisDb, schema, and aris_officer
+dotnet build Aris.slnx              # 0 errors, 0 warnings
+dotnet test  Aris.slnx              # never pass --nologo
 ```
+
+After every committed business operation:
+
+```sql
+SELECT * FROM dbo.vw_GoldenInvariantViolations;   -- must return 0 rows
+```
+
+Full setup details are in [`07-deployment-view.md`](07-deployment-view.md).
