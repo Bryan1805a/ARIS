@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reuse the production transient-fault retry helper (Azure SQL serverless
-         auto-resume) instead of duplicating retry logic in the tests. -->
+    <!-- Reuse the production transient-fault retry helper (container restarts
+         and dropped connections) instead of duplicating retry logic in the tests. -->
     <ProjectReference Include="..\..\src\Aris.Infrastructure\Aris.Infrastructure.csproj" />
   </ItemGroup>
 

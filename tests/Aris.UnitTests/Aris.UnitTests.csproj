@@ -13,7 +13,7 @@
   <ItemGroup>
     <!-- In-memory EF Core provider, pinned to match the repo's Microsoft.Extensions.*
          version (10.0.12) and the provider the Database Designer will add to
-         Aris.Infrastructure. See docs/standards/coding-conventions.md for what an in-memory
+         Aris.Infrastructure. See docs/appendix/C-coding-standards.md for what an in-memory
          provider does and does NOT enforce. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
   </ItemGroup>
