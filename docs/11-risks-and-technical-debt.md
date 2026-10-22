@@ -38,7 +38,7 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 
 | ID | Debt | Impact | Plan |
 |---|---|---|---|
-| `T1` | Baseline lacks all 11 entities, `ArisDbContext`, configurations, and `AuditService`. | Blocks every feature. | `P1-DB2` on the critical path; deliver in small pushes. |
+| `T1` | Baseline lacked all 11 entities, `ArisDbContext`, configurations, and `AuditService`. | Blocked every feature. | **Resolved in `P1-DB2`** (entities, context, configurations, both audit paths). |
 | `T2` | `MainForm` is a stub; no feature screens exist. | No usable UI yet. | `P1-C3` shell, then feature forms per slice. |
 | `T3` | No service-level unit tests; only validator and test-infrastructure tests exist. | Regressions are caught late. | Add tests with each service; use fakes for `IAuditService` and a real DB for persistence. |
 | `T4` | No UI automation or end-to-end harness; WinForms flows are verified manually. | UI wiring regressions are caught late. | Add a scripted smoke-test checklist; consider WinAppDriver or a presenter-level test suite later. |

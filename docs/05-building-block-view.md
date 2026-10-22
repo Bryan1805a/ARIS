@@ -112,11 +112,11 @@ The Domain layer contains no EF Core attributes and no database code.
 
 | Component | Responsibility | Status |
 |---|---|---|
-| `Persistence/ArisDbContext` | Eleven `DbSet`s, applies configurations from assembly | Planned (`P1-DB2`) |
-| `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Planned (`P1-DB2`) |
-| `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection | Planned (`P1-DB2`) |
+| `Persistence/ArisDbContext` | Eleven `DbSet`s, applies configurations from assembly | Implemented |
+| `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
+| `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`) and `IAuditService` | Stub |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`) and `IAuditService` | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -188,19 +188,19 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The repository is at the end
-of the Phase 1 baseline, before `P1-DB2`.
+of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
 | Solution structure, 4 projects | ✔ | — |
 | `Result<T>`, `ValidationException`, `BaseService` | ✔ | — |
 | `EntityBase` | ✔ | — |
-| `IAuditService` + `AuditEntryValidator` | ✔ | `AuditService` implementation |
+| `IAuditService` + `AuditEntryValidator` + `AuditService` | ✔ | — |
 | `SqlResilience` | ✔ | — |
-| DI composition | Stubs | `AddInfrastructure` registration |
-| Domain entities | ✘ | All 11 (`P1-DB2`) |
-| `ArisDbContext` + configurations | ✘ | All (`P1-DB2`) |
-| EF Core SQL Server provider | ✘ | Add package (`P1-DB2`) |
+| DI composition | ✔ | — |
+| Domain entities | ✔ | All 11 |
+| `ArisDbContext` + configurations | ✔ | All |
+| EF Core SQL Server provider | ✔ | — |
 | Citizen slice | ✘ | `P1-C1` → `P2-C1` → `P2-UI1` |
 | Household/transfer engine | ✘ | `P3-C2` → `P4-C2` |
 | Auth/admin/reports | ✘ | `P1-C3`, `P5-C3` |
