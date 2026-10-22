@@ -1,15 +1,37 @@
-﻿
-using Aris.Application.Interfaces;
+﻿using Aris.Application.Interfaces;
 using Aris.Domain.Entities;
+using Aris.Infrastructure.Persistence;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Aris.Infrastructure.Repositories;
 
 public class UserAccountRepository : IUserAccountRepository
 {
-    public Task<UserAccount?> GetByUsernameAsync(string username)
+    private readonly ArisDbContext _context;
+
+    public UserAccountRepository(ArisDbContext context)
     {
-        // TODO: Query UserAccount from ArisDbContext.
-        throw new NotImplementedException(
-            "Database access is not configured yet.");
+        _context = context;
+    }
+
+    public async Task<UserAccount?> GetByUsernameAsync(string username)
+    {
+        return await _context.UserAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == username);
+    }
+    public async Task<List<UserAccount>> GetAllAsync()
+    {
+        return await _context.UserAccounts
+            .AsNoTracking()
+            .OrderBy(u => u.UserId)
+            .ToListAsync();
+    }
+
+    public async Task AddAsync(UserAccount account)
+    {
+        await _context.UserAccounts.AddAsync(account);
+        await _context.SaveChangesAsync();
     }
 }

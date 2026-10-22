@@ -1,10 +1,16 @@
+using Aris.Application.Accounts;
+using Aris.Application.Accounts;
+
 namespace Aris.UI;
 
 public partial class MainForm : Form
 {
-    public MainForm()
+    private readonly IAccountService _accountService;
+
+    public MainForm(IAccountService accountService)
     {
         InitializeComponent();
+        _accountService = accountService;
     }
 
     private void btnDashboard_Click(object sender, EventArgs e)
@@ -25,8 +31,7 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        AccountManagementControl accountControl = new AccountManagementControl();
-
+        AccountManagementControl accountControl = new AccountManagementControl(_accountService);
         accountControl.Dock = DockStyle.Fill; //cho man hinh tu gian theo kich thuoc
 
         pnlContent.Controls.Add(accountControl);

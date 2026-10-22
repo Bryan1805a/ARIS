@@ -5,21 +5,65 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using System.Linq;
+
+using Aris.Application.Accounts;
 
 namespace Aris.UI;
 
 public partial class AccountManagementControl : UserControl
 {
-    public AccountManagementControl()
+    private readonly IAccountService _accountService;
+
+    public AccountManagementControl(IAccountService accountService)
     {
         InitializeComponent();
+        _accountService = accountService;
+
+        this.Load += AccountManagementControl_Load;
     }
 
-    private void btnAddAccount_Click(object sender, EventArgs e)
+    private async void AccountManagementControl_Load(object? sender, EventArgs e)
     {
-        using (AddAccountForm form = new AddAccountForm())
+        await LoadAccountsAsync();
+    }
+
+    private async Task LoadAccountsAsync()
+    {
+        try
         {
-            form.ShowDialog(this);
+            var accounts = await _accountService.GetAllAccountsAsync();
+
+            dgvAccounts.AutoGenerateColumns = false;
+
+            dgvAccounts.DataSource = accounts.Select(a => new
+            {
+                a.UserId,
+                a.Username,
+                a.Role,
+                a.Status,
+                a.CreatedAt
+            }).ToList();
+        }
+        catch (Exception)
+        {
+            MessageBox.Show(
+                "Failed to load accounts.",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+        }
+    }
+
+    private async void btnAddAccount_Click(object sender, EventArgs e)
+    {
+        using (AddAccountForm form = new AddAccountForm(_accountService))
+        {
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                await LoadAccountsAsync();
+            }
         }
     }
 

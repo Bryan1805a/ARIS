@@ -9,11 +9,13 @@ namespace Aris.UI;
 public partial class LoginForm : Form
 {
     private readonly IAuthService _authService;
+    private readonly MainForm _mainForm;
 
-    public LoginForm(IAuthService authService)
+    public LoginForm(IAuthService authService, MainForm mainForm)
     {
         InitializeComponent();
         _authService = authService;
+        _mainForm = mainForm;
     }
 
     private async void btnLogin_Click(object sender, EventArgs e)
@@ -53,6 +55,13 @@ public partial class LoginForm : Form
             }
 
             MessageBox.Show("Login successful.");
+
+            this.Hide();
+
+            _mainForm.FormClosed += (s, e) => this.Close();
+
+            _mainForm.Show();
+
         }
         catch (Exception)
         {

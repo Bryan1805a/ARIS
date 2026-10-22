@@ -36,22 +36,25 @@ partial class AddAccountForm
         cboRole = new ComboBox();
         btnSave = new Button();
         btnCancel = new Button();
+        lblFullname = new Label();
+        txtFullName = new TextBox();
         SuspendLayout();
         // 
         // lblUsername
         // 
         lblUsername.AutoSize = true;
         lblUsername.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        lblUsername.Location = new Point(40, 70);
+        lblUsername.Location = new Point(40, 35);
         lblUsername.Name = "lblUsername";
         lblUsername.Size = new Size(75, 20);
         lblUsername.TabIndex = 0;
         lblUsername.Text = "Username";
+        lblUsername.Click += lblUsername_Click;
         // 
         // txtUsername
         // 
         txtUsername.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        txtUsername.Location = new Point(40, 100);
+        txtUsername.Location = new Point(40, 65);
         txtUsername.Name = "txtUsername";
         txtUsername.PlaceholderText = "Enter username";
         txtUsername.Size = new Size(400, 27);
@@ -60,7 +63,7 @@ partial class AddAccountForm
         // txtPassword
         // 
         txtPassword.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        txtPassword.Location = new Point(40, 180);
+        txtPassword.Location = new Point(40, 215);
         txtPassword.Name = "txtPassword";
         txtPassword.PlaceholderText = "Enter password";
         txtPassword.Size = new Size(400, 27);
@@ -71,7 +74,7 @@ partial class AddAccountForm
         // 
         lblPassword.AutoSize = true;
         lblPassword.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        lblPassword.Location = new Point(40, 150);
+        lblPassword.Location = new Point(40, 185);
         lblPassword.Name = "lblPassword";
         lblPassword.Size = new Size(70, 20);
         lblPassword.TabIndex = 3;
@@ -81,7 +84,7 @@ partial class AddAccountForm
         // 
         lblRole.AutoSize = true;
         lblRole.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        lblRole.Location = new Point(40, 230);
+        lblRole.Location = new Point(40, 260);
         lblRole.Name = "lblRole";
         lblRole.Size = new Size(39, 20);
         lblRole.TabIndex = 4;
@@ -93,7 +96,7 @@ partial class AddAccountForm
         cboRole.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         cboRole.FormattingEnabled = true;
         cboRole.Items.AddRange(new object[] { "Admin", "Officer" });
-        cboRole.Location = new Point(40, 260);
+        cboRole.Location = new Point(40, 290);
         cboRole.Name = "cboRole";
         cboRole.Size = new Size(400, 28);
         cboRole.TabIndex = 5;
@@ -103,7 +106,7 @@ partial class AddAccountForm
         btnSave.BackColor = Color.DarkSlateGray;
         btnSave.FlatStyle = FlatStyle.Flat;
         btnSave.ForeColor = Color.White;
-        btnSave.Location = new Point(100, 340);
+        btnSave.Location = new Point(100, 355);
         btnSave.Name = "btnSave";
         btnSave.Size = new Size(120, 40);
         btnSave.TabIndex = 6;
@@ -116,7 +119,7 @@ partial class AddAccountForm
         btnCancel.BackColor = Color.Gray;
         btnCancel.FlatStyle = FlatStyle.Flat;
         btnCancel.ForeColor = Color.White;
-        btnCancel.Location = new Point(250, 340);
+        btnCancel.Location = new Point(250, 355);
         btnCancel.Name = "btnCancel";
         btnCancel.Size = new Size(120, 40);
         btnCancel.TabIndex = 7;
@@ -124,12 +127,31 @@ partial class AddAccountForm
         btnCancel.UseVisualStyleBackColor = false;
         btnCancel.Click += btnCancel_Click;
         // 
+        // lblFullname
+        // 
+        lblFullname.AutoSize = true;
+        lblFullname.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        lblFullname.Location = new Point(40, 110);
+        lblFullname.Name = "lblFullname";
+        lblFullname.Size = new Size(76, 20);
+        lblFullname.TabIndex = 8;
+        lblFullname.Text = "Full Name";
+        // 
+        // txtFullName
+        // 
+        txtFullName.Location = new Point(40, 140);
+        txtFullName.Name = "txtFullName";
+        txtFullName.Size = new Size(400, 23);
+        txtFullName.TabIndex = 9;
+        // 
         // AddAccountForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.WhiteSmoke;
         ClientSize = new Size(484, 411);
+        Controls.Add(txtFullName);
+        Controls.Add(lblFullname);
         Controls.Add(btnCancel);
         Controls.Add(btnSave);
         Controls.Add(cboRole);
@@ -157,4 +179,6 @@ partial class AddAccountForm
     private ComboBox cboRole;
     private Button btnSave;
     private Button btnCancel;
+    private Label lblFullname;
+    private TextBox txtFullName;
 }

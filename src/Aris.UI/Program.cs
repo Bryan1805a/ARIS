@@ -1,8 +1,10 @@
+using Aris.Application;
+using Aris.Infrastructure;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Aris.Application;
-using Aris.Infrastructure;
 
 namespace Aris.UI;
 
@@ -40,6 +42,8 @@ internal static class Program
             })
             .Build();
 
-        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<MainForm>());
+        
+
+        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<LoginForm>());
     }
 }
