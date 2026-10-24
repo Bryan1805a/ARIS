@@ -1,4 +1,5 @@
-
+using Aris.Application.Auditing;
+using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,6 +40,9 @@ public static class DependencyInjection
 
         // Register repository for Authentication.
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+        // Scoped: AuditService shares the caller's ArisDbContext so LogAsync joins the
+        // business transaction (D7). Coder 1-3 code against IAuditService only.
+        services.AddScoped<IAuditService, AuditService>();
 
         return services;
     }

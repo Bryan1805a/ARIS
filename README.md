@@ -132,6 +132,7 @@ Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a rel
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
 | `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |
+| `AuditServiceTests` | Success audit commits inside the caller's transaction; failure audit survives on an independent connection |
 | `SqlResilienceTests` | Transient errors are retried; constraint/trigger errors are not |
 
 > **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test` through

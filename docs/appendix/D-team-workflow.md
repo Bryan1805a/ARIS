@@ -125,15 +125,17 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 - [x] Computed `AddressText`.
 - [x] Composite FKs on `TransferRequestItem`.
 - [x] No cascade deletes.
-- [ ] `AuditService` implements both audit paths.
+- [x] `AuditService` implements both audit paths.
 - [x] Build and tests clean.
 
-**Status (21/10/2026):** entities, context, configurations, DI registration, and the
-model test are in place. `dotnet build Aris.slnx` reports 0 errors and 0 warnings;
-`dotnet test Aris.slnx` reports 42 passed, 0 failed, 3 skipped (the integration tests
-wait for `ARIS_TEST_CONNECTION`). `AuditService` and its `IAuditService` registration are
-the remaining `P1-DB2` item; Coders 1–3 can start against `ArisDbContext` and code
-against `IAuditService` now.
+**Status (22/10/2026):** `P1-DB2` is complete: entities, context, configurations,
+`AuditService` (both paths), DI registration, and the mapping/audit tests are in place.
+`dotnet build Aris.slnx` reports 0 errors and 0 warnings. Without a database,
+`dotnet test Aris.slnx` reports 48 passed, 5 skipped; against the local
+`aris-sqlserver` container it reports **53 passed, 0 failed, 0 skipped**. Schema
+inventory verified at 11 tables / 5 triggers / 3 views, and
+`vw_GoldenInvariantViolations` returned 0 rows. Coders 1–3 can now use `ArisDbContext`
+and resolve `IAuditService` from DI.
 
 **Traps:** `Citizen.HouseholdId`, `Household.CurrentAddressId`, `IsRowVersion` on
 `AuditLog`/`SystemConfiguration`, missing `HasTrigger`, cascade deletes, EF migrations,
