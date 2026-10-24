@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Aris.Application.Interfaces;
+using Aris.Infrastructure.Repositories;
+
 namespace Aris.Infrastructure;
 
 /// <summary>
@@ -12,15 +15,14 @@ namespace Aris.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("ArisDb");
 
-        // Resolve the connection string lazily: the shell can start without a database
-        // (useful while the UI is being built), but the first feature that needs data
-        // fails with an actionable message instead of an opaque provider error.
-        // The real value belongs in user-secrets, outside the repository
-        // (CON-SEC-02; docs/07-deployment-view.md, step 4).
+        // Resolve the connection string lazily:
+        // the UI can start without a database connection.
         services.AddDbContext<ArisDbContext>((_, options) =>
         {
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -36,6 +38,8 @@ public static class DependencyInjection
                 sql => sql.EnableRetryOnFailure());
         });
 
+        // Register repository for Authentication.
+        services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         // Scoped: AuditService shares the caller's ArisDbContext so LogAsync joins the
         // business transaction (D7). Coder 1-3 code against IAuditService only.
         services.AddScoped<IAuditService, AuditService>();
