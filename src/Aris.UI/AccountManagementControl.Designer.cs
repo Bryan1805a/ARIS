@@ -41,6 +41,7 @@ partial class AccountManagementControl
         btnAddAccount = new Button();
         btnEditAccount = new Button();
         btnDisableAccount = new Button();
+        btnResetPassword = new Button();
         ((System.ComponentModel.ISupportInitialize)dgvAccounts).BeginInit();
         SuspendLayout();
         // 
@@ -173,12 +174,27 @@ partial class AccountManagementControl
         btnDisableAccount.UseVisualStyleBackColor = false;
         btnDisableAccount.Click += btnDisableAccount_Click;
         // 
+        // button1
+        // 
+        btnResetPassword.BackColor = Color.Firebrick;
+        btnResetPassword.FlatStyle = FlatStyle.Flat;
+        btnResetPassword.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+        btnResetPassword.ForeColor = Color.White;
+        btnResetPassword.Location = new Point(501, 525);
+        btnResetPassword.Name = "btnResetPassword";
+        btnResetPassword.Size = new Size(150, 40);
+        btnResetPassword.TabIndex = 7;
+        btnResetPassword.Text = "Reset Password";
+        btnResetPassword.UseVisualStyleBackColor = false;
+        btnResetPassword.Click += btnResetPassword_Click;
+        // 
         // AccountManagementControl
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         AutoScroll = true;
         BackColor = Color.WhiteSmoke;
+        Controls.Add(btnResetPassword);
         Controls.Add(btnDisableAccount);
         Controls.Add(btnEditAccount);
         Controls.Add(btnAddAccount);
@@ -207,4 +223,5 @@ partial class AccountManagementControl
     private Button btnAddAccount;
     private Button btnEditAccount;
     private Button btnDisableAccount;
+    private Button btnResetPassword;
 }

@@ -3,19 +3,28 @@ using System;
 using System.Windows.Forms;
 
 using Aris.Application.Authentication;
+using Aris.Application.Common;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Aris.UI;
 
 public partial class LoginForm : Form
 {
     private readonly IAuthService _authService;
-    private readonly MainForm _mainForm;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IUserSession _userSession;
 
-    public LoginForm(IAuthService authService, MainForm mainForm)
+    public LoginForm(
+     IAuthService authService,
+     IServiceProvider serviceProvider,
+     IUserSession userSession)
     {
         InitializeComponent();
+
         _authService = authService;
-        _mainForm = mainForm;
+        _serviceProvider = serviceProvider;
+        _userSession = userSession;
     }
 
     private async void btnLogin_Click(object sender, EventArgs e)
@@ -56,11 +65,41 @@ public partial class LoginForm : Form
 
             MessageBox.Show("Login successful.");
 
+            var user = result.Value;
+
+            _userSession.SignIn(
+                user.UserId,
+                user.Username,
+                user.Role
+            );
+
+            var mainForm = _serviceProvider.GetRequiredService<MainForm>();
+
+            mainForm.SetCurrentUser(result.Value);
+
+            mainForm.FormClosed += (s, e) =>
+            {
+                _userSession.SignOut();
+
+                txtUsername.Clear();
+                txtPassword.Clear();
+
+                this.Show();
+                txtUsername.Focus();
+            };
+
+            mainForm.FormClosed += (s, e) =>
+            {
+                txtUsername.Clear();
+                txtPassword.Clear();
+
+                this.Show();
+                txtUsername.Focus();
+            };
+
             this.Hide();
 
-            _mainForm.FormClosed += (s, e) => this.Close();
-
-            _mainForm.Show();
+            mainForm.Show();
 
         }
         catch (Exception)
@@ -69,7 +108,8 @@ public partial class LoginForm : Form
                 "An unexpected error occurred during login.",
                 "Error",
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+                MessageBoxIcon.Error
+            );
         }
         finally
         {

@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 
 using Aris.Application.Accounts;
+using Aris.Application.Authentication;
 
 namespace Aris.UI;
 
@@ -19,6 +20,9 @@ public partial class AddAccountForm : Form
         InitializeComponent();
         _accountService = accountService;
     }
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public LoginResult? CurrentUser { get; set; }
 
     private void btnCancel_Click(object sender, EventArgs e)
     {
@@ -63,11 +67,18 @@ public partial class AddAccountForm : Form
 
         try
         {
+            if (CurrentUser == null)
+            {
+                MessageBox.Show("User session not found.");
+                return;
+            }
+
             bool created = await _accountService.CreateAccountAsync(
                 username,
                 fullName,
                 password,
-                cboRole.SelectedItem!.ToString()!
+                cboRole.SelectedItem!.ToString()!,
+                CurrentUser.UserId
             );
 
             if (!created)
