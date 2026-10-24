@@ -9,5 +9,16 @@ public interface IAccountService
     string username,
     string fullName,
     string password,
-    string role);
+    string role,
+    int currentUserId);
+    Task<bool> ChangeAccountStatusAsync(
+        int userId,
+        string status,
+        int currentUserId
+    );
+    Task<bool> ResetPasswordAsync(
+        int userId,
+        string newPassword,
+        int currentUserId
+);
 }

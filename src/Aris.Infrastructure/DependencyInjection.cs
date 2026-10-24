@@ -40,9 +40,10 @@ public static class DependencyInjection
 
         // Register repository for Authentication.
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
-        // Scoped: AuditService shares the caller's ArisDbContext so LogAsync joins the
-        // business transaction (D7). Coder 1-3 code against IAuditService only.
+        // Scoped: AuditService shares the caller's ArisDbContext.
         services.AddScoped<IAuditService, AuditService>();
+
+        services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
 
         return services;
     }
