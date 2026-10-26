@@ -1,11 +1,14 @@
 using System.Data;
 using System.Diagnostics;
+
 using Aris.Application.Auditing;
 using Aris.Application.Common;
 using Aris.Domain.Entities;
 using Aris.Infrastructure.Persistence;
 using Aris.Infrastructure.Resilience;
+
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace Aris.Infrastructure.Auditing;
 
@@ -54,10 +57,14 @@ public sealed class AuditService : IAuditService
         """;
 
     private readonly ArisDbContext _context;
+    private readonly IConfiguration? _configuration;
 
-    public AuditService(ArisDbContext context)
+    public AuditService(
+    ArisDbContext context,
+    IConfiguration? configuration = null)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     /// <inheritdoc />
@@ -103,6 +110,29 @@ public sealed class AuditService : IAuditService
     /// <paramref name="connectionString"/> is null or blank. That is a composition error,
     /// not a business failure, so it is surfaced during development.
     /// </exception>
+    ///
+
+    public async Task LogLoginFailureAsync(
+    AuditFailureEntry entry,
+    CancellationToken cancellationToken = default)
+    {
+        var connectionString =
+            _configuration?.GetConnectionString("ArisDb");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            Trace.TraceError(
+                "Audit login failure could not be recorded: database connection is not configured.");
+            return;
+        }
+
+        await LogFailureIndependentAsync(
+            connectionString,
+            entry,
+            cancellationToken);
+    }
+
+
     public async Task LogFailureIndependentAsync(
         string connectionString,
         AuditFailureEntry entry,

@@ -2,6 +2,7 @@
 using System;
 using System.Windows.Forms;
 
+using Aris.Application.Accounts;
 using Aris.Application.Authentication;
 using Aris.Application.Common;
 
@@ -63,9 +64,29 @@ public partial class LoginForm : Form
                 return;
             }
 
-            MessageBox.Show("Login successful.");
-
             var user = result.Value;
+
+            if (user.MustChangePassword)
+            {
+                var accountService =
+                    _serviceProvider.GetRequiredService<IAccountService>();
+
+                using var changePasswordForm =
+                    new ChangePasswordForm(accountService, user.UserId);
+
+                if (changePasswordForm.ShowDialog(this) != DialogResult.OK)
+                {
+                    MessageBox.Show(
+                        "You must change your password before continuing.",
+                        "Password Change Required",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    return;
+                }
+            }
+
+            MessageBox.Show("Login successful.");
 
             _userSession.SignIn(
                 user.UserId,
@@ -90,6 +111,8 @@ public partial class LoginForm : Form
 
             mainForm.FormClosed += (s, e) =>
             {
+                _userSession.SignOut();
+
                 txtUsername.Clear();
                 txtPassword.Clear();
 

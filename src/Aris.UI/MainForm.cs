@@ -1,7 +1,9 @@
 using Aris.Application.Accounts;
+using Aris.Application.Auditing;
 using Aris.Application.Authentication;
 using Aris.Application.Common;
 using Aris.Application.Interfaces;
+using Aris.Application.Reports;
 
 namespace Aris.UI;
 
@@ -10,20 +12,27 @@ public partial class MainForm : Form
     private readonly IAccountService _accountService;
     private readonly IDatabaseConnectionService _databaseConnectionService;
     private readonly IUserSession _userSession;
+    private readonly IReportService _reportService;
+    private readonly IAuditQueryService _auditQueryService;
 
     public MainForm(
-     IAccountService accountService,
-     IDatabaseConnectionService databaseConnectionService,
-     IUserSession userSession)
+    IAccountService accountService,
+    IDatabaseConnectionService databaseConnectionService,
+    IUserSession userSession,
+    IReportService reportService,
+    IAuditQueryService auditQueryService)
     {
         InitializeComponent();
 
         _accountService = accountService;
         _databaseConnectionService = databaseConnectionService;
         _userSession = userSession;
+        _reportService = reportService;
+        _auditQueryService = auditQueryService;
 
         this.Shown += MainForm_Shown;
     }
+
     public LoginResult? CurrentUser { get; private set; }
 
     public void SetCurrentUser(LoginResult user)
@@ -72,7 +81,7 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        ReportsControl reportsControl = new ReportsControl();
+        ReportsControl reportsControl = new ReportsControl(_reportService);
         reportsControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(reportsControl);
@@ -145,5 +154,28 @@ public partial class MainForm : Form
         transferControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(transferControl);
+    }
+
+    private async void btnAuditLogs_Click(object sender, EventArgs e)
+    {
+        // Only ADMIN can access Audit Logs.
+        if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN")
+        {
+            MessageBox.Show(
+                "You do not have permission to access Audit Logs.",
+                "Access Denied",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
+        pnlContent.Controls.Clear();
+
+        var auditViewer = new AuditViewerControl(_auditQueryService);
+        auditViewer.Dock = DockStyle.Fill;
+
+        pnlContent.Controls.Add(auditViewer);
+
+        await auditViewer.LoadAuditLogsAsync();
     }
 }

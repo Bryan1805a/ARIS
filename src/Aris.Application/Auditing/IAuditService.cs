@@ -124,4 +124,8 @@ public interface IAuditService
         string connectionString,
         AuditFailureEntry entry,
         CancellationToken cancellationToken = default);
+
+    Task LogLoginFailureAsync(
+        AuditFailureEntry entry,
+        CancellationToken cancellationToken = default);
 }
