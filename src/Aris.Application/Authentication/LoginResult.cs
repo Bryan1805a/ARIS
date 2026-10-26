@@ -1,5 +1,4 @@
-﻿
-namespace Aris.Application.Authentication;
+﻿namespace Aris.Application.Authentication;
 
 public class LoginResult
 {
@@ -8,4 +7,6 @@ public class LoginResult
     public string Username { get; set; } = string.Empty;
 
     public string Role { get; set; } = string.Empty;
+
+    public bool MustChangePassword { get; set; }
 }

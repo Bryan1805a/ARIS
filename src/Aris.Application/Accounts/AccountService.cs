@@ -149,4 +149,69 @@ public class AccountService : IAccountService
 
         return true;
     }
+
+    public async Task<bool> ChangeOwnPasswordAsync(
+     int userId,
+     string currentPassword,
+     string newPassword)
+    {
+        var account = await _userAccountRepository.GetByIdAsync(userId);
+
+        if (account == null || account.Status != "ACTIVE")
+        {
+            throw new UnauthorizedAccessException(
+                "Account is not available.");
+        }
+
+        if (!account.MustChangePassword)
+        {
+            throw new InvalidOperationException(
+                "Password change is not required.");
+        }
+
+        bool isCurrentPasswordValid;
+
+        try
+        {
+            isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(
+                currentPassword,
+                account.PasswordHash);
+        }
+        catch (BCrypt.Net.SaltParseException)
+        {
+            throw new InvalidOperationException(
+                "Unable to verify the current password.");
+        }
+
+        if (!isCurrentPasswordValid)
+        {
+            throw new ArgumentException(
+                "Current password is incorrect.");
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword) ||
+            newPassword.Length < 8)
+        {
+            throw new ArgumentException(
+                "Password must contain at least 8 characters.");
+        }
+
+        if (BCrypt.Net.BCrypt.Verify(
+            newPassword,
+            account.PasswordHash))
+        {
+            throw new ArgumentException(
+                "New password must be different from the current password.");
+        }
+
+        account.PasswordHash =
+            BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+        account.MustChangePassword = false;
+        account.PasswordChangedAt = DateTime.UtcNow;
+
+        await _userAccountRepository.UpdateAsync(account);
+
+        return true;
+    }
 }

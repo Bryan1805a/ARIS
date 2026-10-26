@@ -37,13 +37,32 @@ public static class DependencyInjection
                 connectionString,
                 sql => sql.EnableRetryOnFailure());
         });
+        services.AddDbContextFactory<ArisDbContext>(
+    (_, options) =>
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "ConnectionStrings:ArisDb is not configured.");
+        }
+
+        options.UseSqlServer(
+            connectionString,
+            sql => sql.EnableRetryOnFailure());
+    },
+    ServiceLifetime.Scoped);
 
         // Register repository for Authentication.
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+        services.AddScoped<
+            ISystemConfigurationRepository,
+            SystemConfigurationRepository>();
         // Scoped: AuditService shares the caller's ArisDbContext.
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
         return services;
     }

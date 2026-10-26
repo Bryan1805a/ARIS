@@ -18,7 +18,6 @@ public class UserAccountRepository : IUserAccountRepository
     public async Task<UserAccount?> GetByUsernameAsync(string username)
     {
         return await _context.UserAccounts
-            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Username == username);
     }
     public async Task<List<UserAccount>> GetAllAsync()

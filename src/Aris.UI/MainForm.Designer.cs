@@ -30,6 +30,7 @@ partial class MainForm
     private void InitializeComponent()
     {
         pnlSidebar = new Panel();
+        btnTransfer = new Button();
         btnHousehold = new Button();
         btnCitizen = new Button();
         btnLogout = new Button();
@@ -43,15 +44,16 @@ partial class MainForm
         lblStatusUser = new ToolStripStatusLabel();
         lblStatusRole = new ToolStripStatusLabel();
         lblStatusConnection = new ToolStripStatusLabel();
-        btnTransfer = new Button();
+        btnAuditLogs = new Button();
         pnlSidebar.SuspendLayout();
         pnlContent.SuspendLayout();
         statusStrip1.SuspendLayout();
         SuspendLayout();
-        // 
+        //
         // pnlSidebar
-        // 
+        //
         pnlSidebar.BackColor = Color.DarkSlateGray;
+        pnlSidebar.Controls.Add(btnAuditLogs);
         pnlSidebar.Controls.Add(btnTransfer);
         pnlSidebar.Controls.Add(btnHousehold);
         pnlSidebar.Controls.Add(btnCitizen);
@@ -65,13 +67,27 @@ partial class MainForm
         pnlSidebar.Name = "pnlSidebar";
         pnlSidebar.Size = new Size(220, 700);
         pnlSidebar.TabIndex = 0;
-        // 
+        //
+        // btnTransfer
+        //
+        btnTransfer.FlatStyle = FlatStyle.Flat;
+        btnTransfer.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnTransfer.ForeColor = Color.White;
+        btnTransfer.Location = new Point(10, 430);
+        btnTransfer.Name = "btnTransfer";
+        btnTransfer.Size = new Size(200, 45);
+        btnTransfer.TabIndex = 8;
+        btnTransfer.Text = "Transfer Management";
+        btnTransfer.TextAlign = ContentAlignment.MiddleLeft;
+        btnTransfer.UseVisualStyleBackColor = true;
+        btnTransfer.Click += btnTransfer_Click;
+        //
         // btnHousehold
-        // 
+        //
         btnHousehold.FlatStyle = FlatStyle.Flat;
         btnHousehold.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnHousehold.ForeColor = Color.White;
-        btnHousehold.Location = new Point(10, 320);
+        btnHousehold.Location = new Point(10, 375);
         btnHousehold.Name = "btnHousehold";
         btnHousehold.Size = new Size(200, 45);
         btnHousehold.TabIndex = 7;
@@ -79,13 +95,13 @@ partial class MainForm
         btnHousehold.TextAlign = ContentAlignment.MiddleLeft;
         btnHousehold.UseVisualStyleBackColor = true;
         btnHousehold.Click += btnHousehold_Click;
-        // 
+        //
         // btnCitizen
-        // 
+        //
         btnCitizen.FlatStyle = FlatStyle.Flat;
         btnCitizen.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnCitizen.ForeColor = Color.White;
-        btnCitizen.Location = new Point(10, 265);
+        btnCitizen.Location = new Point(10, 320);
         btnCitizen.Name = "btnCitizen";
         btnCitizen.Size = new Size(200, 45);
         btnCitizen.TabIndex = 6;
@@ -93,13 +109,13 @@ partial class MainForm
         btnCitizen.TextAlign = ContentAlignment.MiddleLeft;
         btnCitizen.UseVisualStyleBackColor = true;
         btnCitizen.Click += btnCitizen_Click;
-        // 
+        //
         // btnLogout
-        // 
+        //
         btnLogout.FlatStyle = FlatStyle.Flat;
         btnLogout.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnLogout.ForeColor = Color.White;
-        btnLogout.Location = new Point(10, 430);
+        btnLogout.Location = new Point(10, 485);
         btnLogout.Name = "btnLogout";
         btnLogout.Size = new Size(200, 45);
         btnLogout.TabIndex = 4;
@@ -107,9 +123,9 @@ partial class MainForm
         btnLogout.TextAlign = ContentAlignment.MiddleLeft;
         btnLogout.UseVisualStyleBackColor = true;
         btnLogout.Click += btnLogout_Click;
-        // 
+        //
         // btnReports
-        // 
+        //
         btnReports.FlatStyle = FlatStyle.Flat;
         btnReports.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnReports.ForeColor = Color.White;
@@ -121,9 +137,9 @@ partial class MainForm
         btnReports.TextAlign = ContentAlignment.MiddleLeft;
         btnReports.UseVisualStyleBackColor = true;
         btnReports.Click += btnReports_Click;
-        // 
+        //
         // btnAccounts
-        // 
+        //
         btnAccounts.FlatStyle = FlatStyle.Flat;
         btnAccounts.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnAccounts.ForeColor = Color.White;
@@ -135,9 +151,9 @@ partial class MainForm
         btnAccounts.TextAlign = ContentAlignment.MiddleLeft;
         btnAccounts.UseVisualStyleBackColor = true;
         btnAccounts.Click += btnAccounts_Click;
-        // 
+        //
         // btnDashboard
-        // 
+        //
         btnDashboard.FlatStyle = FlatStyle.Flat;
         btnDashboard.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         btnDashboard.ForeColor = Color.White;
@@ -149,9 +165,9 @@ partial class MainForm
         btnDashboard.TextAlign = ContentAlignment.MiddleLeft;
         btnDashboard.UseVisualStyleBackColor = true;
         btnDashboard.Click += btnDashboard_Click;
-        // 
+        //
         // lblLogo
-        // 
+        //
         lblLogo.AutoSize = true;
         lblLogo.BackColor = Color.Transparent;
         lblLogo.Font = new Font("Segoe UI", 21.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -161,9 +177,9 @@ partial class MainForm
         lblLogo.Size = new Size(81, 40);
         lblLogo.TabIndex = 0;
         lblLogo.Text = "ARIS";
-        // 
+        //
         // pnlContent
-        // 
+        //
         pnlContent.BackColor = Color.WhiteSmoke;
         pnlContent.Controls.Add(lblPageTitle);
         pnlContent.Dock = DockStyle.Fill;
@@ -171,9 +187,9 @@ partial class MainForm
         pnlContent.Name = "pnlContent";
         pnlContent.Size = new Size(804, 700);
         pnlContent.TabIndex = 1;
-        // 
+        //
         // lblPageTitle
-        // 
+        //
         lblPageTitle.AutoSize = true;
         lblPageTitle.BackColor = Color.Transparent;
         lblPageTitle.Font = new Font("Segoe UI", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -183,9 +199,9 @@ partial class MainForm
         lblPageTitle.Size = new Size(157, 37);
         lblPageTitle.TabIndex = 0;
         lblPageTitle.Text = "Dashboard";
-        // 
+        //
         // statusStrip1
-        // 
+        //
         statusStrip1.AutoSize = false;
         statusStrip1.BackColor = Color.DarkSlateGray;
         statusStrip1.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -196,50 +212,50 @@ partial class MainForm
         statusStrip1.SizingGrip = false;
         statusStrip1.TabIndex = 2;
         statusStrip1.Text = "statusStrip1";
-        // 
+        //
         // lblStatusUser
-        // 
+        //
         lblStatusUser.ForeColor = Color.White;
         lblStatusUser.Margin = new Padding(15, 3, 15, 3);
         lblStatusUser.Name = "lblStatusUser";
         lblStatusUser.Size = new Size(124, 30);
         lblStatusUser.Text = "User: Not logged in";
         lblStatusUser.TextAlign = ContentAlignment.MiddleLeft;
-        // 
+        //
         // lblStatusRole
-        // 
+        //
         lblStatusRole.ForeColor = Color.White;
         lblStatusRole.Margin = new Padding(10, 3, 15, 3);
         lblStatusRole.Name = "lblStatusRole";
         lblStatusRole.Size = new Size(432, 30);
         lblStatusRole.Spring = true;
         lblStatusRole.Text = "Role: None";
-        // 
+        //
         // lblStatusConnection
-        // 
+        //
         lblStatusConnection.ForeColor = Color.White;
         lblStatusConnection.Margin = new Padding(10, 3, 15, 3);
         lblStatusConnection.Name = "lblStatusConnection";
         lblStatusConnection.Size = new Size(153, 30);
         lblStatusConnection.Text = "Connection: Not checked";
         lblStatusConnection.TextAlign = ContentAlignment.MiddleRight;
-        // 
-        // btnTransfer
-        // 
-        btnTransfer.FlatStyle = FlatStyle.Flat;
-        btnTransfer.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-        btnTransfer.ForeColor = Color.White;
-        btnTransfer.Location = new Point(10, 375);
-        btnTransfer.Name = "btnTransfer";
-        btnTransfer.Size = new Size(200, 45);
-        btnTransfer.TabIndex = 8;
-        btnTransfer.Text = "Transfer Management";
-        btnTransfer.TextAlign = ContentAlignment.MiddleLeft;
-        btnTransfer.UseVisualStyleBackColor = true;
-        btnTransfer.Click += btnTransfer_Click;
-        // 
+        //
+        // btnAuditLogs
+        //
+        btnAuditLogs.FlatStyle = FlatStyle.Flat;
+        btnAuditLogs.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnAuditLogs.ForeColor = Color.White;
+        btnAuditLogs.Location = new Point(10, 265);
+        btnAuditLogs.Name = "btnAuditLogs";
+        btnAuditLogs.Size = new Size(200, 45);
+        btnAuditLogs.TabIndex = 9;
+        btnAuditLogs.Text = "Audit Logs";
+        btnAuditLogs.TextAlign = ContentAlignment.MiddleLeft;
+        btnAuditLogs.UseVisualStyleBackColor = true;
+        btnAuditLogs.Click += btnAuditLogs_Click;
+        //
         // MainForm
-        // 
+        //
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1024, 700);
@@ -275,4 +291,5 @@ partial class MainForm
     private Button btnCitizen;
     private Button btnHousehold;
     private Button btnTransfer;
+    private Button btnAuditLogs;
 }

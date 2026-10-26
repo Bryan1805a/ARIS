@@ -20,5 +20,11 @@ public interface IAccountService
         int userId,
         string newPassword,
         int currentUserId
-);
+     );
+
+    Task<bool> ChangeOwnPasswordAsync(
+    int userId,
+    string currentPassword,
+    string newPassword
+    );
 }
