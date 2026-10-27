@@ -4,6 +4,9 @@ using Aris.Application.Authentication;
 using Aris.Application.Common;
 using Aris.Application.Interfaces;
 using Aris.Application.Reports;
+using Aris.Application.SystemConfiguration;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Aris.UI;
 
@@ -14,13 +17,17 @@ public partial class MainForm : Form
     private readonly IUserSession _userSession;
     private readonly IReportService _reportService;
     private readonly IAuditQueryService _auditQueryService;
+    private readonly SystemConfigurationService _configurationService;
+    private readonly IServiceProvider _serviceProvider;
 
     public MainForm(
     IAccountService accountService,
     IDatabaseConnectionService databaseConnectionService,
     IUserSession userSession,
     IReportService reportService,
-    IAuditQueryService auditQueryService)
+    IAuditQueryService auditQueryService,
+    SystemConfigurationService configurationService,
+    IServiceProvider serviceProvider)
     {
         InitializeComponent();
 
@@ -29,6 +36,9 @@ public partial class MainForm : Form
         _userSession = userSession;
         _reportService = reportService;
         _auditQueryService = auditQueryService;
+        _configurationService = configurationService;
+        _serviceProvider = serviceProvider;
+        btnSystemConfiguration.Click += btnSystemConfiguration_Click;
 
         this.Shown += MainForm_Shown;
     }
@@ -41,20 +51,86 @@ public partial class MainForm : Form
 
         lblStatusUser.Text = $"User: {_userSession.Username}";
         lblStatusRole.Text = $"Role: {_userSession.Role}";
+        bool isAdmin = string.Equals(
+            _userSession.Role,
+            "ADMIN",
+            StringComparison.OrdinalIgnoreCase);
+
+        btnAccounts.Visible = isAdmin;
+        btnAuditLogs.Visible = isAdmin;
+        btnSystemConfiguration.Visible = isAdmin;
+
+        int nextY = btnDashboard.Bottom + 10;
+
+        Button[] sidebarButtons =
+        {
+            btnAccounts,
+            btnReports,
+            btnAuditLogs,
+            btnSystemConfiguration,
+            btnCitizen,
+            btnHousehold,
+            btnTransfer,
+            btnLogout
+        };
+
+        foreach (Button button in sidebarButtons)
+        {
+            // Skip ADMIN-only buttons for OFFICER
+            if (!isAdmin &&
+                (button == btnAccounts ||
+                 button == btnAuditLogs ||
+                 button == btnSystemConfiguration))
+            {
+                continue;
+            }
+
+            button.Top = nextY;
+            nextY += button.Height + 8;
+        }
     }
 
     private void btnDashboard_Click(object sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
-        Label lblDashboard = new Label();
-        lblDashboard.Text = "Dashboard";
-        lblDashboard.Font = new Font("Segoe UI", 20, FontStyle.Bold);
-        lblDashboard.ForeColor = Color.DarkSlateGray;
-        lblDashboard.AutoSize = true;
-        lblDashboard.Location = new Point(25, 25);
+        bool isAdmin = string.Equals(
+            _userSession.Role,
+            "ADMIN",
+            StringComparison.OrdinalIgnoreCase);
+
+        Label lblDashboard = new Label
+        {
+            Text = isAdmin ? "ADMIN Dashboard" : "OFFICER Dashboard",
+            Font = new Font("Segoe UI", 20, FontStyle.Bold),
+            ForeColor = Color.DarkSlateGray,
+            AutoSize = true,
+            Location = new Point(25, 25)
+        };
+
+        Label lblWelcome = new Label
+        {
+            Text = $"Welcome, {_userSession.Username}!",
+            Font = new Font("Segoe UI", 12),
+            ForeColor = Color.DimGray,
+            AutoSize = true,
+            Location = new Point(25, 80)
+        };
+
+        Label lblRole = new Label
+        {
+            Text = isAdmin
+                ? "You are logged in as Administrator."
+                : "You are logged in as Officer.",
+            Font = new Font("Segoe UI", 11),
+            ForeColor = Color.DarkSlateGray,
+            AutoSize = true,
+            Location = new Point(25, 120)
+        };
 
         pnlContent.Controls.Add(lblDashboard);
+        pnlContent.Controls.Add(lblWelcome);
+        pnlContent.Controls.Add(lblRole);
     }
 
     private void btnAccounts_Click(object sender, EventArgs e)
@@ -70,7 +146,8 @@ public partial class MainForm : Form
                 MessageBoxIcon.Warning);
             return;
         }
-        AccountManagementControl accountControl = new AccountManagementControl(_accountService);
+        AccountManagementControl accountControl =
+     _serviceProvider.GetRequiredService<AccountManagementControl>();
         accountControl.CurrentUser = CurrentUser;
         accountControl.Dock = DockStyle.Fill; //cho man hinh tu gian theo kich thuoc
 
@@ -81,7 +158,8 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        ReportsControl reportsControl = new ReportsControl(_reportService);
+        ReportsControl reportsControl =
+     _serviceProvider.GetRequiredService<ReportsControl>();
         reportsControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(reportsControl);
@@ -171,11 +249,36 @@ public partial class MainForm : Form
 
         pnlContent.Controls.Clear();
 
-        var auditViewer = new AuditViewerControl(_auditQueryService);
+        var auditViewer =
+    _serviceProvider.GetRequiredService<AuditViewerControl>();
         auditViewer.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(auditViewer);
 
         await auditViewer.LoadAuditLogsAsync();
+    }
+
+    private void btnSystemConfiguration_Click(object sender, EventArgs e)
+    {
+        if (!_userSession.IsAuthenticated ||
+            !string.Equals(_userSession.Role, "ADMIN",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show(
+                "You do not have permission to access System Configuration.",
+                "Access Denied",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
+        pnlContent.Controls.Clear();
+
+        var configurationControl =
+     _serviceProvider.GetRequiredService<SystemConfigurationControl>();
+
+        configurationControl.Dock = DockStyle.Fill;
+
+        pnlContent.Controls.Add(configurationControl);
     }
 }
