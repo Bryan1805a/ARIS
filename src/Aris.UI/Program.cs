@@ -42,6 +42,10 @@ internal static class Program
                 services.AddSingleton<IUserSession, UserSession>();
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
+                services.AddTransient<AccountManagementControl>();
+                services.AddTransient<ReportsControl>();
+                services.AddTransient<AuditViewerControl>();
+                services.AddTransient<SystemConfigurationControl>();
 
             })
             .Build();

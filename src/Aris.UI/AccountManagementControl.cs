@@ -36,7 +36,14 @@ public partial class AccountManagementControl : UserControl
     {
         try
         {
-            var accounts = await _accountService.GetAllAccountsAsync();
+            if (CurrentUser == null)
+            {
+                throw new UnauthorizedAccessException(
+                    "You must log in to view accounts.");
+            }
+
+            var accounts = await _accountService.GetAllAccountsAsync(
+                CurrentUser.UserId);
 
             dgvAccounts.AutoGenerateColumns = false;
 

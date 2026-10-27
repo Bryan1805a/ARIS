@@ -187,10 +187,10 @@ public sealed class AuditService : IAuditService
             // The connection string is never logged (CON-SEC-02).
             Trace.TraceError(
                 "AuditService could not write the independent FAILURE entry for action '{0}' " +
-                "(correlation {1}): {2}",
+                "(correlation {1}). Error type: {2}",
                 entry.Action,
                 entry.CorrelationId,
-                ex.Message);
+                ex.GetType().Name);
         }
     }
 

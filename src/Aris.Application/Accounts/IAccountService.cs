@@ -4,7 +4,7 @@ namespace Aris.Application.Accounts;
 
 public interface IAccountService
 {
-    Task<List<UserAccount>> GetAllAccountsAsync();
+    Task<List<UserAccount>> GetAllAccountsAsync(int currentUserId);
     Task<bool> CreateAccountAsync(
     string username,
     string fullName,

@@ -12,10 +12,22 @@ public class AccountService : IAccountService
         _userAccountRepository = userAccountRepository;
     }
 
-    public async Task<List<UserAccount>> GetAllAccountsAsync()
+    public async Task<List<UserAccount>> GetAllAccountsAsync(int currentUserId)
     {
+        var currentUser = await _userAccountRepository
+            .GetByIdAsync(currentUserId);
+
+        if (currentUser == null ||
+            currentUser.Role != "ADMIN" ||
+            currentUser.Status != "ACTIVE")
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to view accounts.");
+        }
+
         return await _userAccountRepository.GetAllAsync();
     }
+
     public async Task<bool> CreateAccountAsync(
      string username,
      string fullName,

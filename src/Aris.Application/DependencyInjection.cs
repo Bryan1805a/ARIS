@@ -2,6 +2,7 @@ using Aris.Application.Accounts;
 using Aris.Application.Auditing;
 using Aris.Application.Authentication;
 using Aris.Application.Reports;
+using Aris.Application.SystemConfiguration;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
+        services.AddScoped<SystemConfigurationService>();
 
         return services;
     }

@@ -36,11 +36,12 @@ partial class ReportsControl
         dtpToDate = new DateTimePicker();
         lblFromDate = new Label();
         lblToDate = new Label();
+        btnExportCsv = new Button();
         ((System.ComponentModel.ISupportInitialize)dgvReports).BeginInit();
         SuspendLayout();
-        //
+        // 
         // lblReportsTitle
-        //
+        // 
         lblReportsTitle.AutoSize = true;
         lblReportsTitle.Font = new Font("Segoe UI", 20.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
         lblReportsTitle.ForeColor = Color.DarkSlateGray;
@@ -49,9 +50,9 @@ partial class ReportsControl
         lblReportsTitle.Size = new Size(118, 37);
         lblReportsTitle.TabIndex = 0;
         lblReportsTitle.Text = "Reports";
-        //
+        // 
         // cboReportType
-        //
+        // 
         cboReportType.DropDownStyle = ComboBoxStyle.DropDownList;
         cboReportType.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
         cboReportType.FormattingEnabled = true;
@@ -60,9 +61,9 @@ partial class ReportsControl
         cboReportType.Name = "cboReportType";
         cboReportType.Size = new Size(350, 28);
         cboReportType.TabIndex = 1;
-        //
+        // 
         // btnGenerateReport
-        //
+        // 
         btnGenerateReport.BackColor = Color.DarkSlateGray;
         btnGenerateReport.FlatStyle = FlatStyle.Flat;
         btnGenerateReport.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -74,9 +75,9 @@ partial class ReportsControl
         btnGenerateReport.Text = "Generate Report";
         btnGenerateReport.UseVisualStyleBackColor = false;
         btnGenerateReport.Click += btnGenerateReport_Click;
-        //
+        // 
         // dgvReports
-        //
+        // 
         dgvReports.AllowUserToAddRows = false;
         dgvReports.AllowUserToDeleteRows = false;
         dgvReports.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -90,27 +91,27 @@ partial class ReportsControl
         dgvReports.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvReports.Size = new Size(735, 370);
         dgvReports.TabIndex = 3;
-        //
+        // 
         // dtpFromDate
-        //
+        // 
         dtpFromDate.Format = DateTimePickerFormat.Short;
         dtpFromDate.Location = new Point(25, 165);
         dtpFromDate.Name = "dtpFromDate";
         dtpFromDate.Size = new Size(200, 23);
         dtpFromDate.TabIndex = 4;
         dtpFromDate.Visible = false;
-        //
+        // 
         // dtpToDate
-        //
+        // 
         dtpToDate.Format = DateTimePickerFormat.Short;
         dtpToDate.Location = new Point(300, 165);
         dtpToDate.Name = "dtpToDate";
         dtpToDate.Size = new Size(200, 23);
         dtpToDate.TabIndex = 5;
         dtpToDate.Visible = false;
-        //
+        // 
         // lblFromDate
-        //
+        // 
         lblFromDate.AutoSize = true;
         lblFromDate.Location = new Point(25, 140);
         lblFromDate.Name = "lblFromDate";
@@ -118,9 +119,9 @@ partial class ReportsControl
         lblFromDate.TabIndex = 6;
         lblFromDate.Text = "From Date:";
         lblFromDate.Visible = false;
-        //
+        // 
         // lblToDate
-        //
+        // 
         lblToDate.AutoSize = true;
         lblToDate.Location = new Point(300, 140);
         lblToDate.Name = "lblToDate";
@@ -128,13 +129,29 @@ partial class ReportsControl
         lblToDate.TabIndex = 7;
         lblToDate.Text = "To Date:";
         lblToDate.Visible = false;
-        //
+        // 
+        // btnExportCsv
+        // 
+        btnExportCsv.BackColor = Color.DarkSlateGray;
+        btnExportCsv.Enabled = false;
+        btnExportCsv.FlatStyle = FlatStyle.Flat;
+        btnExportCsv.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnExportCsv.ForeColor = Color.White;
+        btnExportCsv.Location = new Point(577, 88);
+        btnExportCsv.Name = "btnExportCsv";
+        btnExportCsv.Size = new Size(160, 40);
+        btnExportCsv.TabIndex = 8;
+        btnExportCsv.Text = "Export CSV";
+        btnExportCsv.UseVisualStyleBackColor = false;
+        btnExportCsv.Click += btnExportCsv_Click;
+        // 
         // ReportsControl
-        //
+        // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         AutoScroll = true;
         BackColor = Color.WhiteSmoke;
+        Controls.Add(btnExportCsv);
         Controls.Add(lblToDate);
         Controls.Add(lblFromDate);
         Controls.Add(dtpToDate);
@@ -160,4 +177,5 @@ partial class ReportsControl
     private DateTimePicker dtpToDate;
     private Label lblFromDate;
     private Label lblToDate;
+    private Button btnExportCsv;
 }
