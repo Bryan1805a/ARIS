@@ -103,6 +103,13 @@ dotnet build Aris.slnx
 dotnet run --project src/Aris.UI
 ```
 
+### First run
+
+A fresh database has no accounts, so the login screen offers **Create first
+administrator**. Create that `ADMIN`, sign in, then open **Accounts → Seed demo data** to
+add a consistent demo dataset: 2 addresses, 6 citizens, 2 households, and 1 unassigned
+citizen. The seed is idempotent and respects the Golden Invariant.
+
 Full setup, reset, and troubleshooting: [`docs/07-deployment-view.md`](docs/07-deployment-view.md).
 
 ## Configuration and secrets
