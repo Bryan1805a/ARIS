@@ -30,14 +30,17 @@ public partial class AuditViewerControl : UserControl
 
             dgvAuditLogs.DataSource = auditLogs;
 
-            dgvAuditLogs.Columns["AuditLogId"].HeaderText = "ID";
-            dgvAuditLogs.Columns["Username"].HeaderText = "Username";
-            dgvAuditLogs.Columns["EntityType"].HeaderText = "Entity";
-            dgvAuditLogs.Columns["OccurredAt"].HeaderText = "Time";
-            dgvAuditLogs.Columns["Details"].HeaderText = "Details";
+            dgvAuditLogs.Columns["AuditLogId"]?.HeaderText = "ID";
+            dgvAuditLogs.Columns["Username"]?.HeaderText = "Username";
+            dgvAuditLogs.Columns["EntityType"]?.HeaderText = "Entity";
+            dgvAuditLogs.Columns["OccurredAt"]?.HeaderText = "Time";
+            dgvAuditLogs.Columns["Details"]?.HeaderText = "Details";
 
-            dgvAuditLogs.Columns["OccurredAt"].DefaultCellStyle.Format =
-                "dd/MM/yyyy HH:mm:ss";
+            var occurredAt = dgvAuditLogs.Columns["OccurredAt"];
+            if (occurredAt is not null)
+            {
+                occurredAt.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm:ss";
+            }
         }
         catch (Exception)
         {
