@@ -114,6 +114,10 @@ The **Citizen** screen supports search by National ID, name, or status; registra
 `UNASSIGNED`; a profile with household, canonical address, and residency timeline;
 demographic updates; and deactivation, including successor-head handling.
 
+The **Household** screen supports registration (head + active address), adding an
+UNASSIGNED member, changing the head with close-and-open tenures, and viewing member and
+address history. Addresses can be registered from the household form.
+
 Full setup, reset, and troubleshooting: [`docs/07-deployment-view.md`](docs/07-deployment-view.md).
 
 ## Configuration and secrets
