@@ -1,8 +1,12 @@
+using Aris.Application;
+using Aris.Infrastructure;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Aris.Application;
-using Aris.Infrastructure;
+using Aris.Application.Common;
+using Aris.UI.Session;
 
 namespace Aris.UI;
 
@@ -35,10 +39,19 @@ internal static class Program
                 services.AddInfrastructure(context.Configuration);
 
                 // UI forms and view models.
+                services.AddSingleton<IUserSession, UserSession>();
                 services.AddTransient<MainForm>();
+                services.AddTransient<LoginForm>();
+                services.AddTransient<AccountManagementControl>();
+                services.AddTransient<ReportsControl>();
+                services.AddTransient<AuditViewerControl>();
+                services.AddTransient<SystemConfigurationControl>();
+
             })
             .Build();
 
-        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<MainForm>());
+        
+
+        System.Windows.Forms.Application.Run(host.Services.GetRequiredService<LoginForm>());
     }
 }
