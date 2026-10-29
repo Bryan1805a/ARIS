@@ -219,7 +219,8 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        HouseholdControl householdControl = new HouseholdControl();
+        HouseholdControl householdControl =
+            _serviceProvider.GetRequiredService<HouseholdControl>();
         householdControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(householdControl);

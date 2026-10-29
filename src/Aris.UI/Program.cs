@@ -43,6 +43,7 @@ internal static class Program
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
                 services.AddTransient<CitizenControl>();
+                services.AddTransient<HouseholdControl>();
                 services.AddTransient<AccountManagementControl>();
                 services.AddTransient<ReportsControl>();
                 services.AddTransient<AuditViewerControl>();
