@@ -122,6 +122,16 @@ public partial class LoginForm : Form
 
             var user = result.Value;
 
+            if (user is null)
+            {
+                MessageBox.Show(
+                    "Login failed. Please try again.",
+                    "Login Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
             if (user.MustChangePassword)
             {
                 var accountService =
@@ -152,7 +162,7 @@ public partial class LoginForm : Form
 
             var mainForm = _serviceProvider.GetRequiredService<MainForm>();
 
-            mainForm.SetCurrentUser(result.Value);
+            mainForm.SetCurrentUser(user);
 
             mainForm.FormClosed += (s, e) =>
             {

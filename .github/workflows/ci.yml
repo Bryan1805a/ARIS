@@ -30,12 +30,12 @@ jobs:
         run: dotnet restore Aris.slnx
 
       - name: Build
-        run: dotnet build Aris.slnx --no-restore --configuration Release
+        run: dotnet build Aris.slnx --no-restore --configuration Release -p:TreatWarningsAsErrors=true
 
       # Integration tests skip when ARIS_TEST_CONNECTION is unset; the dedicated
       # integration-tests job runs them against real SQL Server.
       - name: Test
-        run: dotnet test Aris.slnx --no-restore --configuration Release
+        run: dotnet test Aris.slnx --no-restore --configuration Release -p:TreatWarningsAsErrors=true
 
   integration-tests:
     name: integration-tests
@@ -103,7 +103,7 @@ jobs:
 
       # The UI targets net10.0-windows, so only the cross-platform test projects run here.
       - name: Run integration tests
-        run: dotnet test tests/Aris.Tests/Aris.Tests.csproj --no-restore
+        run: dotnet test tests/Aris.Tests/Aris.Tests.csproj --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Run unit tests
-        run: dotnet test tests/Aris.UnitTests/Aris.UnitTests.csproj --no-restore
+        run: dotnet test tests/Aris.UnitTests/Aris.UnitTests.csproj --no-restore -p:TreatWarningsAsErrors=true

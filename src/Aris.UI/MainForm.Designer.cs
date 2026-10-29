@@ -291,21 +291,21 @@ partial class MainForm
 
     #endregion
 
-    private Panel pnlSidebar;
-    private Button btnDashboard;
-    private Label lblLogo;
-    private Button btnReports;
-    private Button btnAccounts;
-    private Button btnLogout;
-    private Panel pnlContent;
-    private Label lblPageTitle;
-    private StatusStrip statusStrip1;
-    private ToolStripStatusLabel lblStatusUser;
-    private ToolStripStatusLabel lblStatusRole;
-    private ToolStripStatusLabel lblStatusConnection;
-    private Button btnCitizen;
-    private Button btnHousehold;
-    private Button btnTransfer;
-    private Button btnAuditLogs;
-    private Button btnSystemConfiguration;
+    private Panel pnlSidebar = null!;
+    private Button btnDashboard = null!;
+    private Label lblLogo = null!;
+    private Button btnReports = null!;
+    private Button btnAccounts = null!;
+    private Button btnLogout = null!;
+    private Panel pnlContent = null!;
+    private Label lblPageTitle = null!;
+    private StatusStrip statusStrip1 = null!;
+    private ToolStripStatusLabel lblStatusUser = null!;
+    private ToolStripStatusLabel lblStatusRole = null!;
+    private ToolStripStatusLabel lblStatusConnection = null!;
+    private Button btnCitizen = null!;
+    private Button btnHousehold = null!;
+    private Button btnTransfer = null!;
+    private Button btnAuditLogs = null!;
+    private Button btnSystemConfiguration = null!;
 }

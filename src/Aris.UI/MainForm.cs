@@ -90,7 +90,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnDashboard_Click(object sender, EventArgs e)
+    private void btnDashboard_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -133,7 +133,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(lblRole);
     }
 
-    private void btnAccounts_Click(object sender, EventArgs e)
+    private void btnAccounts_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -154,7 +154,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(accountControl);
     }
 
-    private void btnReports_Click(object sender, EventArgs e)
+    private void btnReports_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -165,7 +165,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(reportsControl);
     }
 
-    private void btnLogout_Click(object sender, EventArgs e)
+    private void btnLogout_Click(object? sender, EventArgs e)
     {
         DialogResult result = MessageBox.Show(
             "Are you sure you want to log out?",
@@ -204,7 +204,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnCitizen_Click(object sender, EventArgs e)
+    private void btnCitizen_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -215,7 +215,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(citizenControl);
     }
 
-    private void btnHousehold_Click(object sender, EventArgs e)
+    private void btnHousehold_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -226,7 +226,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(householdControl);
     }
 
-    private void btnTransfer_Click(object sender, EventArgs e)
+    private void btnTransfer_Click(object? sender, EventArgs e)
     {
         pnlContent.Controls.Clear();
 
@@ -237,7 +237,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(transferControl);
     }
 
-    private async void btnAuditLogs_Click(object sender, EventArgs e)
+    private async void btnAuditLogs_Click(object? sender, EventArgs e)
     {
         // Only ADMIN can access Audit Logs.
         if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN")
@@ -261,7 +261,7 @@ public partial class MainForm : Form
         await auditViewer.LoadAuditLogsAsync();
     }
 
-    private void btnSystemConfiguration_Click(object sender, EventArgs e)
+    private void btnSystemConfiguration_Click(object? sender, EventArgs e)
     {
         if (!_userSession.IsAuthenticated ||
             !string.Equals(_userSession.Role, "ADMIN",
