@@ -146,6 +146,7 @@ dotnet test Aris.slnx
 ```
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
+CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
 
 | Test | Purpose |
 |---|---|

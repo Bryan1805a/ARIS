@@ -419,7 +419,8 @@ dotnet test  Aris.slnx     # 0 failed (skips allowed only without a DB)
 git status                 # no secrets, no bin/obj, no .env
 ```
 
-- `TreatWarningsAsErrors` is false, so reviewers must reject warning-laden PRs.
+- `TreatWarningsAsErrors` is false for local builds, but CI builds with
+  `-p:TreatWarningsAsErrors=true`, so a warning fails the PR.
 - Never commit `bin/`, `obj/`, `TestResults/`, `.env`, `.local/`, or user-specific files.
 - Keep commit messages task-prefixed: `P1-C1: add citizen DTOs and validators`.
 - One logical change per commit.
