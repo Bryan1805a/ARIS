@@ -55,7 +55,7 @@ flowchart TB
 | `IUserSession` implementation | Holds the authenticated user for the lifetime of the shell | Planned (`P1-C3`) |
 | `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile, create/update | Implemented |
 | `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens | Implemented |
-| `TransferRequestForm`, `TransferInboxForm` | Maker wizard and checker inbox | Planned (`P4-C2`) |
+| `TransferControl`, `TransferRequestForm`, `TransferDecisionForm` | Maker wizard and checker inbox | Implemented |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
 | `AdministrationForm`, `AuditLogForm`, `SystemConfigForm` | Admin screens | Planned (`P5-C3B`) |
@@ -80,7 +80,7 @@ navigation.
 | `Addresses/IAddressService` + DTOs | `ADR-01`, address lookup for households (implementation in Infrastructure) | Implemented |
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
 | `Residences/IResidenceService` | `RES-03` query only | Planned (`P1-C2`) |
-| `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases | Planned (`P4-C2`) |
+| `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthenticationService` | `AUTH-01`, lockout, password change | Planned (`P5-C3A`) |
 | `Administration/IAccountService`, `IAuditQueryService`, `ISystemConfigService` | `ACC-01`, `AUD-01`, `SYS-01` | Planned |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
@@ -123,6 +123,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
 | `Addresses/AddressService` | Address registration and active-address lookup | Implemented |
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
+| `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
 | `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`), `IAuditService`, bootstrap and demo services | Implemented |
 
@@ -212,7 +213,7 @@ of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 | EF Core SQL Server provider | ✔ | — |
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
-| Transfer engine (`UC-06`) | ✘ | `P4-C2` |
+| Transfer engine (`UC-06`) | ✔ | — |
 | Auth/admin/reports | ✘ | `P1-C3`, `P5-C3` |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |

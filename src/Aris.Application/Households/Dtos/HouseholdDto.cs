@@ -8,4 +8,7 @@ public sealed record HouseholdDto
     public string? HeadFullName { get; init; }
     public string? CurrentAddressText { get; init; }
     public required int ActiveMemberCount { get; init; }
+
+    /// <summary>Compact label for pickers and grids.</summary>
+    public string DisplayName => $"#{HouseholdId} - {HeadFullName ?? "(no head)"}";
 }

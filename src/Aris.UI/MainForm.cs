@@ -230,7 +230,8 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        TransferControl transferControl = new TransferControl();
+        TransferControl transferControl =
+            _serviceProvider.GetRequiredService<TransferControl>();
         transferControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(transferControl);

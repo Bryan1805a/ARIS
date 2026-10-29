@@ -3,12 +3,14 @@ using Aris.Application.Addresses;
 using Aris.Application.Auditing;
 using Aris.Application.Citizens;
 using Aris.Application.Households;
+using Aris.Application.Transfers;
 using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Addresses;
 using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Citizens;
 using Aris.Infrastructure.Households;
 using Aris.Infrastructure.Persistence;
+using Aris.Infrastructure.Transfers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,6 +80,9 @@ public static class DependencyInjection
         // Address lookup/creation and household lifecycle (ADR-01, HH-01/HH-02/HH-04/HH-06).
         services.AddScoped<IAddressService, AddressService>();
         services.AddScoped<IHouseholdService, HouseholdService>();
+
+        // Maker-checker transfer engine (UC-06).
+        services.AddScoped<ITransferService, TransferService>();
         services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
