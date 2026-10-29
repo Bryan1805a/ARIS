@@ -15,17 +15,93 @@ namespace Aris.UI;
 public partial class AccountManagementControl : UserControl
 {
     private readonly IAccountService _accountService;
+    private readonly IDemoDataService _demoDataService;
+    private readonly Button _seedDemoButton = new();
+
     [Browsable(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public LoginResult? CurrentUser { get; set; }
 
-    public AccountManagementControl(IAccountService accountService)
+    public AccountManagementControl(
+        IAccountService accountService,
+        IDemoDataService demoDataService)
     {
         InitializeComponent();
         _accountService = accountService;
+        _demoDataService = demoDataService;
         dgvAccounts.SelectionChanged += dgvAccounts_SelectionChanged;
 
+        _seedDemoButton.Text = "Seed demo data";
+        _seedDemoButton.Location = new Point(25, 580);
+        _seedDemoButton.Size = new Size(180, 35);
+        _seedDemoButton.BackColor = Color.DarkSlateGray;
+        _seedDemoButton.ForeColor = Color.White;
+        _seedDemoButton.FlatStyle = FlatStyle.Flat;
+        _seedDemoButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        _seedDemoButton.Click += SeedDemoButton_Click;
+        Controls.Add(_seedDemoButton);
+
         this.Load += AccountManagementControl_Load;
+    }
+
+    private async void SeedDemoButton_Click(object? sender, EventArgs e)
+    {
+        if (CurrentUser is null)
+        {
+            return;
+        }
+
+        var confirmation = MessageBox.Show(
+            "Seed demo addresses, citizens and households? " +
+            "This is sample data, it respects the residency invariant, and it can only be run once.",
+            "Seed demo data",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+
+        if (confirmation != DialogResult.Yes)
+        {
+            return;
+        }
+
+        _seedDemoButton.Enabled = false;
+
+        try
+        {
+            var result = await _demoDataService.SeedAsync(CurrentUser.UserId);
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(
+                    string.Join(Environment.NewLine, result.Errors),
+                    "Cannot seed demo data",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (result.Value is { } summary)
+            {
+                MessageBox.Show(
+                    $"Seeded {summary.Addresses} addresses, {summary.Citizens} citizens and " +
+                    $"{summary.Households} households. One citizen is UNASSIGNED for the " +
+                    "registration demo.",
+                    "Demo data seeded",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Unexpected error while seeding demo data: {ex.Message}",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            _seedDemoButton.Enabled = true;
+        }
     }
     private async void AccountManagementControl_Load(object? sender, EventArgs e)
     {

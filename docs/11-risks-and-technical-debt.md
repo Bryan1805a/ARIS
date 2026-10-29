@@ -23,7 +23,7 @@ closed; it is managed and reviewed.
 | `R12` | **Scope creep or schedule slip.** | Medium | High | Follow the seven-phase roadmap and the phase task briefs; reject out-of-scope features. | Team Leader |
 | `R13` | **Schema drift** because a local database was hand-edited and the DDL was not updated. | Medium | High | The DDL is authoritative; reset and redeploy after schema changes; integration tests compare expected objects. | DB Designer |
 | `R14` | **Transaction held open during UI interaction**, locking rows for minutes. | Low | High | Transfers are two transactions; no `await` on user input inside a transaction; code review. | All |
-| `R15` | **No first administrator** after a fresh deployment. | High | Low | Document bootstrap: the application creates the first `ADMIN`; alternatively a controlled seed script hashes a password. | Coder 3 |
+| `R15` | **No first administrator** after a fresh deployment. | High | Low | **Resolved:** the login screen offers a one-time **Create first administrator** flow backed by `BootstrapService`, which refuses to run once any account exists. | Coder 3 |
 | `R16` | **Report queries slow down** as data grows. | Low | Medium | Use the existing indexes; aggregate in SQL; add indexes only with evidence. | Coder 3 |
 | `R17` | **Address lineage exceeds 20 levels or contains a cycle.** | Low | Medium | Depth limit; validate on write; report `C5`/`H3` if the chain is broken. | Coder 2 |
 | `R18` | **Local data loss** from `docker compose down -v` or a disk failure. | Medium | Low | Intentional resets only; document the command's destructive effect; seed data is replaceable. | All |
@@ -42,13 +42,13 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 | `T2` | `MainForm` is a stub; no feature screens exist. | No usable UI yet. | `P1-C3` shell, then feature forms per slice. |
 | `T3` | No service-level unit tests; only validator and test-infrastructure tests exist. | Regressions are caught late. | Add tests with each service; use fakes for `IAuditService` and a real DB for persistence. |
 | `T4` | No UI automation or end-to-end harness; WinForms flows are verified manually. | UI wiring regressions are caught late. | Add a scripted smoke-test checklist; consider WinAppDriver or a presenter-level test suite later. |
-| `T5` | No CI pipeline; gates are manual. | A red build can reach `develop`. | Add a GitHub Actions workflow with build + unit tests; integration tests optionally with a SQL Server service container. |
-| `T6` | First-admin bootstrap is undocumented in code. | Fresh install has no way to log in. | Implement a one-time bootstrap path in `AuthenticationService` or a reviewed seed script. |
+| `T5` | No CI pipeline; gates are manual. | A red build can reach `develop`. | **Resolved:** `.github/workflows/ci.yml` runs build/unit tests on Windows and SQL Server integration tests on Linux; `main` and `develop` require the checks. |
+| `T6` | First-admin bootstrap is undocumented in code. | Fresh install has no way to log in. | **Resolved:** `BootstrapService` + `BootstrapForm` implement the one-time first-admin path. |
 | `T7` | `SqlResilience` includes cloud service-tier error numbers (for example 40613, 49918–49920) that are unlikely to occur against a local container. | It may retry irrelevant errors or miss a restart-specific failure. | Review the list against `Microsoft.Data.SqlClient` guidance; keep it small and documented. |
 | `T8` | Reports (`RPT-01`–`RPT-03`) and admin screens are not implemented. | Incomplete course deliverable. | Phase 5. |
 | `T9` | No optimistic-concurrency integration test. | `D14` is unproven. | Add a two-context test that asserts `DbUpdateConcurrencyException`. |
 | `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | Add a test asserting 11 tables, 5 triggers, 3 views, and the `aris_app` role. |
-| `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | Add an idempotent development seed script separated from the DDL. |
+| `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | **Resolved:** `DemoDataService` seeds an idempotent demo dataset; it is exposed as **Accounts → Seed demo data** and keeps the Golden Invariant at zero violations. |
 | `T12` | No localization; UI text is English while domain data is Vietnamese. | Minor usability issue. | Out of scope; keep labels consistent and avoid hardcoding culture-specific formats. |
 | `T13` | Restore reports NU1902/NU1903 vulnerabilities from transitive `System.Security.Cryptography.Pkcs` 9.0.4. | Build is not warning-free, so the "0 warnings" gate is currently unmet. | Pin a patched `Pkcs` version (or updated `Microsoft.Data.SqlClient`) and re-run the build. |
 
