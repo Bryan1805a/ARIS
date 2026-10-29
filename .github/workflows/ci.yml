@@ -97,7 +97,9 @@ jobs:
             -i /sql/aris_schema_v2.sql
 
       - name: Restore test projects
-        run: dotnet restore tests/Aris.Tests/Aris.Tests.csproj tests/Aris.UnitTests/Aris.UnitTests.csproj
+        run: |
+          dotnet restore tests/Aris.Tests/Aris.Tests.csproj
+          dotnet restore tests/Aris.UnitTests/Aris.UnitTests.csproj
 
       # The UI targets net10.0-windows, so only the cross-platform test projects run here.
       - name: Run integration tests
