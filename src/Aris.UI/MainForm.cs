@@ -208,7 +208,8 @@ public partial class MainForm : Form
     {
         pnlContent.Controls.Clear();
 
-        CitizenControl citizenControl = new CitizenControl();
+        CitizenControl citizenControl =
+            _serviceProvider.GetRequiredService<CitizenControl>();
         citizenControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(citizenControl);

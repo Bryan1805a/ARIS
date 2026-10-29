@@ -53,7 +53,7 @@ flowchart TB
 | `Program` | Composition root: configuration (including user-secrets), DI, start the shell | Implemented (shell stub) |
 | `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection) | Stub |
 | `IUserSession` implementation | Holds the authenticated user for the lifetime of the shell | Planned (`P1-C3`) |
-| `CitizenDirectoryForm`, `CitizenProfileForm`, `CitizenEditDialog` | Citizen slice screens | Planned (`P2-UI1`, `P3-C1`) |
+| `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile, create/update | Implemented |
 | `HouseholdDirectoryForm`, `HouseholdDetailForm` | Household and member screens | Planned |
 | `TransferRequestForm`, `TransferInboxForm` | Maker wizard and checker inbox | Planned (`P4-C2`) |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
@@ -76,7 +76,7 @@ navigation.
 | `Common/IUserSession` | Session contract used by services and view models | Planned |
 | `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
-| `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` | Planned (`P1-C1`, `P2-C1`) |
+| `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
 | `Addresses/IAddressService` + DTOs | `ADR-01`–`ADR-03`, `SRCH-03` | Planned |
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06` | Planned (`P1-C2`, `P3-C2`) |
 | `Residences/IResidenceService` | `RES-03` query only | Planned (`P1-C2`) |
@@ -120,6 +120,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection | Implemented |
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
+| `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
 | `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`), `IAuditService`, bootstrap and demo services | Implemented |
 
@@ -207,7 +208,7 @@ of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 | Domain entities | ✔ | All 11 |
 | `ArisDbContext` + configurations | ✔ | All |
 | EF Core SQL Server provider | ✔ | — |
-| Citizen slice | ✘ | `P1-C1` → `P2-C1` → `P2-UI1` |
+| Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
 | Household/transfer engine | ✘ | `P3-C2` → `P4-C2` |
 | Auth/admin/reports | ✘ | `P1-C3`, `P5-C3` |
 | Database schema | ✔ deployed by script | — |
