@@ -56,7 +56,8 @@ flowchart TB
 | `CitizenDirectoryForm`, `CitizenProfileForm`, `CitizenEditDialog` | Citizen slice screens | Planned (`P2-UI1`, `P3-C1`) |
 | `HouseholdDirectoryForm`, `HouseholdDetailForm` | Household and member screens | Planned |
 | `TransferRequestForm`, `TransferInboxForm` | Maker wizard and checker inbox | Planned (`P4-C2`) |
-| `LoginForm`, `ChangePasswordForm` | Authentication screens | Planned (`P5-C3A`) |
+| `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
+| `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
 | `AdministrationForm`, `AuditLogForm`, `SystemConfigForm` | Admin screens | Planned (`P5-C3B`) |
 | `ReportsForm` | Report selection, preview, CSV export | Planned (`P5-C3C`) |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Planned |
@@ -82,6 +83,8 @@ navigation.
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases | Planned (`P4-C2`) |
 | `Authentication/IAuthenticationService` | `AUTH-01`, lockout, password change | Planned (`P5-C3A`) |
 | `Administration/IAccountService`, `IAuditQueryService`, `ISystemConfigService` | `ACC-01`, `AUD-01`, `SYS-01` | Planned |
+| `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
+| `Accounts/IDemoDataService` | Idempotent demo dataset exposed to administrators (`T11`) | Implemented |
 | `Reporting/IReportService` | `RPT-01`–`RPT-03` | Planned |
 
 Application services follow the canonical pattern in
@@ -115,8 +118,10 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Persistence/ArisDbContext` | Eleven `DbSet`s, applies configurations from assembly | Implemented |
 | `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection | Implemented |
+| `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
+| `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`) and `IAuditService` | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`), `IAuditService`, bootstrap and demo services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -196,6 +201,7 @@ of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 | `Result<T>`, `ValidationException`, `BaseService` | ✔ | — |
 | `EntityBase` | ✔ | — |
 | `IAuditService` + `AuditEntryValidator` + `AuditService` | ✔ | — |
+| First-admin bootstrap + demo seed | ✔ | — |
 | `SqlResilience` | ✔ | — |
 | DI composition | ✔ | — |
 | Domain entities | ✔ | All 11 |
