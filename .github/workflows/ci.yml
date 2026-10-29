@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-unit-tests:
+    name: build-and-unit-tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore
+        run: dotnet restore Aris.slnx
+
+      - name: Build
+        run: dotnet build Aris.slnx --no-restore --configuration Release
+
+      # Integration tests skip when ARIS_TEST_CONNECTION is unset; the dedicated
+      # integration-tests job runs them against real SQL Server.
+      - name: Test
+        run: dotnet test Aris.slnx --no-restore --configuration Release
+
+  integration-tests:
+    name: integration-tests
+    runs-on: ubuntu-latest
+    env:
+      SA_PASSWORD: "ArisCi!${{ github.run_id }}aA"
+      ARIS_TEST_CONNECTION: "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=ArisCi!${{ github.run_id }}aA;TrustServerCertificate=True;Connect Timeout=30;"
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: "ArisCi!${{ github.run_id }}aA"
+        ports:
+          - 1433:1433
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Wait for SQL Server
+        shell: bash
+        run: |
+          for attempt in $(seq 1 90); do
+            if docker run --rm --network host \
+              --entrypoint /opt/mssql-tools18/bin/sqlcmd \
+              mcr.microsoft.com/mssql/server:2022-latest \
+              -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1; then
+              echo "SQL Server is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SQL Server did not become ready in time." >&2
+          exit 1
+
+      - name: Create ArisDb
+        shell: bash
+        run: |
+          docker run --rm --network host \
+            --entrypoint /opt/mssql-tools18/bin/sqlcmd \
+            mcr.microsoft.com/mssql/server:2022-latest \
+            -S localhost -U sa -P "$SA_PASSWORD" -C \
+            -Q "IF DB_ID(N'ArisDb') IS NULL CREATE DATABASE ArisDb;"
+
+      - name: Apply the canonical schema
+        shell: bash
+        run: |
+          docker run --rm --network host \
+            -v "$PWD/docs:/sql:ro" \
+            --entrypoint /opt/mssql-tools18/bin/sqlcmd \
+            mcr.microsoft.com/mssql/server:2022-latest \
+            -S localhost -U sa -P "$SA_PASSWORD" -C -I -b -d ArisDb \
+            -i /sql/aris_schema_v2.sql
+
+      - name: Restore test projects
+        run: dotnet restore tests/Aris.Tests/Aris.Tests.csproj tests/Aris.UnitTests/Aris.UnitTests.csproj
+
+      # The UI targets net10.0-windows, so only the cross-platform test projects run here.
+      - name: Run integration tests
+        run: dotnet test tests/Aris.Tests/Aris.Tests.csproj --no-restore
+
+      - name: Run unit tests
+        run: dotnet test tests/Aris.UnitTests/Aris.UnitTests.csproj --no-restore
