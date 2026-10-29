@@ -1,4 +1,6 @@
+using Aris.Application.Accounts;
 using Aris.Application.Auditing;
+using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -59,6 +61,10 @@ public static class DependencyInjection
             SystemConfigurationRepository>();
         // Scoped: AuditService shares the caller's ArisDbContext.
         services.AddScoped<IAuditService, AuditService>();
+
+        // Fresh-database setup and demo data (R15/T6/T11).
+        services.AddScoped<IBootstrapService, BootstrapService>();
+        services.AddScoped<IDemoDataService, DemoDataService>();
         services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
