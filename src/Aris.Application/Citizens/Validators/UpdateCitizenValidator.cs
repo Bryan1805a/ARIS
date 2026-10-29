@@ -1,4 +1,4 @@
-﻿using Aris.Application.Citizens.Dtos;
+using Aris.Application.Citizens.Dtos;
 using FluentValidation;
 
 namespace Aris.Application.Citizens.Validators;
@@ -17,6 +17,6 @@ public sealed class UpdateCitizenValidator : AbstractValidator<UpdateCitizenDto>
 
         RuleFor(x => x.Gender)
             .Must(g => g is "MALE" or "FEMALE" or "OTHER")
-            .WithMessage("Gender must be MALE, FEMALE, or OTHER[cite: 3].");
+            .WithMessage("Gender must be MALE, FEMALE, or OTHER.");
     }
 }
