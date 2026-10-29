@@ -1,7 +1,9 @@
 using Aris.Application.Accounts;
 using Aris.Application.Auditing;
+using Aris.Application.Citizens;
 using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Auditing;
+using Aris.Infrastructure.Citizens;
 using Aris.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -65,6 +67,9 @@ public static class DependencyInjection
         // Fresh-database setup and demo data (R15/T6/T11).
         services.AddScoped<IBootstrapService, BootstrapService>();
         services.AddScoped<IDemoDataService, DemoDataService>();
+
+        // Citizen slice (CIT-01..CIT-04, SRCH-01).
+        services.AddScoped<ICitizenService, CitizenService>();
         services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();

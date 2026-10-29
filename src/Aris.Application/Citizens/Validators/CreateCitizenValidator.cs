@@ -1,4 +1,4 @@
-﻿using Aris.Application.Citizens.Dtos;
+using Aris.Application.Citizens.Dtos;
 using FluentValidation;
 
 namespace Aris.Application.Citizens.Validators;
@@ -9,7 +9,7 @@ public sealed class CreateCitizenValidator : AbstractValidator<CreateCitizenDto>
     {
         RuleFor(x => x.NationalId)
             .NotEmpty().WithMessage("National ID is required.")
-            .Matches("^[0-9]{12}$").WithMessage("National ID must be exactly 12 digits (char(12))[cite: 3].");
+            .Matches("^[0-9]{12}$").WithMessage("National ID must be exactly 12 digits (char(12)).");
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Full name is required.")
@@ -21,6 +21,6 @@ public sealed class CreateCitizenValidator : AbstractValidator<CreateCitizenDto>
 
         RuleFor(x => x.Gender)
             .Must(g => g is "MALE" or "FEMALE" or "OTHER")
-            .WithMessage("Gender must be MALE, FEMALE, or OTHER[cite: 3].");
+            .WithMessage("Gender must be MALE, FEMALE, or OTHER.");
     }
 }
