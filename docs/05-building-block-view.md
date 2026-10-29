@@ -54,7 +54,7 @@ flowchart TB
 | `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection) | Stub |
 | `IUserSession` implementation | Holds the authenticated user for the lifetime of the shell | Planned (`P1-C3`) |
 | `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile, create/update | Implemented |
-| `HouseholdDirectoryForm`, `HouseholdDetailForm` | Household and member screens | Planned |
+| `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens | Implemented |
 | `TransferRequestForm`, `TransferInboxForm` | Maker wizard and checker inbox | Planned (`P4-C2`) |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
@@ -77,8 +77,8 @@ navigation.
 | `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
 | `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
-| `Addresses/IAddressService` + DTOs | `ADR-01`–`ADR-03`, `SRCH-03` | Planned |
-| `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06` | Planned (`P1-C2`, `P3-C2`) |
+| `Addresses/IAddressService` + DTOs | `ADR-01`, address lookup for households (implementation in Infrastructure) | Implemented |
+| `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
 | `Residences/IResidenceService` | `RES-03` query only | Planned (`P1-C2`) |
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases | Planned (`P4-C2`) |
 | `Authentication/IAuthenticationService` | `AUTH-01`, lockout, password change | Planned (`P5-C3A`) |
@@ -121,6 +121,8 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
+| `Addresses/AddressService` | Address registration and active-address lookup | Implemented |
+| `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
 | `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`), `IAuditService`, bootstrap and demo services | Implemented |
 
@@ -209,7 +211,8 @@ of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 | `ArisDbContext` + configurations | ✔ | All |
 | EF Core SQL Server provider | ✔ | — |
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
-| Household/transfer engine | ✘ | `P3-C2` → `P4-C2` |
+| Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
+| Transfer engine (`UC-06`) | ✘ | `P4-C2` |
 | Auth/admin/reports | ✘ | `P1-C3`, `P5-C3` |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |

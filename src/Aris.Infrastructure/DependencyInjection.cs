@@ -1,9 +1,13 @@
 using Aris.Application.Accounts;
+using Aris.Application.Addresses;
 using Aris.Application.Auditing;
 using Aris.Application.Citizens;
+using Aris.Application.Households;
 using Aris.Infrastructure.Accounts;
+using Aris.Infrastructure.Addresses;
 using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Citizens;
+using Aris.Infrastructure.Households;
 using Aris.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -70,6 +74,10 @@ public static class DependencyInjection
 
         // Citizen slice (CIT-01..CIT-04, SRCH-01).
         services.AddScoped<ICitizenService, CitizenService>();
+
+        // Address lookup/creation and household lifecycle (ADR-01, HH-01/HH-02/HH-04/HH-06).
+        services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<IHouseholdService, HouseholdService>();
         services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
