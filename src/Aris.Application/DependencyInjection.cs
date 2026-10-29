@@ -9,6 +9,8 @@ using Aris.Application.Households.Dtos;
 using Aris.Application.Households.Validators;
 using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
+using Aris.Application.Transfers.Dtos;
+using Aris.Application.Transfers.Validators;
 
 using FluentValidation;
 
@@ -33,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<IValidator<RegisterHouseholdDto>, RegisterHouseholdValidator>();
         services.AddScoped<IValidator<AddMemberDto>, AddMemberValidator>();
         services.AddScoped<IValidator<ChangeHeadDto>, ChangeHeadValidator>();
+
+        services.AddScoped<IValidator<CreateTransferRequestDto>, CreateTransferRequestValidator>();
+        services.AddScoped<IValidator<TransferDecisionDto>, TransferDecisionValidator>();
 
         return services;
     }
