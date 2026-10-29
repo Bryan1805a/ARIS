@@ -39,7 +39,7 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 | ID | Debt | Impact | Plan |
 |---|---|---|---|
 | `T1` | Baseline lacked all 11 entities, `ArisDbContext`, configurations, and `AuditService`. | Blocked every feature. | **Resolved in `P1-DB2`** (entities, context, configurations, both audit paths). |
-| `T2` | Transfer screens and the maker-checker engine are still stubs; citizen, household, auth, admin and report screens exist. | The core relocation workflow cannot be demonstrated yet. | `P4-C2A/B` transfer engine and inbox. |
+| `T2` | Feature screens and the relocation engine existed only as stubs. | The core relocation workflow could not be demonstrated. | **Resolved:** citizen, household, transfer, auth, admin and report screens are implemented; the maker-checker engine executes all three request shapes. |
 | `T3` | No service-level unit tests; only validator and test-infrastructure tests exist. | Regressions are caught late. | Add tests with each service; use fakes for `IAuditService` and a real DB for persistence. |
 | `T4` | No UI automation or end-to-end harness; WinForms flows are verified manually. | UI wiring regressions are caught late. | Add a scripted smoke-test checklist; consider WinAppDriver or a presenter-level test suite later. |
 | `T5` | No CI pipeline; gates are manual. | A red build can reach `develop`. | **Resolved:** `.github/workflows/ci.yml` runs build/unit tests on Windows and SQL Server integration tests on Linux; `main` and `develop` require the checks. |

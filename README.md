@@ -118,6 +118,11 @@ The **Household** screen supports registration (head + active address), adding a
 UNASSIGNED member, changing the head with close-and-open tenures, and viewing member and
 address history. Addresses can be registered from the household form.
 
+The **Transfer** screen is the maker-checker inbox. An officer creates a
+`JOIN_EXISTING`, `NEW_HOUSEHOLD`, or `HOUSEHOLD_MOVE` request; a different officer
+approves or rejects each item, and the tenures move in one serializable transaction. The
+demo needs two accounts: create the second officer in **Accounts**.
+
 Full setup, reset, and troubleshooting: [`docs/07-deployment-view.md`](docs/07-deployment-view.md).
 
 ## Configuration and secrets
