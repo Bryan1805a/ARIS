@@ -16,6 +16,7 @@ public static class LanguageManager
     {
         // Shell and login
         ["ARIS MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ ARIS",
+        ["RESIDENCE MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ CƯ TRÚ",
         ["Administrative Residence Information System (ARIS)"] = "Hệ thống thông tin cư trú hành chính (ARIS)",
         ["ARIS"] = "ARIS",
         ["ARIS - Login"] = "ARIS - Đăng nhập",
