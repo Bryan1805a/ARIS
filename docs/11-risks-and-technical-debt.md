@@ -40,17 +40,18 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 |---|---|---|---|
 | `T1` | Baseline lacked all 11 entities, `ArisDbContext`, configurations, and `AuditService`. | Blocked every feature. | **Resolved in `P1-DB2`** (entities, context, configurations, both audit paths). |
 | `T2` | Feature screens and the relocation engine existed only as stubs. | The core relocation workflow could not be demonstrated. | **Resolved:** citizen, household, transfer, auth, admin and report screens are implemented; the maker-checker engine executes all three request shapes. |
-| `T3` | No service-level unit tests; only validator and test-infrastructure tests exist. | Regressions are caught late. | Add tests with each service; use fakes for `IAuditService` and a real DB for persistence. |
-| `T4` | No UI automation or end-to-end harness; WinForms flows are verified manually. | UI wiring regressions are caught late. | Add a scripted smoke-test checklist; consider WinAppDriver or a presenter-level test suite later. |
+| `T3` | No service-level unit tests; validator, audit and EF-mapping tests exist, and the services are proven mostly by integration/manual runs. | Regressions are caught late. | Add tests with each service; use fakes for `IAuditService` and a real DB for persistence. |
+| `T4` | No committed UI automation or end-to-end harness; WinForms flows are verified manually (temporary automation scripts are not in the repository). | UI wiring regressions are caught late. | Add a scripted smoke-test checklist and a committed presenter/UI harness. |
 | `T5` | No CI pipeline; gates are manual. | A red build can reach `develop`. | **Resolved:** `.github/workflows/ci.yml` runs build/unit tests on Windows and SQL Server integration tests on Linux; `main` and `develop` require the checks. |
 | `T6` | First-admin bootstrap is undocumented in code. | Fresh install has no way to log in. | **Resolved:** `BootstrapService` + `BootstrapForm` implement the one-time first-admin path. |
 | `T7` | `SqlResilience` includes cloud service-tier error numbers (for example 40613, 49918–49920) that are unlikely to occur against a local container. | It may retry irrelevant errors or miss a restart-specific failure. | Review the list against `Microsoft.Data.SqlClient` guidance; keep it small and documented. |
-| `T8` | Reports (`RPT-01`–`RPT-03`) and admin screens are not implemented. | Incomplete course deliverable. | Phase 5. |
+| `T8` | Reports and admin screens are implemented, but `AUD-01` filtering/detail, `ADR-02`/`ADR-03` address search and retirement, `SRCH-03` address search, and `HIST-01` rectification are incomplete. | Some required flows cannot be demonstrated yet. | Prioritise address search/retirement and rectification; extend the audit viewer filters. |
 | `T9` | No optimistic-concurrency integration test. | `D14` is unproven. | Add a two-context test that asserts `DbUpdateConcurrencyException`. |
 | `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | Add a test asserting 11 tables, 5 triggers, 3 views, and the `aris_app` role. |
 | `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | **Resolved:** `DemoDataService` seeds an idempotent demo dataset; it is exposed as **Accounts → Seed demo data** and keeps the Golden Invariant at zero violations. |
 | `T12` | No localization; UI text was English while domain data is Vietnamese. | Minor usability issue. | **Resolved:** Vietnamese is the default; `LanguageManager` and the login/status-bar buttons switch the static UI between Vietnamese and English. Service validation messages remain English. |
 | `T13` | Restore reported NU1902/NU1903 vulnerabilities from transitive `System.Security.Cryptography.Pkcs` 9.0.4. | The build was not warning-free, so the "0 warnings" gate was unmet. | **Resolved:** `Pkcs` is pinned to 10.0.13, the solution builds with 0 warnings, and CI treats warnings as errors. |
+| `T14` | Account administration and system-configuration mutations are not written to `AuditLog`, and those services throw for expected business failures instead of returning `Result<T>`. | `AUD-01`/`CON-ARCH-07` is incomplete for admin actions. | Inject `IAuditService` into `AccountService`/`SystemConfigurationService`, return `Result`, and add audit tests. |
 
 ---
 

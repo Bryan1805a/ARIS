@@ -276,6 +276,10 @@ The Golden Invariant compares the **canonical** address of the residence with th
 **canonical** address of the household, so a valid historical ID does not break `C3`.
 A broken or inactive terminal address raises `C5` / `H3`.
 
+The schema, view and canonical resolution are implemented. The `ADR-03` service and UI
+for retiring an address and linking its successor are still a known gap (see
+[`05-building-block-view.md`](05-building-block-view.md) §5.5).
+
 ---
 
 ## 6.8 Failure path — rollback and independent audit

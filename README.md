@@ -20,6 +20,20 @@ append-only historical audit trail.
 | Database host | `localhost,1433`, database `ArisDb`, persisted in the `mssql-data` volume |
 | Version control | Git (`feature/*` → `develop` → `main`) |
 
+## Current status
+
+| Area | Status |
+|---|---|
+| Database schema, domain model, EF Core mappings | Complete |
+| Audit trail, authentication, accounts, configuration, reports | Complete; audit filtering/detail and admin-mutation auditing are partial |
+| Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | Complete |
+| Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | Complete |
+| Maker-checker transfer (`UC-06`) | Complete |
+| Address registration (`ADR-01`) | Complete; address search/retirement (`ADR-02`/`ADR-03`, `SRCH-03`) is not |
+| Historical rectification (`HIST-01`) | Not implemented |
+| UI language | Vietnamese by default; English/Vietnamese switch for static UI |
+| Tests | 82 with a database; 77 passed + 5 skipped without |
+
 ## Documentation
 
 The architecture documentation follows the **arc42** template. Start at the
@@ -54,10 +68,10 @@ docker-compose.yml             # local SQL Server 2022 container
 src/
   Aris.Domain/                 # entities, enums, invariants
   Aris.Application/            # use cases, DTOs, validators, Result<T>
-  Aris.Infrastructure/         # EF Core DbContext, mappings, auditing, resilience
-  Aris.UI/                     # WinForms shell, views, view models
+  Aris.Infrastructure/         # EF Core, services, repositories, auditing, resilience
+  Aris.UI/                     # WinForms shell, screens, EN/VI localization
 tests/
-  Aris.UnitTests/              # fast tests, no database
+  Aris.UnitTests/              # validators, audit rules, EF mapping; no database
   Aris.Tests/                  # integration tests against real SQL Server
 scripts/
   deploy-database.ps1          # create ArisDb, apply schema, create aris_officer
@@ -154,9 +168,12 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
+The current suite is **82 passed, 0 failed, 0 skipped** with a database, or
+**77 passed, 5 skipped** without one.
 
-| Test | Purpose |
+| Suite | Purpose |
 |---|---|
+| `Aris.UnitTests` | `Result<T>`, audit validation, citizen/household/transfer validators, EF model vs DDL |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
 | `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |

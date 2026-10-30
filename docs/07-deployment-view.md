@@ -140,6 +140,11 @@ dotnet build Aris.slnx                 # 0 errors, 0 warnings
 dotnet run --project src/Aris.UI
 ```
 
+**First run.** With no accounts in the database, the login screen offers **Create first
+administrator**. After signing in, open **Accounts → Seed demo data** to load the demo
+dataset. The application starts in Vietnamese; use the **English / Tiếng Việt** button on
+the login screen or in the main status bar to switch.
+
 To run the integration tests against the same database:
 
 ```powershell

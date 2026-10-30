@@ -59,6 +59,9 @@ proven, not how it is hoped for.
 | `Q-INT-05` | A residence is edited in place (`AddressId` changed). | The update is rejected. | SQL error `51001`. | Trigger integration test |
 | `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | Query test on `vw_AddressCanonical` |
 
+> `Q-INT-06` is supported by the schema and canonical view, but the `ADR-03` service/UI
+> for retiring an address is still pending (§5.5).
+
 ### Security
 
 | ID | Scenario | Expected response | Measure | Verification |
@@ -77,6 +80,10 @@ proven, not how it is hoped for.
 | `Q-AUD-02` | A mutation fails and the transaction rolls back. | A `FAILURE` row exists after rollback. | Row present, business rows absent. | Integration test with forced failure |
 | `Q-AUD-03` | A transfer touches several tables. | All audit rows share one correlation ID. | Same `CorrelationId` across rows. | Query test |
 | `Q-AUD-04` | A maker tries to approve their own request. | Rejected before commit. | `CK_TR_Decision` violation; no state change. | Integration test |
+
+> `Q-AUD-01` is met for the citizen, household, transfer, bootstrap and demo paths.
+> Account-administration and system-configuration mutations are still unaudited
+> (`T14`).
 
 ### Maintainability and testability
 
