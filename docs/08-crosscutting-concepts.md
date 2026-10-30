@@ -139,7 +139,11 @@ Rules:
 - One use case = one transaction. Never split a composite operation across transactions.
 - Never hold a transaction open while waiting for user input. The transfer is split into
   two transactions precisely because a human decision happens between them.
-- `EnableRetryOnFailure` retries transient connection errors, not business exceptions.
+- EF's retrying execution strategy is not enabled on the application context because
+  every mutation owns an explicit transaction; `SqlResilience` retries the independent
+  failure-audit connection. If EF retry is enabled later, wrap each transaction in
+  `Database.CreateExecutionStrategy().ExecuteAsync(...)`.
+- Constraint and trigger violations are never retried.
 - Never retry a constraint or trigger violation; it will fail again.
 
 ---
