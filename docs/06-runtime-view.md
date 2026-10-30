@@ -162,9 +162,10 @@ Rules and branches:
 
 The overlap triggers inspect committed rows. Two checkers approving overlapping moves at
 the same time could each see a valid state and commit a combined overlap. `Serializable`
-makes the two executions mutually exclusive. The application also uses
-`EnableRetryOnFailure` for transient infrastructure errors, but **never** retries a
-constraint or trigger violation.
+makes the two executions mutually exclusive. Because every mutation owns an explicit
+transaction, EF's retrying execution strategy is **not** enabled on the application
+context; `SqlResilience` still retries the independent failure-audit connection.
+Constraint and trigger violations are **never** retried.
 
 ---
 

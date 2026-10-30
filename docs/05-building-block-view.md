@@ -125,7 +125,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext` (with `EnableRetryOnFailure`), `IAuditService`, bootstrap and demo services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, `IAuditService`, bootstrap and demo services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).

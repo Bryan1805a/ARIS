@@ -208,7 +208,9 @@ services.AddScoped<IHouseholdService, HouseholdService>();
 
 // Infrastructure
 services.AddDbContext<ArisDbContext>(options =>
-    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
+    // Explicit user transactions are used throughout, so do not enable
+    // SqlServerRetryingExecutionStrategy here.
+    options.UseSqlServer(connectionString));
 services.AddScoped<IAuditService, AuditService>();
 ```
 
