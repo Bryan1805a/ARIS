@@ -371,6 +371,10 @@ Rules:
   stack traces.
 - Administration navigation is hidden for `OFFICER` accounts and rejected by the service.
 - The status bar shows the current user, role, and connection state.
+- The UI starts in Vietnamese. A language button on the login screen and in the main
+  status bar switches between Vietnamese and English; static labels, buttons, titles and
+  grid headers are translated by `LanguageManager`. Service-layer validation messages
+  remain English.
 
 See [`appendix/C-coding-standards.md`](appendix/C-coding-standards.md#c6-ui-pattern) for a
 reference view model.

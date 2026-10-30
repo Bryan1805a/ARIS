@@ -123,6 +123,13 @@ The **Transfer** screen is the maker-checker inbox. An officer creates a
 approves or rejects each item, and the tenures move in one serializable transaction. The
 demo needs two accounts: create the second officer in **Accounts**.
 
+### Language
+
+The application starts in **Vietnamese**. Use the **English / Tiếng Việt** button on the
+login screen or in the main status bar to switch. Labels, buttons, form titles, grid
+headers and the shell status text switch immediately. Domain validation errors coming
+from the service layer remain English.
+
 Full setup, reset, and troubleshooting: [`docs/07-deployment-view.md`](docs/07-deployment-view.md).
 
 ## Configuration and secrets
