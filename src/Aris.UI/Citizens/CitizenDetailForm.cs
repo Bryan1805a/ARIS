@@ -3,6 +3,7 @@
 using Aris.Application.Citizens;
 using Aris.Application.Citizens.Dtos;
 using Aris.Application.Common;
+using Aris.UI.Localization;
 
 namespace Aris.UI.Citizens;
 
@@ -86,18 +87,18 @@ public sealed partial class CitizenDetailForm : Form
     {
         var builder = new StringBuilder();
 
-        builder.AppendLine($"Created:    {detail.CreatedAt:yyyy-MM-dd HH:mm}");
-        builder.AppendLine($"Updated:    {detail.UpdatedAt:yyyy-MM-dd HH:mm}");
-        builder.AppendLine($"Deactivated:{detail.DeactivatedAt?.ToString("yyyy-MM-dd HH:mm") ?? " -"}");
+        builder.AppendLine($"{LanguageManager.T("Created:")}    {detail.CreatedAt:yyyy-MM-dd HH:mm}");
+        builder.AppendLine($"{LanguageManager.T("Updated:")}    {detail.UpdatedAt:yyyy-MM-dd HH:mm}");
+        builder.AppendLine($"{LanguageManager.T("Deactivated:")} {detail.DeactivatedAt?.ToString("yyyy-MM-dd HH:mm") ?? " -"}");
         builder.AppendLine();
-        builder.AppendLine($"Household:  {detail.HouseholdId?.ToString() ?? "none"}");
-        builder.AppendLine($"Role:       {detail.HouseholdRole ?? " -"}");
-        builder.AppendLine($"Address:    {detail.CurrentAddressText ?? "none"}");
+        builder.AppendLine($"{LanguageManager.T("Household:")}  {detail.HouseholdId?.ToString() ?? "none"}");
+        builder.AppendLine($"{LanguageManager.T("Role:")}       {detail.HouseholdRole ?? " -"}");
+        builder.AppendLine($"{LanguageManager.T("Address:")}    {detail.CurrentAddressText ?? "none"}");
         builder.AppendLine();
 
         if (detail.HouseholdMembers.Count > 0)
         {
-            builder.AppendLine("Household members:");
+            builder.AppendLine(LanguageManager.T("Household members:"));
             foreach (var member in detail.HouseholdMembers)
             {
                 builder.AppendLine($"  {member.FullName} ({member.NationalId}) {member.Status}");
@@ -106,16 +107,16 @@ public sealed partial class CitizenDetailForm : Form
             builder.AppendLine();
         }
 
-        builder.AppendLine("Residency timeline:");
+        builder.AppendLine(LanguageManager.T("Residency timeline:"));
         if (detail.ResidencyTimeline.Count == 0)
         {
-            builder.AppendLine("  (no residences)");
+            builder.AppendLine($"  {LanguageManager.T("(no residences)")}");
         }
         else
         {
             foreach (var period in detail.ResidencyTimeline)
             {
-                var end = period.EndDate?.ToString("yyyy-MM-dd") ?? "present";
+                var end = period.EndDate?.ToString("yyyy-MM-dd") ?? LanguageManager.T("present");
                 builder.AppendLine(
                     $"  {period.StartDate:yyyy-MM-dd} -> {end}  {period.Status}");
                 builder.AppendLine($"    {period.AddressText}");

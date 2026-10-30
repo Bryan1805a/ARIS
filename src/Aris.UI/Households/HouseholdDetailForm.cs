@@ -2,6 +2,7 @@ using Aris.Application.Citizens;
 using Aris.Application.Common;
 using Aris.Application.Households;
 using Aris.Application.Households.Dtos;
+using Aris.UI.Localization;
 
 namespace Aris.UI.Households;
 
@@ -34,7 +35,7 @@ public sealed class HouseholdDetailForm : Form
         _session = session;
         _householdId = householdId;
 
-        Text = $"ARIS - Household #{householdId}";
+        Text = $"{LanguageManager.T("ARIS - Household")} #{householdId}";
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -146,10 +147,14 @@ public sealed class HouseholdDetailForm : Form
             _detail = result.Value;
 
             _info.Text =
-                $"Status: {_detail.Status}    Created: {_detail.CreatedAt:yyyy-MM-dd HH:mm}" +
-                (_detail.InactivatedAt is { } inactive ? $"    Inactivated: {inactive:yyyy-MM-dd HH:mm}" : "") +
+                $"{LanguageManager.T("Status:")} {_detail.Status}    " +
+                $"{LanguageManager.T("Created:")} {_detail.CreatedAt:yyyy-MM-dd HH:mm}" +
+                (_detail.InactivatedAt is { } inactive
+                    ? $"    {LanguageManager.T("Inactivated:")} {inactive:yyyy-MM-dd HH:mm}"
+                    : "") +
                 Environment.NewLine +
-                $"Head: {_detail.HeadFullName ?? "(none)"}    Address: {_detail.CurrentAddressText ?? "(none)"}";
+                $"{LanguageManager.T("Head:")} {_detail.HeadFullName ?? "(none)"}    " +
+                $"{LanguageManager.T("Address:")} {_detail.CurrentAddressText ?? "(none)"}";
 
             _membersGrid.DataSource = _detail.Members.ToList();
             _addressGrid.DataSource = _detail.AddressHistory.ToList();
