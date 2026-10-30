@@ -17,10 +17,11 @@ UI (WinForms)  →  Application  →  Domain
 ```
 
 - **Domain** contains entities and invariants and depends on nothing.
-- **Application** contains use cases, DTOs, validators, and `Result<T>`.
-- **Infrastructure** implements persistence and auditing against the Domain/Application
-  contracts.
-- **UI** composes screens and delegates every action to an Application service.
+- **Application** defines use-case contracts: interfaces, DTOs, validators, and
+  `Result<T>`.
+- **Infrastructure** implements persistence, auditing, and the services that need
+  `ArisDbContext`/transactions (`D18`).
+- **UI** composes screens and delegates every action to an Application interface.
 
 **Why:** the same business rule must not exist twice. A UI that cannot reference
 `ArisDbContext` cannot bypass validation or auditing, and services become testable

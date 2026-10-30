@@ -50,18 +50,18 @@ flowchart TB
 
 | Component | Responsibility | Status |
 |---|---|---|
-| `Program` | Composition root: configuration (including user-secrets), DI, start the shell | Implemented (shell stub) |
-| `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection) | Stub |
-| `IUserSession` implementation | Holds the authenticated user for the lifetime of the shell | Planned (`P1-C3`) |
+| `Program` | Composition root: configuration (including user-secrets), DI, start the shell | Implemented |
+| `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection), language button | Implemented |
+| `IUserSession` implementation (`Session/UserSession`) | Holds the authenticated user for the lifetime of the shell | Implemented |
 | `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile, create/update | Implemented |
 | `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens | Implemented |
 | `TransferControl`, `TransferRequestForm`, `TransferDecisionForm` | Maker wizard and checker inbox | Implemented |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
 | `Localization/LanguageManager` | EN/VI switch, default Vietnamese; labels, titles and grid headers | Implemented |
-| `AdministrationForm`, `AuditLogForm`, `SystemConfigForm` | Admin screens | Planned (`P5-C3B`) |
-| `ReportsForm` | Report selection, preview, CSV export | Planned (`P5-C3C`) |
-| Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Planned |
+| `AccountManagementControl`, `AuditViewerControl`, `SystemConfigurationControl` | Admin screens | Implemented |
+| `ReportsControl` | Report selection, preview, CSV export | Implemented |
+| Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 
 **Rule:** every screen is registered as a transient in `Program.cs`; the shell resolves
 it and hosts it in `contentPanel`. A screen never opens another top-level window for
@@ -74,23 +74,26 @@ navigation.
 | `Common/Result`, `Result<T>` | Explicit success/failure outcome without exceptions | Implemented |
 | `Common/ValidationException` | Thrown only for malformed input or programmer error | Implemented |
 | `Common/BaseService` | Shared service scaffolding | Implemented |
-| `Common/IUserSession` | Session contract used by services and view models | Planned |
+| `Common/IUserSession` | Session contract used by services and view models | Implemented |
 | `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
 | `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
 | `Addresses/IAddressService` + DTOs | `ADR-01`, address lookup for households (implementation in Infrastructure) | Implemented |
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
-| `Residences/IResidenceService` | `RES-03` query only | Planned (`P1-C2`) |
+| `Residences/IResidenceService` | `RES-03` current-residence query | Not a separate service; exposed through `CitizenService.GetByIdAsync` |
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
-| `Authentication/IAuthenticationService` | `AUTH-01`, lockout, password change | Planned (`P5-C3A`) |
-| `Administration/IAccountService`, `IAuditQueryService`, `ISystemConfigService` | `ACC-01`, `AUD-01`, `SYS-01` | Planned |
+| `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
+| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `AUD-01` (recent view), `SYS-01` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
 | `Accounts/IDemoDataService` | Idempotent demo dataset exposed to administrators (`T11`) | Implemented |
-| `Reporting/IReportService` | `RPT-01`–`RPT-03` | Planned |
+| `Reporting/IReportService` | `RPT-01`–`RPT-03` | Implemented |
 
-Application services follow the canonical pattern in
-[`appendix/C-coding-standards.md`](appendix/C-coding-standards.md): validate first, open
-one transaction, mutate, audit, commit, and log failures independently after rollback.
+Application owns the interfaces, DTOs and validators. Services that need `ArisDbContext`,
+an explicit transaction or serializable isolation are implemented in Infrastructure
+(`D18`); repository-backed services remain in Application. All follow the canonical
+pattern in [`appendix/C-coding-standards.md`](appendix/C-coding-standards.md): validate
+first, open one transaction, mutate, audit, commit, and log failures independently after
+rollback.
 
 ### 5.2.3 Domain layer (`src/Aris.Domain/`)
 
@@ -126,7 +129,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, `IAuditService`, bootstrap and demo services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, audit, bootstrap/demo, citizen, address, household and transfer services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -197,8 +200,9 @@ calls a service.
 
 ## 5.5 Implementation status
 
-This documentation describes the **target architecture**. The repository is at the end
-of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
+This documentation describes the **target architecture**. The core vertical slices are
+implemented; the remaining gaps are address search/retirement, historical rectification,
+audit filtering and test/UI-automation depth.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -215,9 +219,12 @@ of Phase 1: `P1-DB2` is complete and the Phase 2 vertical slices are next.
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
 | Transfer engine (`UC-06`) | ✔ | — |
-| Auth/admin/reports | ✘ | `P1-C3`, `P5-C3` |
+| Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; admin mutation auditing (`T14`); report depth |
+| Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✘ | Address search/lineage UI |
+| Historical rectification (`HIST-01`) | ✘ | Void-and-correct flow |
+| Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |
+| Service-level tests and UI automation | Partial | `T3`, `T4` in §11 |
 
-The critical path is `P1-DB2 → P2-C1 → P2-TL1 → P3-C2A → P4-C2A/B`. See
-[`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).
+The remaining work is tracked in [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).

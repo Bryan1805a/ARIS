@@ -17,8 +17,10 @@ write code that obeys them.
 | `Aris.Infrastructure` | Application, Domain | WinForms |
 | `Aris.UI` | Application; Infrastructure only in `Program.cs` | SQL, `ArisDbContext`, EF Core |
 
-A form calls a service. A service calls a repository-equivalent (`ArisDbContext`) and
-`IAuditService`. A domain entity calls nothing.
+A form calls an Application interface. Its implementation calls a repository-equivalent
+(`ArisDbContext`) and `IAuditService`: repository-backed services live in Application,
+while services that need `ArisDbContext` or a transaction live in Infrastructure
+(`D18`). A domain entity calls nothing.
 
 ---
 
@@ -53,6 +55,13 @@ Additional rules:
 
 Every mutating service follows this shape. Do not invent a variant without updating this
 appendix.
+
+> **Placement note (`D18`).** The sample below shows the flow. In this repository a
+> service that injects `ArisDbContext` or opens a transaction lives in
+> `Aris.Infrastructure` and implements the Application interface; the interface, DTOs and
+> validators stay in Application. Repository-backed services
+> (`AuthService`, `AccountService`, `ReportService`, `AuditQueryService`) remain in
+> Application.
 
 ```csharp
 public sealed class HouseholdService : IHouseholdService
