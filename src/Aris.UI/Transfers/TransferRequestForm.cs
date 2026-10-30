@@ -44,6 +44,7 @@ public sealed class TransferRequestForm : Form
     private List<HouseholdMemberDto> _sourceMembers = new();
 
     private bool _loading;
+    private bool _suppressSourceChange;
 
     public TransferRequestForm(
         ITransferService transferService,
@@ -170,7 +171,15 @@ public sealed class TransferRequestForm : Form
         });
 
         _type.SelectedIndexChanged += (_, _) => UpdateTypeVisibility();
-        _sourceHousehold.SelectedIndexChanged += async (_, _) => await LoadSourceMembersAsync();
+        _sourceHousehold.SelectedIndexChanged += async (_, _) =>
+        {
+            if (_suppressSourceChange)
+            {
+                return;
+            }
+
+            await LoadSourceMembersAsync();
+        };
         _members.ItemCheck += (_, _) => BeginInvoke(new Action(UpdateHeadPickers));
     }
 
@@ -183,6 +192,8 @@ public sealed class TransferRequestForm : Form
 
     private async Task LoadInitialAsync()
     {
+        _createButton.Enabled = false;
+
         try
         {
             var households = await _householdService.SearchAsync(new HouseholdSearchCriteria
@@ -201,7 +212,19 @@ public sealed class TransferRequestForm : Form
             }
 
             _households = households.Value?.ToList() ?? new List<HouseholdDto>();
-            _sourceHousehold.DataSource = _households;
+
+            // Assigning DataSource raises SelectedIndexChanged. Suppress it here so the
+            // form does not start a second query on the shared scoped DbContext while
+            // this method is still loading addresses.
+            _suppressSourceChange = true;
+            try
+            {
+                _sourceHousehold.DataSource = _households;
+            }
+            finally
+            {
+                _suppressSourceChange = false;
+            }
 
             var addresses = await _addressService.GetActiveAsync();
             _addresses = addresses.Value?.ToList() ?? new List<AddressDto>();
@@ -286,6 +309,9 @@ public sealed class TransferRequestForm : Form
         }
 
         _loading = true;
+        _sourceHousehold.Enabled = false;
+        _createButton.Enabled = false;
+        _newAddressButton.Enabled = false;
 
         try
         {
@@ -293,6 +319,9 @@ public sealed class TransferRequestForm : Form
 
             if (detail.IsFailure || detail.Value is null)
             {
+                _sourceMembers = new List<HouseholdMemberDto>();
+                _members.Items.Clear();
+
                 MessageBox.Show(
                     string.Join(Environment.NewLine, detail.Errors.DefaultIfEmpty("Household not found.")),
                     "Cannot load household",
@@ -326,6 +355,9 @@ public sealed class TransferRequestForm : Form
         finally
         {
             _loading = false;
+            _sourceHousehold.Enabled = true;
+            _newAddressButton.Enabled = true;
+            _createButton.Enabled = _sourceMembers.Count > 0;
         }
     }
 
