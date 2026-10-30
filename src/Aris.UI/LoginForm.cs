@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Aris.Application.Accounts;
 using Aris.Application.Authentication;
 using Aris.Application.Common;
+using Aris.UI.Localization;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,6 +39,20 @@ public partial class LoginForm : Form
         _bootstrapButton.Visible = false;
         _bootstrapButton.Click += BootstrapButton_Click;
         Controls.Add(_bootstrapButton);
+
+        var languageButton = new Button
+        {
+            Text = LanguageManager.SwitchLabel,
+            Location = new Point(370, 318),
+            Size = new Size(95, 26),
+            FlatStyle = FlatStyle.Flat
+        };
+        languageButton.Click += (_, _) => LanguageManager.Toggle();
+        LanguageManager.LanguageChanged += () =>
+            languageButton.Text = LanguageManager.SwitchLabel;
+        Controls.Add(languageButton);
+
+        LanguageManager.Apply(this);
 
         Shown += async (_, _) => await CheckForBootstrapAsync();
     }

@@ -49,7 +49,7 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 | `T9` | No optimistic-concurrency integration test. | `D14` is unproven. | Add a two-context test that asserts `DbUpdateConcurrencyException`. |
 | `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | Add a test asserting 11 tables, 5 triggers, 3 views, and the `aris_app` role. |
 | `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | **Resolved:** `DemoDataService` seeds an idempotent demo dataset; it is exposed as **Accounts → Seed demo data** and keeps the Golden Invariant at zero violations. |
-| `T12` | No localization; UI text is English while domain data is Vietnamese. | Minor usability issue. | Out of scope; keep labels consistent and avoid hardcoding culture-specific formats. |
+| `T12` | No localization; UI text was English while domain data is Vietnamese. | Minor usability issue. | **Resolved:** Vietnamese is the default; `LanguageManager` and the login/status-bar buttons switch the static UI between Vietnamese and English. Service validation messages remain English. |
 | `T13` | Restore reported NU1902/NU1903 vulnerabilities from transitive `System.Security.Cryptography.Pkcs` 9.0.4. | The build was not warning-free, so the "0 warnings" gate was unmet. | **Resolved:** `Pkcs` is pinned to 10.0.13, the solution builds with 0 warnings, and CI treats warnings as errors. |
 
 ---

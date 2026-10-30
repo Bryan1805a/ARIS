@@ -1,4 +1,5 @@
 using Aris.Application.Accounts;
+using Aris.UI.Localization;
 
 namespace Aris.UI;
 
@@ -34,6 +35,20 @@ public sealed class BootstrapForm : Form
         ClientSize = new Size(470, 315);
 
         BuildLayout();
+
+        var languageButton = new Button
+        {
+            Text = LanguageManager.SwitchLabel,
+            Location = new Point(20, 275),
+            Size = new Size(100, 30),
+            FlatStyle = FlatStyle.Flat
+        };
+        languageButton.Click += (_, _) => LanguageManager.Toggle();
+        LanguageManager.LanguageChanged += () =>
+            languageButton.Text = LanguageManager.SwitchLabel;
+        Controls.Add(languageButton);
+
+        LanguageManager.Apply(this);
     }
 
     /// <summary>The username that was created, so the login form can prefill it.</summary>

@@ -58,6 +58,7 @@ flowchart TB
 | `TransferControl`, `TransferRequestForm`, `TransferDecisionForm` | Maker wizard and checker inbox | Implemented |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
+| `Localization/LanguageManager` | EN/VI switch, default Vietnamese; labels, titles and grid headers | Implemented |
 | `AdministrationForm`, `AuditLogForm`, `SystemConfigForm` | Admin screens | Planned (`P5-C3B`) |
 | `ReportsForm` | Report selection, preview, CSV export | Planned (`P5-C3C`) |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Planned |

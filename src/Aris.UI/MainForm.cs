@@ -5,6 +5,7 @@ using Aris.Application.Common;
 using Aris.Application.Interfaces;
 using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
+using Aris.UI.Localization;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,7 @@ public partial class MainForm : Form
     private readonly IAuditQueryService _auditQueryService;
     private readonly SystemConfigurationService _configurationService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ToolStripButton _languageButton = new();
 
     public MainForm(
     IAccountService accountService,
@@ -40,7 +42,27 @@ public partial class MainForm : Form
         _serviceProvider = serviceProvider;
         btnSystemConfiguration.Click += btnSystemConfiguration_Click;
 
+        _languageButton.Text = LanguageManager.SwitchLabel;
+        _languageButton.Alignment = ToolStripItemAlignment.Right;
+        _languageButton.Click += (_, _) => LanguageManager.Toggle();
+        statusStrip1.Items.Add(_languageButton);
+        LanguageManager.LanguageChanged += OnLanguageChanged;
+
         this.Shown += MainForm_Shown;
+    }
+
+    private void OnLanguageChanged()
+    {
+        _languageButton.Text = LanguageManager.SwitchLabel;
+        LanguageManager.Apply(this);
+        RefreshStatusTexts();
+        _ = UpdateConnectionStatusAsync();
+    }
+
+    private void RefreshStatusTexts()
+    {
+        lblStatusUser.Text = $"{LanguageManager.T("User:")} {_userSession.Username}";
+        lblStatusRole.Text = $"{LanguageManager.T("Role:")} {_userSession.Role}";
     }
 
     public LoginResult? CurrentUser { get; private set; }
@@ -49,8 +71,8 @@ public partial class MainForm : Form
     {
         CurrentUser = user;
 
-        lblStatusUser.Text = $"User: {_userSession.Username}";
-        lblStatusRole.Text = $"Role: {_userSession.Role}";
+        lblStatusUser.Text = $"{LanguageManager.T("User:")} {_userSession.Username}";
+        lblStatusRole.Text = $"{LanguageManager.T("Role:")} {_userSession.Role}";
         bool isAdmin = string.Equals(
             _userSession.Role,
             "ADMIN",
@@ -101,7 +123,7 @@ public partial class MainForm : Form
 
         Label lblDashboard = new Label
         {
-            Text = isAdmin ? "ADMIN Dashboard" : "OFFICER Dashboard",
+            Text = LanguageManager.T(isAdmin ? "ADMIN Dashboard" : "OFFICER Dashboard"),
             Font = new Font("Segoe UI", 20, FontStyle.Bold),
             ForeColor = Color.DarkSlateGray,
             AutoSize = true,
@@ -110,7 +132,7 @@ public partial class MainForm : Form
 
         Label lblWelcome = new Label
         {
-            Text = $"Welcome, {_userSession.Username}!",
+            Text = $"{LanguageManager.T("Welcome,")} {_userSession.Username}!",
             Font = new Font("Segoe UI", 12),
             ForeColor = Color.DimGray,
             AutoSize = true,
@@ -119,9 +141,9 @@ public partial class MainForm : Form
 
         Label lblRole = new Label
         {
-            Text = isAdmin
+            Text = LanguageManager.T(isAdmin
                 ? "You are logged in as Administrator."
-                : "You are logged in as Officer.",
+                : "You are logged in as Officer."),
             Font = new Font("Segoe UI", 11),
             ForeColor = Color.DarkSlateGray,
             AutoSize = true,
@@ -187,19 +209,19 @@ public partial class MainForm : Form
 
     private async Task UpdateConnectionStatusAsync()
     {
-        lblStatusConnection.Text = "Connection: Checking...";
+        lblStatusConnection.Text = LanguageManager.T("Connection: Checking...");
         lblStatusConnection.ForeColor = Color.White;
 
         bool connected = await _databaseConnectionService.CheckConnectionAsync();
 
         if (connected)
         {
-            lblStatusConnection.Text = "Connection: Connected";
+            lblStatusConnection.Text = LanguageManager.T("Connection: Connected");
             lblStatusConnection.ForeColor = Color.LightGreen;
         }
         else
         {
-            lblStatusConnection.Text = "Connection: Disconnected";
+            lblStatusConnection.Text = LanguageManager.T("Connection: Disconnected");
             lblStatusConnection.ForeColor = Color.LightCoral;
         }
     }

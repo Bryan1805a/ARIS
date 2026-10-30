@@ -1,6 +1,7 @@
 using Aris.Application.Common;
 using Aris.Application.Transfers;
 using Aris.Application.Transfers.Dtos;
+using Aris.UI.Localization;
 
 namespace Aris.UI.Transfers;
 
@@ -30,7 +31,7 @@ public sealed class TransferDecisionForm : Form
         _session = session;
         _requestId = requestId;
 
-        Text = $"ARIS - Transfer request #{requestId}";
+        Text = $"{LanguageManager.T("ARIS - Transfer request")} #{requestId}";
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -156,17 +157,27 @@ public sealed class TransferDecisionForm : Form
             _detail = result.Value;
             _itemList = _detail.Items.ToList();
 
+            var statusLabel = LanguageManager.T("Status:");
+            var sourceLabel = LanguageManager.T("Source:");
+            var destinationLabel = LanguageManager.T("Destination:");
+            var makerLabel = LanguageManager.T("Maker:");
+            var requestedLabel = LanguageManager.T("Requested:");
+            var householdLabel = LanguageManager.T("Household");
+            var noAddress = LanguageManager.T("no address");
+            var none = LanguageManager.T("(none)");
+
             _header.Text =
-                $"{_detail.RequestType}    Status: {_detail.Status}    Effective: {_detail.EffectiveDate:yyyy-MM-dd}" +
+                $"{_detail.RequestType}    {statusLabel} {_detail.Status}    " +
+                $"{LanguageManager.T("Effective date")}: {_detail.EffectiveDate:yyyy-MM-dd}" +
                 Environment.NewLine +
-                $"Source: household #{_detail.SourceHouseholdId} ({_detail.SourceAddressText ?? "no address"})" +
+                $"{sourceLabel} {householdLabel} #{_detail.SourceHouseholdId} ({_detail.SourceAddressText ?? noAddress})" +
                 Environment.NewLine +
                 (_detail.DestinationHouseholdId is int destinationHousehold
-                    ? $"Destination: household #{destinationHousehold}"
-                    : $"Destination: {_detail.DestinationAddressText ?? "(none)"}") +
+                    ? $"{destinationLabel} {householdLabel} #{destinationHousehold}"
+                    : $"{destinationLabel} {_detail.DestinationAddressText ?? none}") +
                 Environment.NewLine +
-                $"Maker: {_detail.RequestedByName ?? _detail.RequestedBy.ToString()}    " +
-                $"Requested: {_detail.RequestedAt:yyyy-MM-dd HH:mm}";
+                $"{makerLabel} {_detail.RequestedByName ?? _detail.RequestedBy.ToString()}    " +
+                $"{requestedLabel} {_detail.RequestedAt:yyyy-MM-dd HH:mm}";
 
             _items.Rows.Clear();
 
@@ -191,11 +202,11 @@ public sealed class TransferDecisionForm : Form
             _submitButton.Enabled = isPending && !isMaker;
             _cancelRequestButton.Enabled = isPending && isMaker;
             _note.Text = !isPending
-                ? $"Decided by {_detail.DecidedByName ?? _detail.DecidedBy?.ToString() ?? "(unknown)"} " +
-                  $"at {_detail.DecidedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-"}."
+                ? $"{LanguageManager.T("Decided by")} {_detail.DecidedByName ?? _detail.DecidedBy?.ToString() ?? "(unknown)"} " +
+                  $"{LanguageManager.T("at")} {_detail.DecidedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-"}."
                 : isMaker
-                    ? "You made this request. Another officer must approve or reject it."
-                    : "Approve or reject each item. A rejection needs a reason.";
+                    ? LanguageManager.T("You made this request. Another officer must approve or reject it.")
+                    : LanguageManager.T("Approve or reject each item. A rejection needs a reason.");
         }
         catch (Exception ex)
         {
