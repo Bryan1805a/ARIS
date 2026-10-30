@@ -43,9 +43,13 @@ public static class DependencyInjection
                     "from src/Aris.UI (see docs/07-deployment-view.md).");
             }
 
-            options.UseSqlServer(
-                connectionString,
-                sql => sql.EnableRetryOnFailure());
+            // Do NOT enable EF's retrying execution strategy here. Every mutating
+            // service opens an explicit transaction, and SqlServerRetryingExecutionStrategy
+            // rejects user-initiated transactions. Transient connection faults on the
+            // independent audit path are still handled by SqlResilience. If EF-level retry
+            // is needed later, wrap each transaction in
+            // Database.CreateExecutionStrategy().ExecuteAsync(...).
+            options.UseSqlServer(connectionString);
         });
         services.AddDbContextFactory<ArisDbContext>(
     (_, options) =>
@@ -56,9 +60,7 @@ public static class DependencyInjection
                 "ConnectionStrings:ArisDb is not configured.");
         }
 
-        options.UseSqlServer(
-            connectionString,
-            sql => sql.EnableRetryOnFailure());
+        options.UseSqlServer(connectionString);
     },
     ServiceLifetime.Scoped);
 
