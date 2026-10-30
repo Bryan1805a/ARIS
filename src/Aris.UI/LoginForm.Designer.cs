@@ -44,7 +44,7 @@ partial class LoginForm
         lblTitle.Name = "lblTitle";
         lblTitle.Size = new Size(306, 30);
         lblTitle.TabIndex = 0;
-        lblTitle.Text = "ARIS MANAGEMENT SYSTEM";
+        lblTitle.Text = "RESIDENCE MANAGEMENT SYSTEM";
         // 
         // lblUsername
         // 
