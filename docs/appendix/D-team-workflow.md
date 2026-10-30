@@ -128,14 +128,14 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 - [x] `AuditService` implements both audit paths.
 - [x] Build and tests clean.
 
-**Status (22/10/2026):** `P1-DB2` is complete: entities, context, configurations,
+**Status (30/10/2026):** `P1-DB2` is complete: entities, context, configurations,
 `AuditService` (both paths), DI registration, and the mapping/audit tests are in place.
-`dotnet build Aris.slnx` reports 0 errors and 0 warnings. Without a database,
-`dotnet test Aris.slnx` reports 48 passed, 5 skipped; against the local
-`aris-sqlserver` container it reports **53 passed, 0 failed, 0 skipped**. Schema
-inventory verified at 11 tables / 5 triggers / 3 views, and
-`vw_GoldenInvariantViolations` returned 0 rows. Coders 1–3 can now use `ArisDbContext`
-and resolve `IAuditService` from DI.
+`dotnet build Aris.slnx` reports 0 errors and 0 warnings, and CI enforces
+warnings-as-errors. Without a database, `dotnet test Aris.slnx` reports 77 passed,
+5 skipped; against the local `aris-sqlserver` container it reports **82 passed, 0 failed,
+0 skipped**. Schema inventory verified at 11 tables / 5 triggers / 3 views, and
+`vw_GoldenInvariantViolations` returned 0 rows. Coders 1–3 can use `ArisDbContext` and
+resolve the Application services from DI.
 
 **Traps:** `Citizen.HouseholdId`, `Household.CurrentAddressId`, `IsRowVersion` on
 `AuditLog`/`SystemConfiguration`, missing `HasTrigger`, cascade deletes, EF migrations,
@@ -221,6 +221,24 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | `P5-TL1` | Audit and security standards across all services |
 | `P6-TL1` | End-to-end integration and negative controls |
 | `P7-TL1` | Concurrency stress, fresh-machine deployment, acceptance |
+
+### D.5.6 Current implementation status (30/10/2026)
+
+| Phase | Status |
+|---|---|
+| Phase 1 — foundation | Complete |
+| Phase 2 — citizen slice | Complete |
+| Phase 3 — household slice | Complete |
+| Phase 4 — transfer engine | Complete |
+| Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer/configuration/basic reports |
+| Phase 6 — integration | Partially complete; address search/retirement, rectification and audit filters remain |
+| Phase 7 — hardening | Ongoing; service tests, committed UI automation, concurrency and schema-inventory tests remain |
+
+Known functional gaps: `ADR-02`/`ADR-03` (address search/retirement), `SRCH-03`
+(address search), `HIST-01` (void-and-correct), and richer `AUD-01` filtering/detail.
+Vietnamization covers the static UI; service-layer validation messages are still English.
+The test suite is 77 passed / 5 skipped without a database and 82 passed / 0 skipped
+against the local container.
 
 ---
 

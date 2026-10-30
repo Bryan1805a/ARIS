@@ -23,6 +23,8 @@ stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
 | `D14` | Optimistic concurrency on all mutable tables | Accepted |
 | `D15` | Local Docker SQL Server instead of shared Azure SQL | Accepted (supersedes the cloud approach) |
 | `D16` | DDL script is authoritative; no EF Core migrations | Accepted |
+| `D17` | EF retry-on-failure disabled because mutations own explicit transactions | Accepted |
+| `D18` | Application interfaces with Infrastructure service implementations | Accepted |
 
 ---
 
@@ -295,3 +297,48 @@ entity configurations. Migrations are forbidden.
 - No migration history to drift from the deployed schema.
 - Developers must reset the local database after a schema change.
 - Production-grade incremental migration is out of scope.
+
+---
+
+## D17 — EF retry-on-failure disabled for explicit transactions
+
+**Context.** The application context originally called `EnableRetryOnFailure()`. Every
+mutating service opens an explicit transaction for atomicity, and EF Core's
+`SqlServerRetryingExecutionStrategy` rejects user-initiated transactions. The first
+citizen registration from the UI failed at runtime with "The configured execution
+strategy does not support user-initiated transactions."
+
+**Decision.** Do not enable the retrying execution strategy on `ArisDbContext`.
+`SqlResilience` remains the retry path for the independent failure-audit connection.
+If EF-level retry is required later, each transaction must be wrapped in
+`Database.CreateExecutionStrategy().ExecuteAsync(...)`.
+
+**Consequences.**
+- Explicit transactions work with the real DI composition.
+- EF queries and saves do not retry transient faults automatically; the local container
+  is expected to be stable and connection-open retries still exist on the audit path.
+- The retry policy is documented in §8.4 and §6.2 so it is not re-enabled accidentally.
+
+---
+
+## D18 — Application interfaces with Infrastructure service implementations
+
+**Context.** The layering rule forbids `Aris.Application` from referencing EF Core or
+`Microsoft.Data.SqlClient` (`CON-ARCH-01`, `CON-ARCH-02`). Composite use cases such as
+household registration and transfer execution need `ArisDbContext`, an explicit
+transaction and serializable isolation. The original canonical-service sample in
+Appendix C placed such a service in Application while injecting `ArisDbContext`, which
+contradicted the layering table.
+
+**Decision.** Application owns the module contracts: interfaces, DTOs, validators and
+`Result<T>`. Infrastructure implements the services that need persistence primitives
+(`BootstrapService`, `DemoDataService`, `CitizenService`, `AddressService`,
+`HouseholdService`, `TransferService`) behind those interfaces. Repository-backed
+services (`AuthService`, `AccountService`, `ReportService`, `AuditQueryService`,
+`SystemConfigurationService`) remain in Application. The UI resolves only the
+Application interfaces through DI.
+
+**Consequences.**
+- Application remains persistence-free and the UI never sees EF Core.
+- Some service implementations sit in Infrastructure; §5.2.2/§5.2.4 record this.
+- Service-level tests can target the interfaces with a real database or fakes.

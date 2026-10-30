@@ -17,7 +17,7 @@ this project. Each constraint below is normative: code and documentation must co
 | `CON-PROJ-04` | **Database location:** `localhost,1433`, database `ArisDb`, data persisted in the `mssql-data` Docker volume. | Every developer runs their own database. No shared cloud instance, no network dependency, no firewall configuration. |
 | `CON-PROJ-05` | **Schema authority:** [`aris_schema_v2.sql`](aris_schema_v2.sql) is the only DDL. | No EF Core migrations. No hand-edited database that is not in the script. A schema change is a change to the script. |
 | `CON-PROJ-06` | **Test runner:** Microsoft.Testing.Platform, configured in `global.json`. | Never pass `--nologo` to `dotnet test`; it is forwarded to the xUnit executable and produces a misleading "Zero tests ran". |
-| `CON-PROJ-07` | **Build quality:** the solution must build with **0 errors and 0 warnings**. | `TreatWarningsAsErrors` is `false`, so warnings do not fail the build automatically. Reviewers must enforce them. |
+| `CON-PROJ-07` | **Build quality:** the solution must build with **0 errors and 0 warnings**. | `TreatWarningsAsErrors` is `false` locally, but CI builds with `-p:TreatWarningsAsErrors=true`, so a warning fails the PR. |
 | `CON-PROJ-08` | **Language features:** `LangVersion=latest`, `Nullable=enable`, `ImplicitUsings=enable`, .NET analyzers enabled at `latest`. | Nullable warnings are meaningful. Do not suppress analyzers to silence a real design problem. |
 
 ---

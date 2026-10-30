@@ -275,6 +275,10 @@ flowchart TD
 Never log: passwords, password hashes, connection strings, or full personal data beyond
 what the business record already contains. Prefer IDs and changed field names.
 
+> **Known gap (`T14`).** Account administration and system-configuration mutations are
+> not yet audited, and their services throw for expected business failures instead of
+> returning `Result<T>`. The core citizen/household/transfer/bootstrap paths do audit.
+
 ### Append-only enforcement
 
 - `trg_AuditLog_AppendOnly` rejects `UPDATE` and `DELETE` with error `51030`.
