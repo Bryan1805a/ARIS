@@ -6,13 +6,14 @@ using Aris.Application.Interfaces;
 using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
 using Aris.UI.Localization;
+using Aris.UI.Addresses;
 
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Aris.UI;
 
-public partial class MainForm : Form
-{
+// Main application window: contains the sidebar navigation, header/status bar, and content panel
+public partial class MainForm : Form {
     private readonly IAccountService _accountService;
     private readonly IDatabaseConnectionService _databaseConnectionService;
     private readonly IUserSession _userSession;
@@ -23,14 +24,13 @@ public partial class MainForm : Form
     private readonly ToolStripButton _languageButton = new();
 
     public MainForm(
-    IAccountService accountService,
-    IDatabaseConnectionService databaseConnectionService,
-    IUserSession userSession,
-    IReportService reportService,
-    IAuditQueryService auditQueryService,
-    SystemConfigurationService configurationService,
-    IServiceProvider serviceProvider)
-    {
+        IAccountService accountService,
+        IDatabaseConnectionService databaseConnectionService,
+        IUserSession userSession,
+        IReportService reportService,
+        IAuditQueryService auditQueryService,
+        SystemConfigurationService configurationService,
+        IServiceProvider serviceProvider) {
         InitializeComponent();
 
         _accountService = accountService;
@@ -42,6 +42,7 @@ public partial class MainForm : Form
         _serviceProvider = serviceProvider;
         btnSystemConfiguration.Click += btnSystemConfiguration_Click;
 
+        // Set up the Vietnamese / English language switch button on the right side of the status bar
         _languageButton.Text = LanguageManager.SwitchLabel;
         _languageButton.Alignment = ToolStripItemAlignment.Right;
         _languageButton.Click += (_, _) => LanguageManager.Toggle();
@@ -51,24 +52,23 @@ public partial class MainForm : Form
         this.Shown += MainForm_Shown;
     }
 
-    private void OnLanguageChanged()
-    {
+    // Refreshes UI text when the user toggles between English and Vietnamese
+    private void OnLanguageChanged() {
         _languageButton.Text = LanguageManager.SwitchLabel;
         LanguageManager.Apply(this);
         RefreshStatusTexts();
         _ = UpdateConnectionStatusAsync();
     }
 
-    private void RefreshStatusTexts()
-    {
+    private void RefreshStatusTexts() {
         lblStatusUser.Text = $"{LanguageManager.T("User:")} {_userSession.Username}";
         lblStatusRole.Text = $"{LanguageManager.T("Role:")} {_userSession.Role}";
     }
 
     public LoginResult? CurrentUser { get; private set; }
 
-    public void SetCurrentUser(LoginResult user)
-    {
+    // Sets the logged-in user and configures role-based visibility on the sidebar
+    public void SetCurrentUser(LoginResult user) {
         CurrentUser = user;
 
         lblStatusUser.Text = $"{LanguageManager.T("User:")} {_userSession.Username}";
@@ -78,10 +78,12 @@ public partial class MainForm : Form
             "ADMIN",
             StringComparison.OrdinalIgnoreCase);
 
+        // Hide admin-only menu buttons if the logged-in user is an OFFICER
         btnAccounts.Visible = isAdmin;
         btnAuditLogs.Visible = isAdmin;
         btnSystemConfiguration.Visible = isAdmin;
 
+        // Reposition sidebar buttons smoothly so there are no empty gaps when admin buttons are hidden
         int nextY = btnDashboard.Bottom + 10;
 
         Button[] sidebarButtons =
@@ -92,18 +94,17 @@ public partial class MainForm : Form
             btnSystemConfiguration,
             btnCitizen,
             btnHousehold,
+            btnAddress,
             btnTransfer,
             btnLogout
         };
 
-        foreach (Button button in sidebarButtons)
-        {
+        foreach (Button button in sidebarButtons) {
             // Skip ADMIN-only buttons for OFFICER
             if (!isAdmin &&
                 (button == btnAccounts ||
                  button == btnAuditLogs ||
-                 button == btnSystemConfiguration))
-            {
+                 button == btnSystemConfiguration)) {
                 continue;
             }
 
@@ -112,8 +113,8 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnDashboard_Click(object? sender, EventArgs e)
-    {
+    // Shows the default welcome dashboard
+    private void btnDashboard_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
         bool isAdmin = string.Equals(
@@ -121,8 +122,7 @@ public partial class MainForm : Form
             "ADMIN",
             StringComparison.OrdinalIgnoreCase);
 
-        Label lblDashboard = new Label
-        {
+        Label lblDashboard = new Label {
             Text = LanguageManager.T(isAdmin ? "ADMIN Dashboard" : "OFFICER Dashboard"),
             Font = new Font("Segoe UI", 20, FontStyle.Bold),
             ForeColor = Color.DarkSlateGray,
@@ -130,8 +130,7 @@ public partial class MainForm : Form
             Location = new Point(25, 25)
         };
 
-        Label lblWelcome = new Label
-        {
+        Label lblWelcome = new Label {
             Text = $"{LanguageManager.T("Welcome,")} {_userSession.Username}!",
             Font = new Font("Segoe UI", 12),
             ForeColor = Color.DimGray,
@@ -139,8 +138,7 @@ public partial class MainForm : Form
             Location = new Point(25, 80)
         };
 
-        Label lblRole = new Label
-        {
+        Label lblRole = new Label {
             Text = LanguageManager.T(isAdmin
                 ? "You are logged in as Administrator."
                 : "You are logged in as Officer."),
@@ -155,12 +153,12 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(lblRole);
     }
 
-    private void btnAccounts_Click(object? sender, EventArgs e)
-    {
+    // Navigates to User Account Management (ADMIN only)
+    private void btnAccounts_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
-        if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN")
-        {
+        // Defense-in-depth permission check in UI
+        if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN") {
             MessageBox.Show(
                 "You do not have permission to access Account Management.",
                 "Access Denied",
@@ -168,66 +166,63 @@ public partial class MainForm : Form
                 MessageBoxIcon.Warning);
             return;
         }
+
         AccountManagementControl accountControl =
-     _serviceProvider.GetRequiredService<AccountManagementControl>();
+            _serviceProvider.GetRequiredService<AccountManagementControl>();
         accountControl.CurrentUser = CurrentUser;
-        accountControl.Dock = DockStyle.Fill; //cho man hinh tu gian theo kich thuoc
+        accountControl.Dock = DockStyle.Fill; // auto-expand to fill content area
 
         pnlContent.Controls.Add(accountControl);
     }
 
-    private void btnReports_Click(object? sender, EventArgs e)
-    {
+    // Navigates to Reports
+    private void btnReports_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
         ReportsControl reportsControl =
-     _serviceProvider.GetRequiredService<ReportsControl>();
+            _serviceProvider.GetRequiredService<ReportsControl>();
         reportsControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(reportsControl);
     }
 
-    private void btnLogout_Click(object? sender, EventArgs e)
-    {
+    // Prompts confirmation and logs out
+    private void btnLogout_Click(object? sender, EventArgs e) {
         DialogResult result = MessageBox.Show(
             "Are you sure you want to log out?",
             "Confirm Logout",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
 
-        if (result == DialogResult.Yes)
-        {
+        if (result == DialogResult.Yes) {
             _userSession.SignOut();
             CurrentUser = null;
             this.Close();
         }
     }
-    private async void MainForm_Shown(object? sender, EventArgs e)
-    {
+
+    private async void MainForm_Shown(object? sender, EventArgs e) {
         await UpdateConnectionStatusAsync();
     }
 
-    private async Task UpdateConnectionStatusAsync()
-    {
+    // Pings database and updates connection status indicator on bottom status bar
+    private async Task UpdateConnectionStatusAsync() {
         lblStatusConnection.Text = LanguageManager.T("Connection: Checking...");
         lblStatusConnection.ForeColor = Color.White;
 
         bool connected = await _databaseConnectionService.CheckConnectionAsync();
 
-        if (connected)
-        {
+        if (connected) {
             lblStatusConnection.Text = LanguageManager.T("Connection: Connected");
             lblStatusConnection.ForeColor = Color.LightGreen;
-        }
-        else
-        {
+        } else {
             lblStatusConnection.Text = LanguageManager.T("Connection: Disconnected");
             lblStatusConnection.ForeColor = Color.LightCoral;
         }
     }
 
-    private void btnCitizen_Click(object? sender, EventArgs e)
-    {
+    // Navigates to Citizen Management screen
+    private void btnCitizen_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
         CitizenControl citizenControl =
@@ -237,8 +232,8 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(citizenControl);
     }
 
-    private void btnHousehold_Click(object? sender, EventArgs e)
-    {
+    // Navigates to Household Management screen
+    private void btnHousehold_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
         HouseholdControl householdControl =
@@ -248,8 +243,18 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(householdControl);
     }
 
-    private void btnTransfer_Click(object? sender, EventArgs e)
-    {
+    // Navigates to Address Management screen (ADR-02, ADR-03, SRCH-03)
+    private void btnAddress_Click(object? sender, EventArgs e) {
+        pnlContent.Controls.Clear();
+
+        AddressControl addressControl = _serviceProvider.GetRequiredService<AddressControl>();
+        addressControl.Dock = DockStyle.Fill;
+
+        pnlContent.Controls.Add(addressControl);
+    }
+
+    // Navigates to Relocation/Transfer screen (maker-checker wizard and review inbox)
+    private void btnTransfer_Click(object? sender, EventArgs e) {
         pnlContent.Controls.Clear();
 
         TransferControl transferControl =
@@ -259,11 +264,10 @@ public partial class MainForm : Form
         pnlContent.Controls.Add(transferControl);
     }
 
-    private async void btnAuditLogs_Click(object? sender, EventArgs e)
-    {
-        // Only ADMIN can access Audit Logs.
-        if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN")
-        {
+    // Navigates to Audit Log viewer (ADMIN only)
+    private async void btnAuditLogs_Click(object? sender, EventArgs e) {
+        // Only ADMIN can access Audit Logs
+        if (!_userSession.IsAuthenticated || _userSession.Role != "ADMIN") {
             MessageBox.Show(
                 "You do not have permission to access Audit Logs.",
                 "Access Denied",
@@ -275,7 +279,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Clear();
 
         var auditViewer =
-    _serviceProvider.GetRequiredService<AuditViewerControl>();
+            _serviceProvider.GetRequiredService<AuditViewerControl>();
         auditViewer.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(auditViewer);
@@ -283,12 +287,11 @@ public partial class MainForm : Form
         await auditViewer.LoadAuditLogsAsync();
     }
 
-    private void btnSystemConfiguration_Click(object? sender, EventArgs e)
-    {
+    // Navigates to System Configuration parameters editor (ADMIN only)
+    private void btnSystemConfiguration_Click(object? sender, EventArgs e) {
         if (!_userSession.IsAuthenticated ||
             !string.Equals(_userSession.Role, "ADMIN",
-                StringComparison.OrdinalIgnoreCase))
-        {
+                StringComparison.OrdinalIgnoreCase)) {
             MessageBox.Show(
                 "You do not have permission to access System Configuration.",
                 "Access Denied",
@@ -300,7 +303,7 @@ public partial class MainForm : Form
         pnlContent.Controls.Clear();
 
         var configurationControl =
-     _serviceProvider.GetRequiredService<SystemConfigurationControl>();
+            _serviceProvider.GetRequiredService<SystemConfigurationControl>();
 
         configurationControl.Dock = DockStyle.Fill;
 

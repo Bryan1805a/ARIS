@@ -4,9 +4,8 @@ using Aris.Application.Common;
 
 namespace Aris.UI.Addresses;
 
-/// <summary>Register a normalized address (<c>ADR-01</c>).</summary>
-public sealed class AddressEditForm : Form
-{
+// Register a normalized address (ADR-01)
+public sealed class AddressEditForm : Form {
     private readonly IAddressService _addressService;
     private readonly IUserSession _session;
 
@@ -19,8 +18,7 @@ public sealed class AddressEditForm : Form
     private readonly Button _saveButton = new();
     private readonly Button _cancelButton = new();
 
-    public AddressEditForm(IAddressService addressService, IUserSession session)
-    {
+    public AddressEditForm(IAddressService addressService, IUserSession session) {
         _addressService = addressService;
         _session = session;
 
@@ -35,13 +33,11 @@ public sealed class AddressEditForm : Form
         BuildLayout();
     }
 
-    /// <summary>The new address id after <see cref="DialogResult.OK"/>.</summary>
+    // The new address id after DialogResult.OK
     public int? CreatedAddressId { get; private set; }
 
-    private void BuildLayout()
-    {
-        var title = new Label
-        {
+    private void BuildLayout() {
+        var title = new Label {
             Text = "Register an address",
             Font = new Font("Segoe UI", 14F, FontStyle.Bold),
             ForeColor = Color.DarkSlateGray,
@@ -55,8 +51,7 @@ public sealed class AddressEditForm : Form
         AddRow("District (optional)", _district, 180);
         AddRow("Province", _province, 220);
 
-        var validFromLabel = new Label
-        {
+        var validFromLabel = new Label {
             Text = "Valid from",
             AutoSize = true,
             Location = new Point(20, 263)
@@ -89,10 +84,8 @@ public sealed class AddressEditForm : Form
         });
     }
 
-    private void AddRow(string labelText, TextBox textBox, int top)
-    {
-        var label = new Label
-        {
+    private void AddRow(string labelText, TextBox textBox, int top) {
+        var label = new Label {
             Text = labelText,
             AutoSize = true,
             Location = new Point(20, top + 3)
@@ -105,10 +98,9 @@ public sealed class AddressEditForm : Form
         Controls.Add(textBox);
     }
 
-    private async void SaveButton_Click(object? sender, EventArgs e)
-    {
-        if (_session.UserId is not int userId)
-        {
+    private async void SaveButton_Click(object? sender, EventArgs e) {
+        // Check if user session is valid
+        if (_session.UserId is not int userId) {
             MessageBox.Show(
                 "Your session has expired. Sign in again.",
                 "Session expired",
@@ -119,10 +111,8 @@ public sealed class AddressEditForm : Form
 
         _saveButton.Enabled = false;
 
-        try
-        {
-            var result = await _addressService.CreateAsync(new CreateAddressDto
-            {
+        try {
+            var result = await _addressService.CreateAsync(new CreateAddressDto {
                 AddressCode = _code.Text.Trim(),
                 AddressLine = _line.Text.Trim(),
                 Ward = _ward.Text.Trim(),
@@ -131,8 +121,7 @@ public sealed class AddressEditForm : Form
                 ValidFrom = DateOnly.FromDateTime(_validFrom.Value)
             }, userId);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot register address",
@@ -144,17 +133,13 @@ public sealed class AddressEditForm : Form
             CreatedAddressId = result.Value;
             DialogResult = DialogResult.OK;
             Close();
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while registering the address: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             _saveButton.Enabled = true;
         }
     }

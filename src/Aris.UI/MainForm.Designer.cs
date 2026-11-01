@@ -1,8 +1,7 @@
 #nullable enable
 namespace Aris.UI;
 
-partial class MainForm
-{
+partial class MainForm {
     /// <summary>
     ///  Required designer variable.
     /// </summary>
@@ -12,10 +11,8 @@ partial class MainForm
     ///  Clean up any resources being used.
     /// </summary>
     /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing && (components != null))
-        {
+    protected override void Dispose(bool disposing) {
+        if (disposing && (components != null)) {
             components.Dispose();
         }
         base.Dispose(disposing);
@@ -27,12 +24,12 @@ partial class MainForm
     ///  Required method for Designer support - do not modify
     ///  the contents of this method with the code editor.
     /// </summary>
-    private void InitializeComponent()
-    {
+    private void InitializeComponent() {
         pnlSidebar = new Panel();
         btnAuditLogs = new Button();
         btnTransfer = new Button();
         btnHousehold = new Button();
+        btnAddress = new Button();
         btnCitizen = new Button();
         btnLogout = new Button();
         btnReports = new Button();
@@ -64,6 +61,7 @@ partial class MainForm
         pnlSidebar.Controls.Add(btnAccounts);
         pnlSidebar.Controls.Add(btnDashboard);
         pnlSidebar.Controls.Add(lblLogo);
+        pnlSidebar.Controls.Add(btnAddress);
         pnlSidebar.Dock = DockStyle.Left;
         pnlSidebar.Location = new Point(0, 0);
         pnlSidebar.Name = "pnlSidebar";
@@ -83,6 +81,20 @@ partial class MainForm
         btnAuditLogs.TextAlign = ContentAlignment.MiddleLeft;
         btnAuditLogs.UseVisualStyleBackColor = true;
         btnAuditLogs.Click += btnAuditLogs_Click;
+        // 
+        // btnAddress
+        // 
+        btnAddress.FlatStyle = FlatStyle.Flat;
+        btnAddress.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnAddress.ForeColor = Color.White;
+        btnAddress.Location = new Point(10, 480);
+        btnAddress.Name = "btnAddress";
+        btnAddress.Size = new Size(200, 45);
+        btnAddress.TabIndex = 11;
+        btnAddress.Text = "Address Management";
+        btnAddress.TextAlign = ContentAlignment.MiddleLeft;
+        btnAddress.UseVisualStyleBackColor = true;
+        btnAddress.Click += btnAddress_Click;
         // 
         // btnTransfer
         // 
@@ -308,4 +320,5 @@ partial class MainForm
     private Button btnTransfer = null!;
     private Button btnAuditLogs = null!;
     private Button btnSystemConfiguration = null!;
+    private Button btnAddress = null!;
 }

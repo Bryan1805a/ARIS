@@ -10,10 +10,8 @@ namespace Aris.UI.Localization;
 /// constructor having to call it. Text boxes and combo boxes are deliberately skipped:
 /// their Text is user data or a domain value, not a label.
 /// </remarks>
-public static class LanguageManager
-{
-    private static readonly Dictionary<string, string> VietnameseByEnglish = new(StringComparer.Ordinal)
-    {
+public static class LanguageManager {
+    private static readonly Dictionary<string, string> VietnameseByEnglish = new(StringComparer.Ordinal) {
         // Shell and login
         ["ARIS MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ ARIS",
         ["RESIDENCE MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ CƯ TRÚ",
@@ -260,13 +258,43 @@ public static class LanguageManager
         ["RejectReason"] = "Lý do từ chối",
         ["ItemStatus"] = "Trạng thái",
         ["Citizen"] = "Công dân",
-        ["CreatedAt"] = "Ngày tạo"
+        ["CreatedAt"] = "Ngày tạo",
+
+        // Address directory and lineage (ADR-02, ADR-03, SRCH-03)
+        ["Address Management"] = "Quản lý địa chỉ",
+        ["Addresses"] = "Địa chỉ",
+        ["View address"] = "Xem địa chỉ",
+        ["Retire address"] = "Ngừng sử dụng địa chỉ",
+        ["Address detail"] = "Chi tiết địa chỉ",
+        ["Current households"] = "Hộ gia đình hiện tại",
+        ["Current residents"] = "Cư dân hiện tại",
+        ["Successor address"] = "Địa chỉ kế nhiệm",
+        ["Valid to"] = "Có hiệu lực đến",
+        ["Canonical address"] = "Địa chỉ chuẩn",
+        ["Search by code, street, ward, district or province"] =
+            "Tìm theo mã, đường, phường/xã, quận/huyện hoặc tỉnh/thành",
+        ["There are no other active addresses to use as a successor."] =
+            "Không có địa chỉ đang hoạt động khác để làm địa chỉ kế nhiệm.",
+        ["Historical residences keep the old address. The canonical view resolves it to the successor."] =
+            "Nơi cư trú lịch sử vẫn giữ địa chỉ cũ. Khung nhìn chuẩn sẽ quy đổi sang địa chỉ kế nhiệm.",
+        ["ARIS - Address"] = "ARIS - Địa chỉ",
+        ["ARIS - Retire address"] = "ARIS - Ngừng sử dụng địa chỉ",
+
+        // Grid property names for the address screens
+        ["AddressCode"] = "Mã địa chỉ",
+        ["AddressLine"] = "Địa chỉ chi tiết",
+        ["District"] = "Quận/Huyện",
+        ["ValidFrom"] = "Có hiệu lực từ",
+        ["ValidTo"] = "Có hiệu lực đến",
+        ["ReplacedByAddressId"] = "Địa chỉ kế nhiệm",
+        ["CanonicalAddressId"] = "Địa chỉ chuẩn",
+        ["CanonicalStatus"] = "Trạng thái địa chỉ chuẩn",
+        ["DeactivatedAt"] = "Ngày ngừng sử dụng",
     };
 
     private static readonly Dictionary<string, string> EnglishByVietnamese = BuildReverse();
 
-    static LanguageManager()
-    {
+    static LanguageManager() {
         System.Windows.Forms.Application.Idle += (_, _) => ApplyToOpenForms();
     }
 
@@ -279,10 +307,8 @@ public static class LanguageManager
     public static event Action? LanguageChanged;
 
     /// <summary>Translates a static label or message to the current language.</summary>
-    public static string T(string english)
-    {
-        if (!IsVietnamese)
-        {
+    public static string T(string english) {
+        if (!IsVietnamese) {
             return english;
         }
 
@@ -292,33 +318,27 @@ public static class LanguageManager
     }
 
     /// <summary>Switches the language and refreshes every open form.</summary>
-    public static void Toggle()
-    {
+    public static void Toggle() {
         IsVietnamese = !IsVietnamese;
         ApplyToOpenForms();
         LanguageChanged?.Invoke();
     }
 
     /// <summary>Applies the current language to a control tree.</summary>
-    public static void Apply(Control root)
-    {
-        if (root.IsDisposed)
-        {
+    public static void Apply(Control root) {
+        if (root.IsDisposed) {
             return;
         }
 
-        switch (root)
-        {
+        switch (root) {
             case TextBox textBox:
-                if (!string.IsNullOrEmpty(textBox.PlaceholderText))
-                {
+                if (!string.IsNullOrEmpty(textBox.PlaceholderText)) {
                     textBox.PlaceholderText = TranslateCurrent(textBox.PlaceholderText);
                 }
                 break;
 
             case DataGridView grid:
-                foreach (DataGridViewColumn column in grid.Columns)
-                {
+                foreach (DataGridViewColumn column in grid.Columns) {
                     column.HeaderText = TranslateCurrent(column.HeaderText);
                 }
                 break;
@@ -333,61 +353,47 @@ public static class LanguageManager
 
             default:
                 var text = TranslateCurrent(root.Text);
-                if (!string.Equals(text, root.Text, StringComparison.Ordinal))
-                {
+                if (!string.Equals(text, root.Text, StringComparison.Ordinal)) {
                     root.Text = text;
                 }
                 break;
         }
 
-        foreach (Control child in root.Controls.Cast<Control>().ToArray())
-        {
+        foreach (Control child in root.Controls.Cast<Control>().ToArray()) {
             Apply(child);
         }
     }
 
-    private static void ApplyToOpenForms()
-    {
-        foreach (Form form in System.Windows.Forms.Application.OpenForms.Cast<Form>().ToArray())
-        {
-            try
-            {
+    private static void ApplyToOpenForms() {
+        foreach (Form form in System.Windows.Forms.Application.OpenForms.Cast<Form>().ToArray()) {
+            try {
                 Apply(form);
-            }
-            catch (ObjectDisposedException)
-            {
+            } catch (ObjectDisposedException) {
                 // A form closed while the idle handler was iterating.
             }
         }
     }
 
-    private static void TranslateToolStripItems(ToolStripItemCollection items)
-    {
-        foreach (ToolStripItem item in items)
-        {
+    private static void TranslateToolStripItems(ToolStripItemCollection items) {
+        foreach (ToolStripItem item in items) {
             var text = TranslateCurrent(item.Text ?? string.Empty);
-            if (!string.Equals(text, item.Text, StringComparison.Ordinal))
-            {
+            if (!string.Equals(text, item.Text, StringComparison.Ordinal)) {
                 item.Text = text;
             }
 
-            if (item is ToolStripDropDownItem dropDown)
-            {
+            if (item is ToolStripDropDownItem dropDown) {
                 TranslateToolStripItems(dropDown.DropDownItems);
             }
         }
     }
 
-    private static string TranslateCurrent(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
+    private static string TranslateCurrent(string text) {
+        if (string.IsNullOrEmpty(text)) {
             return text;
         }
 
         var dynamicText = TranslateDynamicPrefix(text);
-        if (!string.Equals(dynamicText, text, StringComparison.Ordinal))
-        {
+        if (!string.Equals(dynamicText, text, StringComparison.Ordinal)) {
             return dynamicText;
         }
 
@@ -400,10 +406,8 @@ public static class LanguageManager
     /// Handles labels that combine a fixed prefix with data, such as
     /// <c>User: admin</c> or <c>Welcome: An</c>.
     /// </summary>
-    private static string TranslateDynamicPrefix(string text)
-    {
-        if (IsVietnamese)
-        {
+    private static string TranslateDynamicPrefix(string text) {
+        if (IsVietnamese) {
             if (text.StartsWith("Welcome, ", StringComparison.Ordinal))
                 return "Chào mừng, " + text["Welcome, ".Length..];
             if (text.StartsWith("User: ", StringComparison.Ordinal))
@@ -412,9 +416,7 @@ public static class LanguageManager
                 return "Vai trò: " + text["Role: ".Length..];
             if (text.StartsWith("Connection: ", StringComparison.Ordinal))
                 return "Kết nối: " + text["Connection: ".Length..];
-        }
-        else
-        {
+        } else {
             if (text.StartsWith("Chào mừng, ", StringComparison.Ordinal))
                 return "Welcome, " + text["Chào mừng, ".Length..];
             if (text.StartsWith("Người dùng: ", StringComparison.Ordinal))
@@ -428,17 +430,14 @@ public static class LanguageManager
         return text;
     }
 
-    private static Dictionary<string, string> BuildReverse()
-    {
+    private static Dictionary<string, string> BuildReverse() {
         var reverse = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        foreach (var pair in VietnameseByEnglish)
-        {
+        foreach (var pair in VietnameseByEnglish) {
             // Keep the first English label for each Vietnamese value. Several headers
             // share a translation (Status/ItemStatus, Created At/CreatedAt); first-wins
             // restores the display label instead of the property name.
-            if (!reverse.ContainsKey(pair.Value))
-            {
+            if (!reverse.ContainsKey(pair.Value)) {
                 reverse[pair.Value] = pair.Key;
             }
         }
