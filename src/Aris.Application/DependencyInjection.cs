@@ -7,6 +7,8 @@ using Aris.Application.Citizens.Dtos;
 using Aris.Application.Citizens.Validators;
 using Aris.Application.Households.Dtos;
 using Aris.Application.Households.Validators;
+using Aris.Application.Rectifications.Dtos;
+using Aris.Application.Rectifications.Validators;
 using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
 using Aris.Application.Transfers.Dtos;
@@ -38,6 +40,12 @@ public static class DependencyInjection {
         services.AddScoped<IValidator<TransferDecisionDto>, TransferDecisionValidator>();
 
         services.AddScoped<IValidator<RetireAddressDto>, RetireAddressValidator>();
+
+        // HIST-01: void-and-correct validators. The service implementation lives in
+        // Infrastructure and is registered by AddInfrastructure.
+        services.AddScoped<IValidator<RectifyResidenceDto>, RectifyResidenceValidator>();
+        services.AddScoped<IValidator<RectifyMembershipDto>, RectifyMembershipValidator>();
+        services.AddScoped<IValidator<RectifyHouseholdAddressDto>, RectifyHouseholdAddressValidator>();
 
         return services;
     }

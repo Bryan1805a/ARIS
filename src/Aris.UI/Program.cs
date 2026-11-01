@@ -2,7 +2,6 @@ using Aris.Application;
 using Aris.Infrastructure;
 using Aris.UI.Addresses;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

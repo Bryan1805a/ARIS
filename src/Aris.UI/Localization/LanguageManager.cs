@@ -13,9 +13,9 @@ namespace Aris.UI.Localization;
 public static class LanguageManager {
     private static readonly Dictionary<string, string> VietnameseByEnglish = new(StringComparer.Ordinal) {
         // Shell and login
-        ["ARIS MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ ARIS",
-        ["RESIDENCE MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ CƯ TRÚ",
-        ["Administrative Residence Information System (ARIS)"] = "Hệ thống thông tin cư trú hành chính (ARIS)",
+        ["ARIS RESIDENCE MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ THÔNG TIN CƯ TRÚ ARIS",
+        ["RESIDENCE MANAGEMENT SYSTEM"] = "HỆ THỐNG QUẢN LÝ THÔNG TIN CƯ TRÚ",
+        ["Administrative Residence Information System (ARIS)"] = "Hệ thống quản lý thông tin cư trú (ARIS)",
         ["ARIS"] = "ARIS",
         ["ARIS - Login"] = "ARIS - Đăng nhập",
         ["Login"] = "Đăng nhập",
@@ -290,6 +290,36 @@ public static class LanguageManager {
         ["CanonicalAddressId"] = "Địa chỉ chuẩn",
         ["CanonicalStatus"] = "Trạng thái địa chỉ chuẩn",
         ["DeactivatedAt"] = "Ngày ngừng sử dụng",
+
+        // Rectification (HIST-01)
+        ["Rectify member"] = "Điều chỉnh thành viên",
+        ["Rectify address"] = "Điều chỉnh địa chỉ",
+        ["Rectify residence"] = "Điều chỉnh nơi cư trú",
+        ["Rectify membership"] = "Điều chỉnh thành viên hộ",
+        ["Rectify household address"] = "Điều chỉnh địa chỉ hộ",
+        ["Save correction"] = "Lưu điều chỉnh",
+        ["Correct history"] = "Điều chỉnh lịch sử",
+        ["Cannot rectify history"] = "Không thể điều chỉnh lịch sử",
+        ["Start date"] = "Ngày bắt đầu",
+        ["End date"] = "Ngày kết thúc",
+        ["Reason (required)"] = "Lý do (bắt buộc)",
+        ["Source row:"] = "Dòng nguồn:",
+        ["Membership"] = "Thành viên hộ",
+        ["Household address"] = "Địa chỉ hộ",
+        ["Residence"] = "Nơi cư trú",
+        ["Record"] = "Bản ghi",
+        ["Residency history"] = "Lịch sử cư trú",
+        ["Active records can only have their start date corrected. Current-state changes go through transfer, change head, or deactivation."] =
+            "Hồ sơ đang hoạt động chỉ được điều chỉnh ngày bắt đầu. Thay đổi trạng thái hiện tại phải thực hiện qua chuyển hộ, đổi chủ hộ hoặc vô hiệu hóa.",
+        ["The row was corrected. The old row is now VOID and the replacement is linked to it."] =
+            "Đã điều chỉnh. Dòng cũ chuyển sang VOID và dòng mới được liên kết với nó.",
+        ["Select a row first."] = "Hãy chọn một dòng trước.",
+        ["Select an address."] = "Hãy chọn một địa chỉ.",
+        ["Select a household."] = "Hãy chọn một hộ gia đình.",
+        ["Explain why the row is wrong."] = "Hãy giải thích vì sao dòng này sai.",
+        ["ARIS - Rectify membership"] = "ARIS - Điều chỉnh thành viên hộ",
+        ["ARIS - Rectify household address"] = "ARIS - Điều chỉnh địa chỉ hộ",
+        ["ARIS - Rectify residence"] = "ARIS - Điều chỉnh nơi cư trú",
     };
 
     private static readonly Dictionary<string, string> EnglishByVietnamese = BuildReverse();

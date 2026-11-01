@@ -1,6 +1,9 @@
+using Aris.Application.Addresses;
 using Aris.Application.Citizens;
 using Aris.Application.Citizens.Dtos;
 using Aris.Application.Common;
+using Aris.Application.Households;
+using Aris.Application.Rectifications;
 using Aris.UI.Citizens;
 
 namespace Aris.UI;
@@ -9,10 +12,11 @@ namespace Aris.UI;
 /// Citizen directory: search, register, view/edit, and deactivate
 /// (<c>CIT-01</c>-<c>CIT-04</c>, <c>SRCH-01</c>).
 /// </summary>
-// Screen control for managing citizens: searching by ID/name, opening registration, viewing details, and deactivating.
-public partial class CitizenControl : UserControl
-{
+public partial class CitizenControl : UserControl {
     private readonly ICitizenService _citizenService;
+    private readonly IRectificationService _rectificationService;
+    private readonly IAddressService _addressService;
+    private readonly IHouseholdService _householdService;
     private readonly IUserSession _session;
 
     // Search and filter controls
@@ -27,9 +31,16 @@ public partial class CitizenControl : UserControl
 
     private bool _loading;
 
-    public CitizenControl(ICitizenService citizenService, IUserSession session)
-    {
+    public CitizenControl(
+        ICitizenService citizenService,
+        IRectificationService rectificationService,
+        IAddressService addressService,
+        IHouseholdService householdService,
+        IUserSession session) {
         _citizenService = citizenService;
+        _rectificationService = rectificationService;
+        _addressService = addressService;
+        _householdService = householdService;
         _session = session;
 
         InitializeComponent();
@@ -41,8 +52,7 @@ public partial class CitizenControl : UserControl
     }
 
     // Positions and styles the search bar, filter dropdown, grid, and action buttons
-    private void BuildLayout()
-    {
+    private void BuildLayout() {
         _search.Location = new Point(25, 80);
         _search.Size = new Size(250, 27);
         _search.PlaceholderText = "National ID or full name";
@@ -108,10 +118,8 @@ public partial class CitizenControl : UserControl
         _status.SelectedIndexChanged += async (_, _) => await LoadCitizensAsync();
 
         // Search on Enter key
-        _search.KeyDown += async (_, e) =>
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
+        _search.KeyDown += async (_, e) => {
+            if (e.KeyCode == Keys.Enter) {
                 e.SuppressKeyPress = true;
                 await LoadCitizensAsync();
             }
@@ -119,25 +127,21 @@ public partial class CitizenControl : UserControl
     }
 
     // Fetches citizen records from ICitizenService and binds them to the grid
-    private async Task LoadCitizensAsync()
-    {
-        if (_loading || IsDisposed)
-        {
+    private async Task LoadCitizensAsync() {
+        if (_loading || IsDisposed) {
             return;
         }
 
         _loading = true;
         SetBusy(true);
 
-        try
-        {
+        try {
             var text = _search.Text.Trim();
             // If the user typed only digits, search as National ID; otherwise search as Full Name
             var looksLikeNationalId = text.Length > 0 && text.All(char.IsDigit);
             var selectedStatus = _status.SelectedItem?.ToString();
 
-            var criteria = new CitizenSearchCriteria
-            {
+            var criteria = new CitizenSearchCriteria {
                 NationalId = looksLikeNationalId ? text : null,
                 FullName = !looksLikeNationalId && text.Length > 0 ? text : null,
                 Status = selectedStatus == "All" ? null : selectedStatus
@@ -145,8 +149,7 @@ public partial class CitizenControl : UserControl
 
             var result = await _citizenService.SearchAsync(criteria);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot search citizens",
@@ -156,25 +159,20 @@ public partial class CitizenControl : UserControl
             }
 
             _grid.DataSource = result.Value?.ToList() ?? new List<CitizenDto>();
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while loading citizens: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             _loading = false;
             SetBusy(false);
         }
     }
 
     // Disables controls while an async load operation is running
-    private void SetBusy(bool busy)
-    {
+    private void SetBusy(bool busy) {
         _searchButton.Enabled = !busy;
         _createButton.Enabled = !busy;
         _refreshButton.Enabled = !busy;
@@ -188,12 +186,10 @@ public partial class CitizenControl : UserControl
         => _grid.CurrentRow?.DataBoundItem as CitizenDto;
 
     // Opens registration popup dialog to add a new citizen
-    private async void CreateButton_Click(object? sender, EventArgs e)
-    {
+    private async void CreateButton_Click(object? sender, EventArgs e) {
         using var form = new CitizenEditForm(_citizenService, _session);
 
-        if (form.ShowDialog(this) == DialogResult.OK)
-        {
+        if (form.ShowDialog(this) == DialogResult.OK) {
             // Reload grid if citizen was successfully registered
             await LoadCitizensAsync();
         }
@@ -203,11 +199,9 @@ public partial class CitizenControl : UserControl
         => ViewButton_Click(sender, e);
 
     // Opens citizen profile/edit form
-    private async void ViewButton_Click(object? sender, EventArgs e)
-    {
+    private async void ViewButton_Click(object? sender, EventArgs e) {
         var selected = GetSelectedCitizen();
-        if (selected is null)
-        {
+        if (selected is null) {
             MessageBox.Show(
                 "Select a citizen first.",
                 "No selection",
@@ -217,7 +211,8 @@ public partial class CitizenControl : UserControl
         }
 
         using var form = new CitizenDetailForm(
-            _citizenService, _session, selected.CitizenId);
+            _citizenService, _rectificationService, _addressService,
+            _householdService, _session, selected.CitizenId);
 
         form.ShowDialog(this);
         // Refresh grid after closing detail/edit form
@@ -225,11 +220,9 @@ public partial class CitizenControl : UserControl
     }
 
     // Handles citizen deactivation with safety checks
-    private async void DeactivateButton_Click(object? sender, EventArgs e)
-    {
+    private async void DeactivateButton_Click(object? sender, EventArgs e) {
         var selected = GetSelectedCitizen();
-        if (selected is null)
-        {
+        if (selected is null) {
             MessageBox.Show(
                 "Select a citizen first.",
                 "No selection",
@@ -238,8 +231,7 @@ public partial class CitizenControl : UserControl
             return;
         }
 
-        if (_session.UserId is not int userId)
-        {
+        if (_session.UserId is not int userId) {
             MessageBox.Show(
                 "Your session has expired. Sign in again.",
                 "Session expired",
@@ -252,8 +244,7 @@ public partial class CitizenControl : UserControl
         var detailResult = await _citizenService.GetByIdAsync(selected.CitizenId);
         var detail = detailResult.Value;
 
-        if (detail is null)
-        {
+        if (detail is null) {
             MessageBox.Show(
                 string.Join(Environment.NewLine, detailResult.Errors.DefaultIfEmpty("Citizen not found.")),
                 "Cannot deactivate",
@@ -267,8 +258,7 @@ public partial class CitizenControl : UserControl
             .ToList();
 
         // If this citizen is the HEAD and other members remain, direct them to detail view to pick a successor head!
-        if (detail.HouseholdRole == "HEAD" && otherMembers.Count > 0)
-        {
+        if (detail.HouseholdRole == "HEAD" && otherMembers.Count > 0) {
             MessageBox.Show(
                 "This citizen is the household head. Open the record and choose a successor head.",
                 "Successor required",
@@ -276,7 +266,8 @@ public partial class CitizenControl : UserControl
                 MessageBoxIcon.Information);
 
             using var form = new CitizenDetailForm(
-                _citizenService, _session, detail.CitizenId);
+                _citizenService, _rectificationService, _addressService,
+                _householdService, _session, detail.CitizenId);
             form.ShowDialog(this);
             await LoadCitizensAsync();
             return;
@@ -293,8 +284,7 @@ public partial class CitizenControl : UserControl
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
 
-        if (confirmation != DialogResult.Yes)
-        {
+        if (confirmation != DialogResult.Yes) {
             return;
         }
 
@@ -302,8 +292,7 @@ public partial class CitizenControl : UserControl
         var result = await _citizenService.DeactivateCitizenAsync(
             detail.CitizenId, userId);
 
-        if (result.IsFailure)
-        {
+        if (result.IsFailure) {
             MessageBox.Show(
                 string.Join(Environment.NewLine, result.Errors),
                 "Cannot deactivate citizen",

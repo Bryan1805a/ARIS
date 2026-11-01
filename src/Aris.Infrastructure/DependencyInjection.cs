@@ -3,6 +3,7 @@ using Aris.Application.Addresses;
 using Aris.Application.Auditing;
 using Aris.Application.Citizens;
 using Aris.Application.Households;
+using Aris.Application.Rectifications;
 using Aris.Application.Transfers;
 using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Addresses;
@@ -10,6 +11,7 @@ using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Citizens;
 using Aris.Infrastructure.Households;
 using Aris.Infrastructure.Persistence;
+using Aris.Infrastructure.Rectifications;
 using Aris.Infrastructure.Transfers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,20 +25,16 @@ namespace Aris.Infrastructure;
 /// <summary>
 /// Composition entry point for the Infrastructure layer.
 /// </summary>
-public static class DependencyInjection
-{
+public static class DependencyInjection {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
-    {
+        IConfiguration configuration) {
         var connectionString = configuration.GetConnectionString("ArisDb");
 
         // Resolve the connection string lazily:
         // the UI can start without a database connection.
-        services.AddDbContext<ArisDbContext>((_, options) =>
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
+        services.AddDbContext<ArisDbContext>((_, options) => {
+            if (string.IsNullOrWhiteSpace(connectionString)) {
                 throw new InvalidOperationException(
                     "ConnectionStrings:ArisDb is not configured. " +
                     "Set it with 'dotnet user-secrets set \"ConnectionStrings:ArisDb\" \"...\"' " +
@@ -52,10 +50,8 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString);
         });
         services.AddDbContextFactory<ArisDbContext>(
-    (_, options) =>
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
+    (_, options) => {
+        if (string.IsNullOrWhiteSpace(connectionString)) {
             throw new InvalidOperationException(
                 "ConnectionStrings:ArisDb is not configured.");
         }
@@ -66,9 +62,8 @@ public static class DependencyInjection
 
         // Register repository for Authentication.
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
-        services.AddScoped<
-            ISystemConfigurationRepository,
-            SystemConfigurationRepository>();
+        services.AddScoped<ISystemConfigurationRepository, SystemConfigurationRepository>();
+
         // Scoped: AuditService shares the caller's ArisDbContext.
         services.AddScoped<IAuditService, AuditService>();
 
@@ -85,6 +80,10 @@ public static class DependencyInjection
 
         // Maker-checker transfer engine (UC-06).
         services.AddScoped<ITransferService, TransferService>();
+
+        // Void-and-correct workflow for append-only tenures (HIST-01).
+        services.AddScoped<IRectificationService, RectificationService>();
+
         services.AddScoped<IAuditRepository, AuditRepository>();
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();

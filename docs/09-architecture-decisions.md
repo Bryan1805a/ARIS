@@ -25,6 +25,7 @@ stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
 | `D16` | DDL script is authoritative; no EF Core migrations | Accepted |
 | `D17` | EF retry-on-failure disabled because mutations own explicit transactions | Accepted |
 | `D18` | Application interfaces with Infrastructure service implementations | Accepted |
+| `D19` | Rectification uses VOID-and-replace with guarded current state | Accepted |
 
 ---
 
@@ -333,12 +334,40 @@ contradicted the layering table.
 **Decision.** Application owns the module contracts: interfaces, DTOs, validators and
 `Result<T>`. Infrastructure implements the services that need persistence primitives
 (`BootstrapService`, `DemoDataService`, `CitizenService`, `AddressService`,
-`HouseholdService`, `TransferService`) behind those interfaces. Repository-backed
-services (`AuthService`, `AccountService`, `ReportService`, `AuditQueryService`,
-`SystemConfigurationService`) remain in Application. The UI resolves only the
-Application interfaces through DI.
+`HouseholdService`, `TransferService`, `RectificationService`) behind those interfaces.
+Repository-backed services (`AuthService`, `AccountService`, `ReportService`,
+`AuditQueryService`, `SystemConfigurationService`) remain in Application. The UI resolves
+only the Application interfaces through DI.
 
 **Consequences.**
 - Application remains persistence-free and the UI never sees EF Core.
 - Some service implementations sit in Infrastructure; §5.2.2/§5.2.4 record this.
 - Service-level tests can target the interfaces with a real database or fakes.
+
+---
+
+## D19 — Rectification uses VOID-and-replace with guarded current state
+
+**Context.** Append-only tenure rows sometimes contain errors. Editing them in place would
+destroy the historical record, while treating a correction as an ordinary close-and-open
+would hide the fact that the original row was wrong. Current-state changes also interact
+with the Golden Invariant: moving a residence, changing a role, or changing a household
+must adjust the related membership, residence, and household-address rows together.
+
+**Decision.** Implement `HIST-01` as `RectificationService` behind
+`IRectificationService`. Each operation marks the erroneous row `VOID` and inserts a
+replacement linked through `CorrectsMembershipId`, `CorrectsResidenceId`, or
+`CorrectsHouseholdAddressId`, in one transaction with two correlated audit rows. An
+`ACTIVE` row may only have its `StartDate` corrected. Address, role, household, and
+end-date changes on current state are performed by transfer (`UC-06`), change-head
+(`HH-04`), or deactivation (`CIT-04`). A residence or membership referenced by a pending
+transfer item is blocked until the transfer is decided or cancelled.
+
+**Consequences.**
+- Errors remain visible and traceable; the old row is never rewritten.
+- Rectification cannot bypass maker-checker, atomic current-state operations, or the
+  Golden Invariant.
+- Historical (`ENDED`) rows can be corrected more broadly, subject to temporal
+  non-overlap.
+- The service lives in Infrastructure (`D18`) and is exposed through one shared
+  `RectifyTenureForm` in the citizen and household screens.
