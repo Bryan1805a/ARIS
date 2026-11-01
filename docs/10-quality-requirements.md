@@ -57,10 +57,7 @@ proven, not how it is hoped for.
 | `Q-INT-03` | A transfer is approved for two members. | Both tenures move atomically; a failure moves neither. | Zero rows for both citizens after commit; zero partial rows after rollback. | `Aris.Tests` |
 | `Q-INT-04` | Two overlapping residences are inserted for one citizen. | The second insert is rejected. | SQL error `51002`. | Trigger integration test |
 | `Q-INT-05` | A residence is edited in place (`AddressId` changed). | The update is rejected. | SQL error `51001`. | Trigger integration test |
-| `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | Query test on `vw_AddressCanonical` |
-
-> `Q-INT-06` is supported by the schema and canonical view, but the `ADR-03` service/UI
-> for retiring an address is still pending (§5.5).
+| `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | `AddressCanonicalTests` query on `vw_AddressCanonical` |
 
 ### Security
 

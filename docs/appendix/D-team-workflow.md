@@ -222,7 +222,7 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | `P6-TL1` | End-to-end integration and negative controls |
 | `P7-TL1` | Concurrency stress, fresh-machine deployment, acceptance |
 
-### D.5.6 Current implementation status (30/10/2026)
+### D.5.6 Current implementation status (01/11/2026)
 
 | Phase | Status |
 |---|---|
@@ -231,13 +231,12 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 3 — household slice | Complete |
 | Phase 4 — transfer engine | Complete |
 | Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer/configuration/basic reports |
-| Phase 6 — integration | Partially complete; address search/retirement, rectification and audit filters remain |
+| Phase 6 — integration | Partially complete; rectification and audit filters remain |
 | Phase 7 — hardening | Ongoing; service tests, committed UI automation, concurrency and schema-inventory tests remain |
 
-Known functional gaps: `ADR-02`/`ADR-03` (address search/retirement), `SRCH-03`
-(address search), `HIST-01` (void-and-correct), and richer `AUD-01` filtering/detail.
+Known functional gaps: `HIST-01` (void-and-correct) and richer `AUD-01` filtering/detail.
 Vietnamization covers the static UI; service-layer validation messages are still English.
-The test suite is 77 passed / 5 skipped without a database and 82 passed / 0 skipped
+The test suite is 80 passed / 6 skipped without a database and 86 passed / 0 skipped
 against the local container.
 
 ---

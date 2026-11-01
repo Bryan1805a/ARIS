@@ -62,6 +62,7 @@ flowchart TB
 | `AccountManagementControl`, `AuditViewerControl`, `SystemConfigurationControl` | Admin screens | Implemented |
 | `ReportsControl` | Report selection, preview, CSV export | Implemented |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
+| `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
 
 **Rule:** every screen is registered as a transient in `Program.cs`; the shell resolves
 it and hosts it in `contentPanel`. A screen never opens another top-level window for
@@ -78,7 +79,7 @@ navigation.
 | `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
 | `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
-| `Addresses/IAddressService` + DTOs | `ADR-01`, address lookup for households (implementation in Infrastructure) | Implemented |
+| `Addresses/IAddressService` + DTOs | `ADR-01`–`ADR-03`, `SRCH-03`; `SearchAsync`, `GetByIdAsync`, `RetireAsync`, plus registration and active-address lookup for households (implementation in Infrastructure) | Implemented |
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
 | `Residences/IResidenceService` | `RES-03` current-residence query | Not a separate service; exposed through `CitizenService.GetByIdAsync` |
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
@@ -125,7 +126,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
-| `Addresses/AddressService` | Address registration and active-address lookup | Implemented |
+| `Addresses/AddressService` | Address registration, search, detail, retirement and active-address lookup | Implemented |
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
@@ -201,8 +202,8 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The core vertical slices are
-implemented; the remaining gaps are address search/retirement, historical rectification,
-audit filtering and test/UI-automation depth.
+implemented; the remaining gaps are historical rectification, audit filtering and
+test/UI-automation depth.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -220,7 +221,7 @@ audit filtering and test/UI-automation depth.
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
 | Transfer engine (`UC-06`) | ✔ | — |
 | Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; admin mutation auditing (`T14`); report depth |
-| Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✘ | Address search/lineage UI |
+| Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✔ | — |
 | Historical rectification (`HIST-01`) | ✘ | Void-and-correct flow |
 | Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
 | Database schema | ✔ deployed by script | — |
