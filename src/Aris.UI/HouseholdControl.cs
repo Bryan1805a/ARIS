@@ -3,6 +3,7 @@ using Aris.Application.Citizens;
 using Aris.Application.Common;
 using Aris.Application.Households;
 using Aris.Application.Households.Dtos;
+using Aris.Application.Rectifications;
 using Aris.UI.Households;
 
 namespace Aris.UI;
@@ -11,12 +12,11 @@ namespace Aris.UI;
 /// Household directory: search, register, and open the household profile
 /// (<c>HH-01</c>, <c>HH-06</c>, <c>SRCH-02</c>).
 /// </summary>
-// Screen control for managing households: searching, registering new households, and opening household profiles.
-public partial class HouseholdControl : UserControl
-{
+public partial class HouseholdControl : UserControl {
     private readonly IHouseholdService _householdService;
     private readonly ICitizenService _citizenService;
     private readonly IAddressService _addressService;
+    private readonly IRectificationService _rectificationService;
     private readonly IUserSession _session;
 
     // Search and filter controls
@@ -34,11 +34,12 @@ public partial class HouseholdControl : UserControl
         IHouseholdService householdService,
         ICitizenService citizenService,
         IAddressService addressService,
-        IUserSession session)
-    {
+        IRectificationService rectificationService,
+        IUserSession session) {
         _householdService = householdService;
         _citizenService = citizenService;
         _addressService = addressService;
+        _rectificationService = rectificationService;
         _session = session;
 
         InitializeComponent();
@@ -50,8 +51,7 @@ public partial class HouseholdControl : UserControl
     }
 
     // Sets up the search bar, status dropdown filter, grid, and action buttons
-    private void BuildLayout()
-    {
+    private void BuildLayout() {
         _search.Location = new Point(25, 80);
         _search.Size = new Size(300, 27);
         _search.PlaceholderText = "Household #, head name, National ID or address";
@@ -111,10 +111,8 @@ public partial class HouseholdControl : UserControl
         _status.SelectedIndexChanged += async (_, _) => await LoadHouseholdsAsync();
 
         // Search on Enter key
-        _search.KeyDown += async (_, e) =>
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
+        _search.KeyDown += async (_, e) => {
+            if (e.KeyCode == Keys.Enter) {
                 e.SuppressKeyPress = true;
                 await LoadHouseholdsAsync();
             }
@@ -122,24 +120,20 @@ public partial class HouseholdControl : UserControl
     }
 
     // Fetches households from IHouseholdService according to search criteria
-    private async Task LoadHouseholdsAsync()
-    {
-        if (_loading || IsDisposed)
-        {
+    private async Task LoadHouseholdsAsync() {
+        if (_loading || IsDisposed) {
             return;
         }
 
         _loading = true;
         SetBusy(true);
 
-        try
-        {
+        try {
             var text = _search.Text.Trim();
             var selectedStatus = _status.SelectedItem?.ToString();
 
             // If the search input is a number, treat it as HouseholdId; otherwise as text search across head/address
-            var criteria = new HouseholdSearchCriteria
-            {
+            var criteria = new HouseholdSearchCriteria {
                 HouseholdId = int.TryParse(text, out var id) ? id : null,
                 SearchText = int.TryParse(text, out _) || text.Length == 0 ? null : text,
                 Status = selectedStatus == "All" ? null : selectedStatus
@@ -147,8 +141,7 @@ public partial class HouseholdControl : UserControl
 
             var result = await _householdService.SearchAsync(criteria);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot search households",
@@ -158,25 +151,20 @@ public partial class HouseholdControl : UserControl
             }
 
             _grid.DataSource = result.Value?.ToList() ?? new List<HouseholdDto>();
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while loading households: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             _loading = false;
             SetBusy(false);
         }
     }
 
     // Disables buttons during async loading
-    private void SetBusy(bool busy)
-    {
+    private void SetBusy(bool busy) {
         _searchButton.Enabled = !busy;
         _registerButton.Enabled = !busy;
         _refreshButton.Enabled = !busy;
@@ -189,13 +177,11 @@ public partial class HouseholdControl : UserControl
         => _grid.CurrentRow?.DataBoundItem as HouseholdDto;
 
     // Opens registration popup to create a new household with an unassigned citizen as head
-    private async void RegisterButton_Click(object? sender, EventArgs e)
-    {
+    private async void RegisterButton_Click(object? sender, EventArgs e) {
         using var form = new RegisterHouseholdForm(
             _householdService, _citizenService, _addressService, _session);
 
-        if (form.ShowDialog(this) == DialogResult.OK)
-        {
+        if (form.ShowDialog(this) == DialogResult.OK) {
             await LoadHouseholdsAsync();
         }
     }
@@ -204,11 +190,9 @@ public partial class HouseholdControl : UserControl
         => ViewButton_Click(sender, e);
 
     // Opens household detail profile (members list, address history, change head, add member)
-    private async void ViewButton_Click(object? sender, EventArgs e)
-    {
+    private async void ViewButton_Click(object? sender, EventArgs e) {
         var selected = GetSelectedHousehold();
-        if (selected is null)
-        {
+        if (selected is null) {
             MessageBox.Show(
                 "Select a household first.",
                 "No selection",
@@ -218,7 +202,8 @@ public partial class HouseholdControl : UserControl
         }
 
         using var form = new HouseholdDetailForm(
-            _householdService, _citizenService, _session, selected.HouseholdId);
+            _householdService, _citizenService, _rectificationService,
+            _addressService, _session, selected.HouseholdId);
 
         form.ShowDialog(this);
         await LoadHouseholdsAsync();
