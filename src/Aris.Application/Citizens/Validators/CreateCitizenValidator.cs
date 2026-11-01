@@ -5,6 +5,7 @@ namespace Aris.Application.Citizens.Validators;
 
 public sealed class CreateCitizenValidator : AbstractValidator<CreateCitizenDto>
 {
+    // Cehck if NationalID, FullName, DateOfBirth and Gender are in correct format before create
     public CreateCitizenValidator()
     {
         RuleFor(x => x.NationalId)

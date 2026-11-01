@@ -18,10 +18,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Aris.Application;
 
-public static class DependencyInjection
-{
-    public static IServiceCollection AddApplication(this IServiceCollection services)
-    {
+public static class DependencyInjection {
+    public static IServiceCollection AddApplication(this IServiceCollection services) {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IReportService, ReportService>();
@@ -38,6 +36,8 @@ public static class DependencyInjection
 
         services.AddScoped<IValidator<CreateTransferRequestDto>, CreateTransferRequestValidator>();
         services.AddScoped<IValidator<TransferDecisionDto>, TransferDecisionValidator>();
+
+        services.AddScoped<IValidator<RetireAddressDto>, RetireAddressValidator>();
 
         return services;
     }

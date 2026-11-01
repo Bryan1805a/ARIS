@@ -1,5 +1,6 @@
 using Aris.Application;
 using Aris.Infrastructure;
+using Aris.UI.Addresses;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +50,7 @@ internal static class Program
                 services.AddTransient<ReportsControl>();
                 services.AddTransient<AuditViewerControl>();
                 services.AddTransient<SystemConfigurationControl>();
+                services.AddTransient<AddressControl>();
 
             })
             .Build();

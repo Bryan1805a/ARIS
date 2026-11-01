@@ -5,8 +5,7 @@ using Aris.Application.Common;
 namespace Aris.UI.Citizens;
 
 /// <summary>Create or update a citizen's non-identifying demographics.</summary>
-public sealed class CitizenEditForm : Form
-{
+public sealed class CitizenEditForm : Form {
     private readonly ICitizenService _citizenService;
     private readonly IUserSession _session;
     private readonly CitizenDetailDto? _existing;
@@ -18,11 +17,11 @@ public sealed class CitizenEditForm : Form
     private readonly Button _saveButton = new();
     private readonly Button _cancelButton = new();
 
+    // Constructor
     public CitizenEditForm(
         ICitizenService citizenService,
         IUserSession session,
-        CitizenDetailDto? existing = null)
-    {
+        CitizenDetailDto? existing = null) {
         _citizenService = citizenService;
         _session = session;
         _existing = existing;
@@ -37,8 +36,7 @@ public sealed class CitizenEditForm : Form
 
         BuildLayout();
 
-        if (existing is not null)
-        {
+        if (existing is not null) {
             _nationalId.Text = existing.NationalId;
             _nationalId.ReadOnly = true;
             _fullName.Text = existing.FullName;
@@ -47,10 +45,10 @@ public sealed class CitizenEditForm : Form
         }
     }
 
-    private void BuildLayout()
-    {
-        var title = new Label
-        {
+    // Create an options form and let user choose Register new citizen or Update current one
+    private void BuildLayout() {
+        // Title lable
+        var title = new Label {
             Text = _existing is null ? "Register a citizen" : "Update citizen demographics",
             Font = new Font("Segoe UI", 14F, FontStyle.Bold),
             ForeColor = Color.DarkSlateGray,
@@ -58,8 +56,8 @@ public sealed class CitizenEditForm : Form
             Location = new Point(20, 15)
         };
 
-        var hint = new Label
-        {
+        // Hint label
+        var hint = new Label {
             Text = _existing is null
                 ? "The citizen starts as UNASSIGNED until a household is registered."
                 : "National ID is identifying data and cannot be changed.",
@@ -69,37 +67,41 @@ public sealed class CitizenEditForm : Form
             Location = new Point(20, 50)
         };
 
+        // Add new citizen information rows
         AddRow("National ID", _nationalId, 95);
         _nationalId.MaxLength = 12;
 
         AddRow("Full name", _fullName, 135);
         _fullName.MaxLength = 100;
 
-        var dobLabel = new Label
-        {
+        // Date of birth label
+        var dobLabel = new Label {
             Text = "Date of birth",
             AutoSize = true,
             Location = new Point(20, 178)
         };
 
+        // Date time picker
         _dateOfBirth.Location = new Point(140, 175);
         _dateOfBirth.Size = new Size(310, 23);
         _dateOfBirth.Format = DateTimePickerFormat.Custom;
         _dateOfBirth.CustomFormat = "yyyy-MM-dd";
         _dateOfBirth.MaxDate = DateTime.Today.AddDays(-1);
 
-        var genderLabel = new Label
-        {
+        // Gender label
+        var genderLabel = new Label {
             Text = "Gender",
             AutoSize = true,
             Location = new Point(20, 218)
         };
 
+        // Gender combobox
         _gender.Location = new Point(140, 215);
         _gender.Size = new Size(310, 23);
         _gender.DropDownStyle = ComboBoxStyle.DropDownList;
         _gender.Items.AddRange(new object[] { "MALE", "FEMALE", "OTHER" });
 
+        // Save button
         _saveButton.Text = _existing is null ? "Register" : "Save changes";
         _saveButton.Location = new Point(230, 270);
         _saveButton.Size = new Size(110, 30);
@@ -108,6 +110,7 @@ public sealed class CitizenEditForm : Form
         _saveButton.FlatStyle = FlatStyle.Flat;
         _saveButton.Click += SaveButton_Click;
 
+        // Cancel button
         _cancelButton.Text = "Cancel";
         _cancelButton.Location = new Point(350, 270);
         _cancelButton.Size = new Size(100, 30);
@@ -123,10 +126,9 @@ public sealed class CitizenEditForm : Form
         });
     }
 
-    private void AddRow(string labelText, TextBox textBox, int top)
-    {
-        var label = new Label
-        {
+    // Add a new citizen information row
+    private void AddRow(string labelText, TextBox textBox, int top) {
+        var label = new Label {
             Text = labelText,
             AutoSize = true,
             Location = new Point(20, top + 3)
@@ -139,10 +141,10 @@ public sealed class CitizenEditForm : Form
         Controls.Add(textBox);
     }
 
-    private async void SaveButton_Click(object? sender, EventArgs e)
-    {
-        if (_session.UserId is not int userId)
-        {
+    // When click, create a DTO to register a new citizen or update current one
+    private async void SaveButton_Click(object? sender, EventArgs e) {
+        // Check if UserId is valid
+        if (_session.UserId is not int userId) {
             MessageBox.Show(
                 "Your session has expired. Sign in again.",
                 "Session expired",
@@ -151,12 +153,13 @@ public sealed class CitizenEditForm : Form
             return;
         }
 
+        // Format and convert type
         var fullName = _fullName.Text.Trim();
         var gender = _gender.SelectedItem?.ToString();
         var dateOfBirth = DateOnly.FromDateTime(_dateOfBirth.Value);
 
-        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(gender))
-        {
+        // Check if fullName or gender is empty
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(gender)) {
             MessageBox.Show(
                 "Full name and gender are required.",
                 "Missing information",
@@ -167,15 +170,13 @@ public sealed class CitizenEditForm : Form
 
         _saveButton.Enabled = false;
 
-        try
-        {
+        try {
             Result result;
 
-            if (_existing is null)
-            {
+            // Check if citizen is not exists, create new one
+            if (_existing is null) {
                 var created = await _citizenService.CreateCitizenAsync(
-                    new CreateCitizenDto
-                    {
+                    new CreateCitizenDto {
                         NationalId = _nationalId.Text.Trim(),
                         FullName = fullName,
                         DateOfBirth = dateOfBirth,
@@ -184,13 +185,11 @@ public sealed class CitizenEditForm : Form
                     userId);
 
                 result = created;
-            }
-            else
-            {
+            } else // If citizen is exists, update current one
+              {
                 result = await _citizenService.UpdateCitizenAsync(
                     _existing.CitizenId,
-                    new UpdateCitizenDto
-                    {
+                    new UpdateCitizenDto {
                         FullName = fullName,
                         DateOfBirth = dateOfBirth,
                         Gender = gender
@@ -198,8 +197,8 @@ public sealed class CitizenEditForm : Form
                     userId);
             }
 
-            if (result.IsFailure)
-            {
+            // Failure check
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot save citizen",
@@ -210,17 +209,13 @@ public sealed class CitizenEditForm : Form
 
             DialogResult = DialogResult.OK;
             Close();
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while saving the citizen: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             _saveButton.Enabled = true;
         }
     }

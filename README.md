@@ -29,10 +29,10 @@ append-only historical audit trail.
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | Complete |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | Complete |
 | Maker-checker transfer (`UC-06`) | Complete |
-| Address registration (`ADR-01`) | Complete; address search/retirement (`ADR-02`/`ADR-03`, `SRCH-03`) is not |
+| Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Not implemented |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 82 with a database; 77 passed + 5 skipped without |
+| Tests | 86 with a database; 80 passed + 6 skipped without |
 
 ## Documentation
 
@@ -130,7 +130,12 @@ demographic updates; and deactivation, including successor-head handling.
 
 The **Household** screen supports registration (head + active address), adding an
 UNASSIGNED member, changing the head with close-and-open tenures, and viewing member and
-address history. Addresses can be registered from the household form.
+address history.
+
+The **Address** screen supports search by code, street, ward, district, province, or
+status; a profile with canonical lineage, current households and residents; registration;
+and retirement with an active successor. Addresses can also be registered from the
+household form.
 
 The **Transfer** screen is the maker-checker inbox. An officer creates a
 `JOIN_EXISTING`, `NEW_HOUSEHOLD`, or `HOUSEHOLD_MOVE` request; a different officer
@@ -168,15 +173,16 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **82 passed, 0 failed, 0 skipped** with a database, or
-**77 passed, 5 skipped** without one.
+The current suite is **86 passed, 0 failed, 0 skipped** with a database, or
+**80 passed, 6 skipped** without one.
 
 | Suite | Purpose |
 |---|---|
-| `Aris.UnitTests` | `Result<T>`, audit validation, citizen/household/transfer validators, EF model vs DDL |
+| `Aris.UnitTests` | `Result<T>`, audit validation, citizen/household/transfer/address validators, EF model vs DDL |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
 | `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |
+| `AddressCanonicalTests` | Retiring an address preserves historical residences through the canonical view |
 | `AuditServiceTests` | Success audit commits inside the caller's transaction; failure audit survives on an independent connection |
 | `SqlResilienceTests` | Transient errors are retried; constraint/trigger errors are not |
 

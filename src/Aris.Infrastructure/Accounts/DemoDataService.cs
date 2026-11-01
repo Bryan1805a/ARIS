@@ -19,6 +19,7 @@ namespace Aris.Infrastructure.Accounts;
 /// active address. The seed is idempotent and runs in one transaction, so a partial
 /// dataset can never be left behind. It creates no accounts and no transfer requests.
 /// </remarks>
+// Populates demo citizens, households, and addresses for easy local testing and presentation.
 public sealed class DemoDataService : IDemoDataService
 {
     private const string Action = "SEED_DEMO_DATA";
@@ -33,10 +34,12 @@ public sealed class DemoDataService : IDemoDataService
         _audit = audit;
     }
 
+    // Seeds sample data if not already present
     public async Task<Result<DemoSeedSummary>> SeedAsync(
         int currentUserId,
         CancellationToken cancellationToken = default)
     {
+        // 1. Only admins can trigger demo data seeding
         var actor = await _context.UserAccounts
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.UserId == currentUserId, cancellationToken)
@@ -48,6 +51,7 @@ public sealed class DemoDataService : IDemoDataService
                 "Only an active administrator can seed demo data.");
         }
 
+        // 2. Prevent duplicate seeding: check if the first demo national ID exists
         if (await _context.Citizens
                 .AnyAsync(c => c.NationalId == FirstDemoNationalId, cancellationToken)
                 .ConfigureAwait(false))
@@ -59,13 +63,14 @@ public sealed class DemoDataService : IDemoDataService
         var correlationId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
+        // 3. Insert everything in a single transaction so we don't end up with partial data
         await using var transaction = await _context.Database
             .BeginTransactionAsync(cancellationToken)
             .ConfigureAwait(false);
 
         try
         {
-            // --- Addresses -------------------------------------------------------
+            // --- Sample Addresses ------------------------------------------------
             var home1 = new Address
             {
                 AddressCode = "DEMO-ADDR-001",
@@ -90,7 +95,8 @@ public sealed class DemoDataService : IDemoDataService
                 CreatedAt = now
             };
 
-            // --- Citizens --------------------------------------------------------
+            // --- Sample Citizens -------------------------------------------------
+            // Citizens 1-5 belong to households (ACTIVE), Citizen 6 is UNASSIGNED (ready to be added to a household or transfer)
             var an = NewCitizen("000000000001", "Nguyen Van An", new DateOnly(1980, 1, 1), "MALE", "ACTIVE", now);
             var binh = NewCitizen("000000000002", "Tran Thi Binh", new DateOnly(1985, 5, 12), "FEMALE", "ACTIVE", now);
             var cu = NewCitizen("000000000003", "Nguyen Van Cu", new DateOnly(2010, 9, 20), "MALE", "ACTIVE", now);
@@ -102,7 +108,7 @@ public sealed class DemoDataService : IDemoDataService
             _context.Citizens.AddRange(an, binh, cu, dung, em, phuc);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            // --- Households ------------------------------------------------------
+            // --- Sample Households -----------------------------------------------
             var household1 = new Household { Status = "ACTIVE", CreatedAt = now };
             var household2 = new Household { Status = "ACTIVE", CreatedAt = now };
 
@@ -117,7 +123,8 @@ public sealed class DemoDataService : IDemoDataService
                 NewHouseholdAddress(household1.HouseholdId, home1.AddressId, start1, currentUserId, now),
                 NewHouseholdAddress(household2.HouseholdId, home2.AddressId, start2, currentUserId, now));
 
-            // --- Membership and residency ---------------------------------------
+            // --- Membership and physical residency (satisfies Golden Invariant) ---
+            // Household 1: An is HEAD, Binh and Cu are members; all live at home1
             _context.HouseholdMemberships.AddRange(
                 NewMembership(an.CitizenId, household1.HouseholdId, "HEAD", start1, currentUserId, now),
                 NewMembership(binh.CitizenId, household1.HouseholdId, "MEMBER", start1, currentUserId, now),
@@ -134,7 +141,7 @@ public sealed class DemoDataService : IDemoDataService
 
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            // --- Audit -----------------------------------------------------------
+            // --- Audit the seeding operation -------------------------------------
             await _audit.LogAsync(new AuditEntry
             {
                 ActorUserId = currentUserId,

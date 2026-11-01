@@ -46,16 +46,19 @@ public sealed class CitizenService : ICitizenService
         _updateValidator = updateValidator;
     }
 
+    // CIT-01: Registers a brand-new citizen with initial status UNASSIGNED
     public async Task<Result<int>> CreateCitizenAsync(
         CreateCitizenDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Check if the current user is active
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result<int>.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input DTO (valid 12-digit National ID, name length, date of birth in past, etc.)
         var validation = await _createValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -66,6 +69,7 @@ public sealed class CitizenService : ICitizenService
         var fullName = dto.FullName.Trim();
         var gender = dto.Gender.Trim().ToUpperInvariant();
 
+        // 3. Make sure the National ID is unique before doing anything else
         if (await _context.Citizens.AnyAsync(c => c.NationalId == nationalId, ct))
         {
             return Result<int>.Failure($"National ID {nationalId} is already registered.");
@@ -74,9 +78,11 @@ public sealed class CitizenService : ICitizenService
         var correlationId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
+        // 4. Wrap insert + audit in a transaction
         await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
+            // Note: Citizen starts as UNASSIGNED! They only become ACTIVE when added to a household.
             var citizen = new Citizen
             {
                 NationalId = nationalId,
@@ -91,6 +97,7 @@ public sealed class CitizenService : ICitizenService
             _context.Citizens.Add(citizen);
             await _context.SaveChangesAsync(ct);
 
+            // Audit the registration
             await _audit.LogAsync(new AuditEntry
             {
                 ActorUserId = currentUserId,
@@ -117,17 +124,20 @@ public sealed class CitizenService : ICitizenService
         }
     }
 
+    // CIT-03: Updates demographic details (full name, DOB, gender) and writes an audit log
     public async Task<Result> UpdateCitizenAsync(
         int citizenId,
         UpdateCitizenDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Verify caller
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input
         var validation = await _updateValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -148,12 +158,14 @@ public sealed class CitizenService : ICitizenService
                 return Result.Failure("Citizen not found.");
             }
 
+            // Inactive citizens cannot have their records modified
             if (citizen.Status == "INACTIVE")
             {
                 await TryRollbackAsync(transaction, ct);
                 return Result.Failure("An inactive citizen cannot be edited.");
             }
 
+            // Capture before snapshot for audit comparison
             var before = new
             {
                 citizen.FullName,
@@ -168,6 +180,7 @@ public sealed class CitizenService : ICitizenService
 
             await _context.SaveChangesAsync(ct);
 
+            // Audit record includes both before and after states
             await _audit.LogAsync(new AuditEntry
             {
                 ActorUserId = currentUserId,
@@ -192,6 +205,7 @@ public sealed class CitizenService : ICitizenService
         }
         catch (DbUpdateConcurrencyException)
         {
+            // Another user saved changes to this citizen in the meantime (RowVersion mismatch)
             await TryRollbackAsync(transaction, ct);
             return Result.Failure(
                 "This citizen was changed by another user. Reload the record and try again.");
@@ -204,6 +218,7 @@ public sealed class CitizenService : ICitizenService
         }
     }
 
+    // CIT-02: Loads citizen profile, active household, canonical address, and residency history
     public async Task<Result<CitizenDetailDto?>> GetByIdAsync(
         int citizenId,
         CancellationToken ct = default)
@@ -217,22 +232,26 @@ public sealed class CitizenService : ICitizenService
             return Result<CitizenDetailDto?>.Success(null);
         }
 
+        // Get current active household membership
         var membership = await _context.HouseholdMemberships
             .AsNoTracking()
             .Where(m => m.CitizenId == citizenId && m.Status == "ACTIVE")
             .OrderByDescending(m => m.StartDate)
             .FirstOrDefaultAsync(ct);
 
+        // Get current active physical residence
         var residence = await _context.Residences
             .AsNoTracking()
             .Where(r => r.CitizenId == citizenId && r.Status == "ACTIVE")
             .OrderByDescending(r => r.StartDate)
             .FirstOrDefaultAsync(ct);
 
+        // Resolve canonical address text (follows administrative mergers if address was retired)
         var currentAddressText = residence is null
             ? null
             : await ResolveCanonicalAddressTextAsync(residence.AddressId, ct);
 
+        // Get full residency history timeline (excluding VOIDed rows)
         var timeline = await (
             from r in _context.Residences.AsNoTracking()
             join a in _context.Addresses.AsNoTracking() on r.AddressId equals a.AddressId
@@ -248,6 +267,7 @@ public sealed class CitizenService : ICitizenService
                 Status = r.Status
             }).ToListAsync(ct);
 
+        // Load fellow members in the same household if currently assigned to one
         var householdMembers = membership is null
             ? new List<CitizenDto>()
             : await (
@@ -284,6 +304,7 @@ public sealed class CitizenService : ICitizenService
         });
     }
 
+    // SRCH-01: Searches citizens by National ID, name substring, or lifecycle status
     public async Task<Result<IEnumerable<CitizenDto>>> SearchAsync(
         CitizenSearchCriteria criteria,
         CancellationToken ct = default)
@@ -332,6 +353,7 @@ public sealed class CitizenService : ICitizenService
         return Result<IEnumerable<CitizenDto>>.Success(citizens);
     }
 
+    // CIT-04: Deactivates a citizen, closing active tenures and designating successor head or inactiving household
     public async Task<Result> DeactivateCitizenAsync(
         int citizenId,
         int currentUserId,
@@ -339,6 +361,7 @@ public sealed class CitizenService : ICitizenService
         DateOnly? effectiveDate = null,
         CancellationToken ct = default)
     {
+        // 1. Verify caller
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result.Failure("The authenticated user was not found or is not active.");
@@ -366,6 +389,8 @@ public sealed class CitizenService : ICitizenService
                 return Result.Failure("The citizen is already inactive.");
             }
 
+            // Case 1: Citizen is UNASSIGNED (never belonged to a household)
+            // Simply mark them INACTIVE and save.
             if (citizen.Status == "UNASSIGNED")
             {
                 citizen.Status = "INACTIVE";
@@ -381,6 +406,7 @@ public sealed class CitizenService : ICitizenService
                 return Result.Success();
             }
 
+            // Case 2: Citizen is ACTIVE (currently lives in a household)
             var membership = await _context.HouseholdMemberships
                 .FirstOrDefaultAsync(m => m.CitizenId == citizenId && m.Status == "ACTIVE", ct);
 
@@ -402,6 +428,7 @@ public sealed class CitizenService : ICitizenService
                     "The effective date must be later than the start date of the active tenures.");
             }
 
+            // Find other active members in the same household
             var otherActiveMembers = await _context.HouseholdMemberships
                 .Where(m => m.HouseholdId == membership.HouseholdId
                     && m.Status == "ACTIVE"
@@ -410,6 +437,7 @@ public sealed class CitizenService : ICitizenService
 
             HouseholdMembership? successorMembership = null;
 
+            // If the person being deactivated is the HEAD and other members remain, a successor HEAD is required!
             if (membership.Role == "HEAD"
                 && otherActiveMembers.Count > 0
                 && successorHeadCitizenId is null)
@@ -419,6 +447,7 @@ public sealed class CitizenService : ICitizenService
                     "This citizen is the household head. Choose a successor head before deactivating.");
             }
 
+            // Validate the chosen successor head
             if (membership.Role == "HEAD" && successorHeadCitizenId is int successorId)
             {
                 successorMembership = otherActiveMembers
@@ -439,6 +468,7 @@ public sealed class CitizenService : ICitizenService
                 }
             }
 
+            // If this citizen was the HEAD and the ONLY member left, the household is now empty
             var householdBecomesEmpty = membership.Role == "HEAD" && otherActiveMembers.Count == 0;
 
             Household? household = null;
@@ -482,8 +512,10 @@ public sealed class CitizenService : ICitizenService
                 successorMembership.EndedAt = now;
             }
 
+            // Save closures to the database first!
             await _context.SaveChangesAsync(ct);
 
+            // Promote successor to HEAD if there was one
             if (successorMembership is not null)
             {
                 _context.HouseholdMemberships.Add(new HouseholdMembership
@@ -500,6 +532,7 @@ public sealed class CitizenService : ICitizenService
                 await _context.SaveChangesAsync(ct);
             }
 
+            // If the household became empty, deactivate it and close its address
             if (householdBecomesEmpty)
             {
                 if (household is not null)
@@ -519,11 +552,13 @@ public sealed class CitizenService : ICitizenService
                 await _context.SaveChangesAsync(ct);
             }
 
+            // Finally, set citizen status to INACTIVE
             citizen.Status = "INACTIVE";
             citizen.DeactivatedAt = now;
             citizen.UpdatedAt = now;
             await _context.SaveChangesAsync(ct);
 
+            // Audit the deactivation
             await WriteDeactivationAuditAsync(
                 citizenId, currentUserId, correlationId,
                 effective, successorHeadCitizenId, householdBecomesEmpty, ct);
@@ -545,7 +580,6 @@ public sealed class CitizenService : ICitizenService
         }
     }
 
-
     private static async Task TryRollbackAsync(
         Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction,
         CancellationToken ct)
@@ -559,6 +593,7 @@ public sealed class CitizenService : ICitizenService
             // A trigger may already have rolled the transaction back; keep the original error.
         }
     }
+
     private async Task WriteDeactivationAuditAsync(
         int citizenId,
         int currentUserId,
@@ -601,6 +636,7 @@ public sealed class CitizenService : ICitizenService
     {
         var currentId = addressId;
 
+        // Recursive lookup up to 20 hops to find terminal address text
         for (var depth = 0; depth <= 20; depth++)
         {
             var address = await _context.Addresses
@@ -612,6 +648,7 @@ public sealed class CitizenService : ICitizenService
                 return null;
             }
 
+            // No replacement -> this is the active terminal address
             if (address.ReplacedByAddressId is not int successorId)
             {
                 return address.AddressText;

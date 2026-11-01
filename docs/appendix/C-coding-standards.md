@@ -48,6 +48,23 @@ Additional rules:
 - Prefer `DateOnly` for business dates.
 - Keep methods short; extract private helpers rather than nesting.
 - Comments explain **why**, not what. Reference requirement or decision IDs where useful.
+- Follow `.editorconfig` for formatting. `csharp_new_line_before_open_brace = false`
+  means K&R braces: the opening brace stays on the same line as the declaration or
+  statement, and `else`, `catch`, and `finally` follow the closing brace.
+
+  ```csharp
+  if (validation.IsValid) {
+      Register();
+  } else {
+      return Result.Failure("Invalid input.");
+  }
+
+  try {
+      await SaveAsync(ct);
+  } catch (DbUpdateConcurrencyException ex) {
+      return Result.Failure(ex.Message);
+  }
+  ```
 
 ---
 
@@ -64,8 +81,7 @@ appendix.
 > Application.
 
 ```csharp
-public sealed class HouseholdService : IHouseholdService
-{
+public sealed class HouseholdService : IHouseholdService {
     private readonly ArisDbContext _context;
     private readonly IAuditService _audit;
     private readonly IValidator<RegisterHouseholdDto> _validator;
@@ -73,8 +89,7 @@ public sealed class HouseholdService : IHouseholdService
     public HouseholdService(
         ArisDbContext context,
         IAuditService audit,
-        IValidator<RegisterHouseholdDto> validator)
-    {
+        IValidator<RegisterHouseholdDto> validator) {
         _context = context;
         _audit = audit;
         _validator = validator;
@@ -83,12 +98,10 @@ public sealed class HouseholdService : IHouseholdService
     public async Task<Result<int>> RegisterHouseholdAsync(
         RegisterHouseholdDto dto,
         int currentUserId,
-        CancellationToken ct = default)
-    {
+        CancellationToken ct = default) {
         // 1. Validation BEFORE the transaction.
         var validation = await _validator.ValidateAsync(dto, ct);
-        if (!validation.IsValid)
-        {
+        if (!validation.IsValid) {
             return Result<int>.Failure(
                 validation.Errors.Select(e => e.ErrorMessage));
         }
@@ -98,20 +111,17 @@ public sealed class HouseholdService : IHouseholdService
         // 2. One atomic transaction.
         await using var transaction =
             await _context.Database.BeginTransactionAsync(ct);
-        try
-        {
+        try {
             var effectiveDate = dto.EffectiveDate;
 
-            var household = new Household
-            {
+            var household = new Household {
                 Status = "ACTIVE",
                 CreatedAt = DateTime.UtcNow
             };
             _context.Households.Add(household);
             await _context.SaveChangesAsync(ct);
 
-            _context.HouseholdAddresses.Add(new HouseholdAddress
-            {
+            _context.HouseholdAddresses.Add(new HouseholdAddress {
                 HouseholdId = household.HouseholdId,
                 AddressId = dto.AddressId,
                 StartDate = effectiveDate,
@@ -120,8 +130,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = DateTime.UtcNow
             });
 
-            _context.HouseholdMemberships.Add(new HouseholdMembership
-            {
+            _context.HouseholdMemberships.Add(new HouseholdMembership {
                 CitizenId = dto.HeadCitizenId,
                 HouseholdId = household.HouseholdId,
                 Role = "HEAD",
@@ -131,8 +140,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = DateTime.UtcNow
             });
 
-            _context.Residences.Add(new Residence
-            {
+            _context.Residences.Add(new Residence {
                 CitizenId = dto.HeadCitizenId,
                 AddressId = dto.AddressId,
                 StartDate = effectiveDate,
@@ -143,8 +151,7 @@ public sealed class HouseholdService : IHouseholdService
 
             var citizen = await _context.Citizens
                 .FindAsync(new object[] { dto.HeadCitizenId }, ct);
-            if (citizen is null)
-            {
+            if (citizen is null) {
                 return Result<int>.Failure("Citizen not found.");
             }
 
@@ -154,14 +161,12 @@ public sealed class HouseholdService : IHouseholdService
             await _context.SaveChangesAsync(ct);
 
             // 3. Success audit shares the transaction.
-            await _audit.LogAsync(new AuditEntry
-            {
+            await _audit.LogAsync(new AuditEntry {
                 ActorUserId = currentUserId,
                 Action = "REGISTER_HOUSEHOLD",
                 EntityType = "Household",
                 EntityId = household.HouseholdId,
-                DetailsJson = JsonSerializer.Serialize(new
-                {
+                DetailsJson = JsonSerializer.Serialize(new {
                     after = new { household.HouseholdId, dto.AddressId }
                 }),
                 CorrelationId = correlationId
@@ -169,22 +174,18 @@ public sealed class HouseholdService : IHouseholdService
 
             await transaction.CommitAsync(ct);
             return Result<int>.Success(household.HouseholdId);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             await transaction.RollbackAsync(ct);
 
             var connectionString = _context.Database.GetConnectionString()
                 ?? throw new InvalidOperationException(
                     "Missing connection string for failure audit.");
 
-            await _audit.LogFailureIndependentAsync(connectionString, new AuditFailureEntry
-            {
+            await _audit.LogFailureIndependentAsync(connectionString, new AuditFailureEntry {
                 ActorUserId = currentUserId,
                 Action = "REGISTER_HOUSEHOLD",
                 EntityType = "Household",
-                DetailsJson = JsonSerializer.Serialize(new
-                {
+                DetailsJson = JsonSerializer.Serialize(new {
                     reason = ex.Message,
                     exception = ex.GetType().Name
                 }),
@@ -242,8 +243,7 @@ services.AddScoped<IAuditService, AuditService>();
 ## C.5 DTO and validation rules
 
 ```csharp
-public sealed record CreateCitizenDto
-{
+public sealed record CreateCitizenDto {
     public required string NationalId { get; init; }
     public required string FullName { get; init; }
     public required DateOnly DateOfBirth { get; init; }
@@ -283,25 +283,21 @@ RuleFor(x => x.Gender)
 - Hide admin navigation for `OFFICER`, and enforce the same rule in the service.
 
 ```csharp
-public sealed class RegisterHouseholdViewModel
-{
+public sealed class RegisterHouseholdViewModel {
     private readonly IHouseholdService _households;
     private readonly IUserSession _session;
 
     public RegisterHouseholdViewModel(
-        IHouseholdService households, IUserSession session)
-    {
+        IHouseholdService households, IUserSession session) {
         _households = households;
         _session = session;
     }
 
-    public async Task<bool> SaveAsync(RegisterHouseholdDto dto)
-    {
+    public async Task<bool> SaveAsync(RegisterHouseholdDto dto) {
         var result = await _households.RegisterHouseholdAsync(
             dto, _session.CurrentUserId);
 
-        if (result.IsFailure)
-        {
+        if (result.IsFailure) {
             MessageBox.Show(
                 string.Join(Environment.NewLine, result.Errors),
                 "Cannot save household",
@@ -330,8 +326,7 @@ oldMembership.EndedAt = DateTime.UtcNow;
 
 await _context.SaveChangesAsync(ct);   // closures persisted
 
-_context.HouseholdMemberships.Add(new HouseholdMembership
-{
+_context.HouseholdMemberships.Add(new HouseholdMembership {
     CitizenId = citizenId,
     HouseholdId = householdId,
     Role = "MEMBER",
@@ -398,6 +393,8 @@ MANDATORY RULES (DO NOT DEVIATE):
    matching the household's active canonical address.
 9. Failure audit is written on an INDEPENDENT connection AFTER rollback.
 10. The DDL is authoritative. Do not add EF migrations.
+11. C# formatting follows .editorconfig: opening braces stay on the same line
+    (if (x) { ... }), and else / catch / finally follow the closing brace.
 ```
 
 ### Ten hallucination traps
@@ -424,6 +421,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] `vw_GoldenInvariantViolations` returns 0 rows after the operation.
 - [ ] No EF migration was generated.
 - [ ] No secret or connection string added to a tracked file.
+- [ ] Braces follow `.editorconfig` (`csharp_new_line_before_open_brace = false`).
 
 ---
 
@@ -437,6 +435,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Integration tests executed with a local database for schema-sensitive changes.
 - [ ] `SELECT * FROM dbo.vw_GoldenInvariantViolations;` → 0 rows.
 - [ ] No secrets, `.env`, `bin/`, `obj/`, or `TestResults/` staged.
+- [ ] Formatting matches `.editorconfig` (braces on the same line).
 - [ ] PR description lists requirement IDs and tests.
 
 ### Reviewer checklist
@@ -448,6 +447,11 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Expected failures return `Result<T>`; exceptions are reserved for bugs and
       infrastructure.
 - [ ] Validation runs before the transaction.
+
+**Style**
+
+- [ ] Opening braces are on the same line; `else`, `catch`, and `finally` follow the
+      closing brace (`.editorconfig`).
 
 **Schema and EF Core**
 

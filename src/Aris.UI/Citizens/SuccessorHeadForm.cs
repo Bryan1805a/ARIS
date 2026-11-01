@@ -2,15 +2,13 @@ using Aris.Application.Citizens.Dtos;
 
 namespace Aris.UI.Citizens;
 
-/// <summary>Choose the successor head when the departing citizen is the head.</summary>
-public sealed class SuccessorHeadForm : Form
-{
+// Choose the successor head when the departing citizen is the head
+public sealed class SuccessorHeadForm : Form {
     private readonly ComboBox _members = new();
     private readonly Button _okButton = new();
     private readonly Button _cancelButton = new();
 
-    public SuccessorHeadForm(IReadOnlyList<CitizenDto> candidates)
-    {
+    public SuccessorHeadForm(IReadOnlyList<CitizenDto> candidates) {
         Text = "ARIS - Choose successor head";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterParent;
@@ -19,8 +17,7 @@ public sealed class SuccessorHeadForm : Form
         ShowInTaskbar = false;
         ClientSize = new Size(440, 190);
 
-        var label = new Label
-        {
+        var label = new Label {
             Text = "The departing citizen is the household head. Choose a successor:",
             AutoSize = false,
             Size = new Size(400, 40),
@@ -56,10 +53,8 @@ public sealed class SuccessorHeadForm : Form
     /// <summary>The chosen citizen id after <see cref="DialogResult.OK"/>.</summary>
     public int? SelectedCitizenId { get; private set; }
 
-    private void OkButton_Click(object? sender, EventArgs e)
-    {
-        if (_members.SelectedValue is int citizenId)
-        {
+    private void OkButton_Click(object? sender, EventArgs e) {
+        if (_members.SelectedValue is int citizenId) {
             SelectedCitizenId = citizenId;
             DialogResult = DialogResult.OK;
             Close();

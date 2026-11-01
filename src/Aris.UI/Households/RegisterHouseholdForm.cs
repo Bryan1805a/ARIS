@@ -25,6 +25,7 @@ public sealed class RegisterHouseholdForm : Form
     private readonly Button _newAddressButton = new();
     private readonly Label _hint = new();
 
+    // Constructor
     public RegisterHouseholdForm(
         IHouseholdService householdService,
         ICitizenService citizenService,
@@ -222,8 +223,7 @@ public sealed class RegisterHouseholdForm : Form
             return;
         }
 
-        if (_head.SelectedValue is not int headCitizenId
-            || _address.SelectedValue is not int addressId)
+        if (_head.SelectedValue is not int headCitizenId || _address.SelectedValue is not int addressId)
         {
             MessageBox.Show(
                 "Select a head citizen and an address.",
