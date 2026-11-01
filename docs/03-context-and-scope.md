@@ -118,6 +118,7 @@ flowchart TB
 | Business rules and orchestration | Application layer | Services, validators, `Result<T>` |
 | Data shape and identity rules | Domain + database | Entities, CHECK constraints, FKs |
 | Temporal history rules | Database + Application | Guard triggers + close-and-open services |
+| Historical rectification | Application + Infrastructure + database | `RectificationService`, `VOID` status, `Corrects...Id`, guard triggers |
 | Cross-record consistency | Application + database view | Atomic transactions + `vw_GoldenInvariantViolations` |
 | Authentication | Application + Infrastructure | `AuthenticationService`, PBKDF2/BCrypt, `UserAccount` |
 | Authorization | Application | Role checks in services |

@@ -335,15 +335,68 @@ asking the user to retry.
 
 ---
 
-## 6.10 Scenario-to-component map
+## 6.10 Rectify a historical tenure (`HIST-01`)
+
+`HIST-01` corrects an erroneous `HouseholdMembership`, `Residence`, or
+`HouseholdAddress` row. It never edits the identity of the old row: the old row becomes
+`VOID` and a replacement is inserted with `Corrects...Id` pointing at it.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor O as Officer
+    participant F as RectifyTenureForm
+    participant S as RectificationService
+    participant DB as SQL Server
+
+    O->>F: choose the erroneous row, corrected values, reason
+    F->>S: Rectify<Kind>Async(dto, actor)
+    S->>S: validate shape; load source and enforce rules
+    Note over S: VOID source rejected; ACTIVE source may change StartDate only;<br/>a pending transfer item blocks the row
+    S->>DB: BEGIN TRANSACTION
+    S->>DB: UPDATE source SET Status = 'VOID'
+    S->>DB: save the closure
+    S->>DB: INSERT replacement (owner, Status, dates, Corrects...Id)
+    S->>DB: AuditLog VOID_<KIND> + CORRECT_<KIND> (one CorrelationId)
+    S->>DB: COMMIT
+    S-->>F: Result.Success(newId)
+    F-->>O: reload history
+```
+
+Rules:
+
+- The replacement keeps the source owner and lifecycle status: `ACTIVE → ACTIVE`,
+  `ENDED → ENDED`.
+- An `ACTIVE` source may only have `StartDate` corrected. Changing an address, role,
+  household, or end date is a transfer (`UC-06`), change-head (`HH-04`), or deactivation
+  (`CIT-04`), because those operations also adjust the rows the Golden Invariant compares.
+- An `ENDED` source may have its dates and its address/role/household corrected, subject
+  to temporal non-overlap.
+- A residence or membership referenced by a `PENDING` `TransferRequestItem` cannot be
+  rectified until the transfer is decided or cancelled.
+- The closure is saved before the replacement is inserted, so the filtered unique indexes
+  never observe two active rows (`R1`).
+- Two audit rows are written in the same transaction: `VOID_*` and `CORRECT_*`, sharing
+  one `CorrelationId`.
+- A no-op correction (identical values) is rejected.
+
+`RectificationService` lives in Infrastructure and implements
+`Aris.Application.Rectifications.IRectificationService` (`D18`, `D19`). The negative paths
+are proven by `tests/Aris.Tests/RectificationTests.cs`: overlap, double-void, active-state
+field changes, no-op, and pending-transfer reference.
+
+---
+
+## 6.11 Scenario-to-component map
 
 | Scenario | UI | Application | Infrastructure | Database |
 |---|---|---|---|---|
-| Login | `LoginForm` | `AuthenticationService` | `ArisDbContext`, `AuditService` | `UserAccount`, `SystemConfiguration`, `AuditLog` |
-| Register household | `HouseholdEditForm` | `HouseholdService` | `ArisDbContext`, `AuditService` | `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `Citizen` |
+| Login | `LoginForm` | `AuthService` | `ArisDbContext`, `AuditService` | `UserAccount`, `SystemConfiguration`, `AuditLog` |
+| Register household | `RegisterHouseholdForm` | `HouseholdService` | `ArisDbContext`, `AuditService` | `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `Citizen` |
 | Change head | `HouseholdDetailForm` | `HouseholdService` | `ArisDbContext`, `AuditService` | `HouseholdMembership` (close + open) |
 | Create transfer | `TransferRequestForm` | `TransferService` | `ArisDbContext`, `AuditService` | `TransferRequest`, `TransferRequestItem`, `AuditLog` |
-| Execute transfer | `TransferInboxForm` | `TransferService` | `ArisDbContext`, `AuditService` | nine tables in one serializable transaction |
-| Deactivate citizen | `CitizenProfileForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
-| Address lineage | `AddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
+| Execute transfer | `TransferDecisionForm` | `TransferService` | `ArisDbContext`, `AuditService` | nine tables in one serializable transaction |
+| Deactivate citizen | `CitizenDetailForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
+| Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
+| Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
 | Invariant verification | test runner | — | ADO.NET | `vw_GoldenInvariantViolations` |

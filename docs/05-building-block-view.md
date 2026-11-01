@@ -53,8 +53,8 @@ flowchart TB
 | `Program` | Composition root: configuration (including user-secrets), DI, start the shell | Implemented |
 | `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection), language button | Implemented |
 | `IUserSession` implementation (`Session/UserSession`) | Holds the authenticated user for the lifetime of the shell | Implemented |
-| `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile, create/update | Implemented |
-| `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens | Implemented |
+| `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile with residency history, create/update, residence rectification (`HIST-01`) | Implemented |
+| `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens, including membership/address rectification (`HIST-01`) | Implemented |
 | `TransferControl`, `TransferRequestForm`, `TransferDecisionForm` | Maker wizard and checker inbox | Implemented |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
@@ -63,6 +63,7 @@ flowchart TB
 | `ReportsControl` | Report selection, preview, CSV export | Implemented |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 | `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
+| `RectifyTenureForm` | Void-and-correct dialog for membership, household address and residence rows (`HIST-01`); active rows are limited to start-date corrections | Implemented |
 
 **Rule:** every screen is registered as a transient in `Program.cs`; the shell resolves
 it and hosts it in `contentPanel`. A screen never opens another top-level window for
@@ -83,6 +84,7 @@ navigation.
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
 | `Residences/IResidenceService` | `RES-03` current-residence query | Not a separate service; exposed through `CitizenService.GetByIdAsync` |
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
+| `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
 | `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `AUD-01` (recent view), `SYS-01` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
@@ -129,8 +131,9 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Addresses/AddressService` | Address registration, search, detail, retirement and active-address lookup | Implemented |
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
+| `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, audit, bootstrap/demo, citizen, address, household and transfer services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, audit, bootstrap/demo, citizen, address, household, transfer and rectification services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -202,8 +205,7 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The core vertical slices are
-implemented; the remaining gaps are historical rectification, audit filtering and
-test/UI-automation depth.
+implemented; the remaining gaps are audit filtering and test/UI-automation depth.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -222,7 +224,7 @@ test/UI-automation depth.
 | Transfer engine (`UC-06`) | ✔ | — |
 | Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; admin mutation auditing (`T14`); report depth |
 | Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✔ | — |
-| Historical rectification (`HIST-01`) | ✘ | Void-and-correct flow |
+| Historical rectification (`HIST-01`) | ✔ | — |
 | Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |

@@ -11,7 +11,7 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.2 (address slice complete) |
+| **Document version** | 3.3 (rectification slice complete) |
 | **Last updated** | 2026-11-01 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
@@ -83,7 +83,8 @@ mechanisms.
 4. **Append-only history.** `HouseholdMembership`, `Residence`, and `HouseholdAddress`
    are never edited in place. A change closes the old row
    (`EndDate = E - 1, Status = 'ENDED'`) and opens a new one
-   (`StartDate = E, Status = 'ACTIVE'`).
+   (`StartDate = E, Status = 'ACTIVE'`). An erroneous row is marked `VOID` and replaced
+   by a row linked through `Corrects...Id` (`HIST-01`).
 5. **Maker-checker relocations.** A `TransferRequest` is approved or rejected by an
    officer other than its requester (`DecidedBy <> RequestedBy`), inside one
    `IsolationLevel.Serializable` transaction.

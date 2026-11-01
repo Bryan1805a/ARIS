@@ -182,6 +182,12 @@ Applied to `HouseholdMembership`, `Residence`, and `HouseholdAddress`.
 Voided rows are excluded from overlap checks, so the correcting row can occupy the same
 interval legitimately.
 
+`HIST-01` is implemented by `RectificationService` and the shared `RectifyTenureForm`
+(§6.10). An `ACTIVE` row may only have its `StartDate` corrected; address, role,
+household, and end-date changes belong to the operation that owns current state
+(`UC-06`, `HH-04`, or `CIT-04`). A residence or membership referenced by a pending
+transfer item cannot be rectified until that transfer is decided or cancelled.
+
 ### Why not soft delete?
 
 `Status = 'VOID'` is not deletion. The row remains visible, carries its correction link,

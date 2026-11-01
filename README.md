@@ -30,9 +30,9 @@ append-only historical audit trail.
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | Complete |
 | Maker-checker transfer (`UC-06`) | Complete |
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
-| Historical rectification (`HIST-01`) | Not implemented |
+| Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 86 with a database; 80 passed + 6 skipped without |
+| Tests | 95 with a database; 80 passed + 15 skipped without |
 
 ## Documentation
 
@@ -142,6 +142,12 @@ The **Transfer** screen is the maker-checker inbox. An officer creates a
 approves or rejects each item, and the tenures move in one serializable transaction. The
 demo needs two accounts: create the second officer in **Accounts**.
 
+The **Citizen** and **Household** detail screens expose **Rectify** actions for the
+append-only membership, residence, and household-address history. A correction voids the
+erroneous row, inserts a linked replacement with the corrected values, and requires a
+reason. Active rows are limited to start-date corrections; current-state changes still go
+through transfer, change-head, or deactivation.
+
 ### Language
 
 The application starts in **Vietnamese**. Use the **English / Tiếng Việt** button on the
@@ -173,12 +179,13 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **86 passed, 0 failed, 0 skipped** with a database, or
-**80 passed, 6 skipped** without one.
+The current suite is **95 passed, 0 failed, 0 skipped** with a database, or
+**80 passed, 15 skipped** without one.
 
 | Suite | Purpose |
 |---|---|
 | `Aris.UnitTests` | `Result<T>`, audit validation, citizen/household/transfer/address validators, EF model vs DDL |
+| `RectificationTests` | Void-and-replace, overlap/no-op guards, active-state limits, correlated audit, and the Golden Invariant |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
 | `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |
