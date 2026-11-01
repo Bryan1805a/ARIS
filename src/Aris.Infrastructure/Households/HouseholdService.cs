@@ -49,16 +49,19 @@ public sealed class HouseholdService : IHouseholdService
         _changeHeadValidator = changeHeadValidator;
     }
 
+    // HH-01: Atomically creates a household, its initial address, HEAD membership, residence, and activates the citizen
     public async Task<Result<int>> RegisterHouseholdAsync(
         RegisterHouseholdDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Make sure the user performing this action is logged in and active
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result<int>.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input fields using FluentValidation before opening any database transaction
         var validation = await _registerValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -68,9 +71,11 @@ public sealed class HouseholdService : IHouseholdService
         var correlationId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
+        // 3. Open a database transaction so all 5 writes succeed together or none do
         await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
+            // Verify the head citizen exists
             var citizen = await _context.Citizens
                 .FirstOrDefaultAsync(c => c.CitizenId == dto.HeadCitizenId, ct);
 
@@ -80,6 +85,7 @@ public sealed class HouseholdService : IHouseholdService
                 return Result<int>.Failure("The selected citizen was not found.");
             }
 
+            // Citizens can only head a new household if they are UNASSIGNED (not already in a household)
             if (citizen.Status != "UNASSIGNED")
             {
                 await TryRollbackAsync(transaction, ct);
@@ -87,6 +93,7 @@ public sealed class HouseholdService : IHouseholdService
                     "Only an UNASSIGNED citizen can become the head of a new household.");
             }
 
+            // Double check they don't have dangling active tenures
             var hasTenure = await _context.HouseholdMemberships.AnyAsync(
                     m => m.CitizenId == citizen.CitizenId && m.Status == "ACTIVE", ct)
                 || await _context.Residences.AnyAsync(
@@ -99,6 +106,7 @@ public sealed class HouseholdService : IHouseholdService
                     "The citizen already has an active membership or residence. Run the invariant check.");
             }
 
+            // Check that the chosen address is active
             var address = await _context.Addresses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.AddressId == dto.AddressId, ct);
@@ -109,6 +117,7 @@ public sealed class HouseholdService : IHouseholdService
                 return Result<int>.Failure("Select an active address.");
             }
 
+            // Step A: Create the Household row (no address column here - address lives in HouseholdAddress)
             var household = new Household
             {
                 Status = "ACTIVE",
@@ -118,6 +127,7 @@ public sealed class HouseholdService : IHouseholdService
             _context.Households.Add(household);
             await _context.SaveChangesAsync(ct);
 
+            // Step B: Record where this household lives in the append-only HouseholdAddress table
             _context.HouseholdAddresses.Add(new HouseholdAddress
             {
                 HouseholdId = household.HouseholdId,
@@ -128,6 +138,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // Step C: Set the citizen as HEAD in the append-only HouseholdMembership table
             _context.HouseholdMemberships.Add(new HouseholdMembership
             {
                 CitizenId = citizen.CitizenId,
@@ -139,6 +150,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // Step D: Record where the citizen physically resides in the append-only Residence table
             _context.Residences.Add(new Residence
             {
                 CitizenId = citizen.CitizenId,
@@ -149,11 +161,13 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // Step E: Transition the citizen from UNASSIGNED to ACTIVE
             citizen.Status = "ACTIVE";
             citizen.UpdatedAt = now;
 
             await _context.SaveChangesAsync(ct);
 
+            // 4. Write audit log inside the same transaction so it commits together with the data
             await WriteAuditAsync(
                 RegisterAction,
                 "Household",
@@ -169,27 +183,33 @@ public sealed class HouseholdService : IHouseholdService
                 },
                 ct);
 
+            // 5. Commit everything!
             await transaction.CommitAsync(ct);
             return Result<int>.Success(household.HouseholdId);
         }
         catch (Exception ex)
         {
+            // If something fails, rollback the business transaction first...
             await TryRollbackAsync(transaction, ct);
+            // ...then log the failure on a separate independent connection so it doesn't get rolled back!
             await LogFailureAsync(currentUserId, RegisterAction, null, correlationId, ex, ct);
             return Result<int>.Failure($"The household could not be registered: {ex.Message}");
         }
     }
 
+    // HH-02: Adds an UNASSIGNED citizen to an existing active household as a MEMBER
     public async Task<Result> AddMemberAsync(
         AddMemberDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Verify caller is active
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input
         var validation = await _addMemberValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -199,9 +219,11 @@ public sealed class HouseholdService : IHouseholdService
         var correlationId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
+        // 3. Begin transaction
         await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
+            // Verify the household exists and is ACTIVE
             var household = await _context.Households
                 .AsNoTracking()
                 .FirstOrDefaultAsync(h => h.HouseholdId == dto.HouseholdId, ct);
@@ -212,6 +234,7 @@ public sealed class HouseholdService : IHouseholdService
                 return Result.Failure("The household is not active.");
             }
 
+            // Verify the citizen exists and is UNASSIGNED
             var citizen = await _context.Citizens
                 .FirstOrDefaultAsync(c => c.CitizenId == dto.CitizenId, ct);
 
@@ -228,6 +251,7 @@ public sealed class HouseholdService : IHouseholdService
                     "Only an UNASSIGNED citizen can be added as a new member.");
             }
 
+            // Ensure no existing active tenures
             var hasTenure = await _context.HouseholdMemberships.AnyAsync(
                     m => m.CitizenId == citizen.CitizenId && m.Status == "ACTIVE", ct)
                 || await _context.Residences.AnyAsync(
@@ -240,6 +264,7 @@ public sealed class HouseholdService : IHouseholdService
                     "The citizen already has an active membership or residence. Run the invariant check.");
             }
 
+            // Find where this household currently lives
             var householdAddress = await _context.HouseholdAddresses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.HouseholdId == household.HouseholdId
@@ -258,6 +283,7 @@ public sealed class HouseholdService : IHouseholdService
                     "The effective date cannot be earlier than the household address start date.");
             }
 
+            // Step A: Add HouseholdMembership as MEMBER
             _context.HouseholdMemberships.Add(new HouseholdMembership
             {
                 CitizenId = citizen.CitizenId,
@@ -269,6 +295,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // Step B: Add Residence matching the household's current address
             _context.Residences.Add(new Residence
             {
                 CitizenId = citizen.CitizenId,
@@ -279,11 +306,13 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // Step C: Activate citizen
             citizen.Status = "ACTIVE";
             citizen.UpdatedAt = now;
 
             await _context.SaveChangesAsync(ct);
 
+            // Audit the addition
             await WriteAuditAsync(
                 AddMemberAction,
                 "Household",
@@ -310,16 +339,19 @@ public sealed class HouseholdService : IHouseholdService
         }
     }
 
+    // HH-04: Changes the household head using close-and-open (never in-place edit)
     public async Task<Result> ChangeHeadAsync(
         ChangeHeadDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Verify caller
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input
         var validation = await _changeHeadValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -332,6 +364,7 @@ public sealed class HouseholdService : IHouseholdService
         await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
+            // Verify household
             var household = await _context.Households
                 .AsNoTracking()
                 .FirstOrDefaultAsync(h => h.HouseholdId == dto.HouseholdId, ct);
@@ -342,6 +375,7 @@ public sealed class HouseholdService : IHouseholdService
                 return Result.Failure("The household is not active.");
             }
 
+            // Find current HEAD
             var currentHead = await _context.HouseholdMemberships
                 .FirstOrDefaultAsync(m => m.HouseholdId == dto.HouseholdId
                     && m.Status == "ACTIVE"
@@ -359,6 +393,7 @@ public sealed class HouseholdService : IHouseholdService
                 return Result.Failure("The selected citizen is already the head.");
             }
 
+            // The new head must already be an active MEMBER of this same household
             var newHead = await _context.HouseholdMemberships
                 .FirstOrDefaultAsync(m => m.HouseholdId == dto.HouseholdId
                     && m.CitizenId == dto.NewHeadCitizenId
@@ -372,6 +407,7 @@ public sealed class HouseholdService : IHouseholdService
                     "The new head must be an active MEMBER of the same household.");
             }
 
+            // Effective date must be strictly after the start dates of both rows being closed
             if (dto.EffectiveDate <= currentHead.StartDate
                 || dto.EffectiveDate <= newHead.StartDate)
             {
@@ -382,7 +418,8 @@ public sealed class HouseholdService : IHouseholdService
 
             var previousHeadCitizenId = currentHead.CitizenId;
 
-            // Close first, then open: the filtered unique head index must see no active head.
+            // IMPORTANT: Close the old rows first!
+            // EndDate is set to (EffectiveDate - 1 day) so there is no date gap or overlap.
             currentHead.EndDate = dto.EffectiveDate.AddDays(-1);
             currentHead.Status = "ENDED";
             currentHead.EndedBy = currentUserId;
@@ -393,8 +430,13 @@ public sealed class HouseholdService : IHouseholdService
             newHead.EndedBy = currentUserId;
             newHead.EndedAt = now;
 
+            // Crucial: Save closures to SQL Server BEFORE adding the new HEAD!
+            // SQL Server has a filtered unique index (UX_HM_OneActiveHeadPerHousehold) which will throw
+            // an error if it sees two active heads during the same save batch.
             await _context.SaveChangesAsync(ct);
 
+            // Now open the new rows starting on EffectiveDate:
+            // 1) Former head becomes a MEMBER
             _context.HouseholdMemberships.Add(new HouseholdMembership
             {
                 CitizenId = previousHeadCitizenId,
@@ -406,6 +448,7 @@ public sealed class HouseholdService : IHouseholdService
                 CreatedAt = now
             });
 
+            // 2) Successor becomes the new HEAD
             _context.HouseholdMemberships.Add(new HouseholdMembership
             {
                 CitizenId = dto.NewHeadCitizenId,
@@ -419,6 +462,7 @@ public sealed class HouseholdService : IHouseholdService
 
             await _context.SaveChangesAsync(ct);
 
+            // Audit the head change
             await WriteAuditAsync(
                 ChangeHeadAction,
                 "Household",
@@ -445,6 +489,7 @@ public sealed class HouseholdService : IHouseholdService
         }
     }
 
+    // Retrieves full household details: head, members, current address, and history timeline
     public async Task<Result<HouseholdDetailDto?>> GetByIdAsync(
         int householdId,
         CancellationToken ct = default)
@@ -458,18 +503,21 @@ public sealed class HouseholdService : IHouseholdService
             return Result<HouseholdDetailDto?>.Success(null);
         }
 
+        // Get the current active address
         var currentAddress = await (
             from ha in _context.HouseholdAddresses.AsNoTracking()
             join a in _context.Addresses.AsNoTracking() on ha.AddressId equals a.AddressId
             where ha.HouseholdId == householdId && ha.Status == "ACTIVE"
             select new { ha.AddressId, a.AddressText }).FirstOrDefaultAsync(ct);
 
+        // Get current active head
         var head = await (
             from m in _context.HouseholdMemberships.AsNoTracking()
             join c in _context.Citizens.AsNoTracking() on m.CitizenId equals c.CitizenId
             where m.HouseholdId == householdId && m.Status == "ACTIVE" && m.Role == "HEAD"
             select new { m.CitizenId, c.FullName }).FirstOrDefaultAsync(ct);
 
+        // Get all member records (excluding VOIDed rows)
         var members = await (
             from m in _context.HouseholdMemberships.AsNoTracking()
             join c in _context.Citizens.AsNoTracking() on m.CitizenId equals c.CitizenId
@@ -487,6 +535,7 @@ public sealed class HouseholdService : IHouseholdService
                 Status = m.Status
             }).ToListAsync(ct);
 
+        // Get household address history timeline
         var addressHistory = await (
             from ha in _context.HouseholdAddresses.AsNoTracking()
             join a in _context.Addresses.AsNoTracking() on ha.AddressId equals a.AddressId
@@ -517,6 +566,7 @@ public sealed class HouseholdService : IHouseholdService
         });
     }
 
+    // Searches households by ID, status, or search text (head name, head national ID, or address text)
     public async Task<Result<IEnumerable<HouseholdDto>>> SearchAsync(
         HouseholdSearchCriteria criteria,
         CancellationToken ct = default)
@@ -544,6 +594,7 @@ public sealed class HouseholdService : IHouseholdService
         {
             var text = criteria.SearchText.Trim();
 
+            // Match head citizen name/national ID or active address text
             query = query.Where(h =>
                 _context.HouseholdMemberships.Any(m =>
                     m.HouseholdId == h.HouseholdId
@@ -592,6 +643,7 @@ public sealed class HouseholdService : IHouseholdService
         return Result<IEnumerable<HouseholdDto>>.Success(households);
     }
 
+    // Helper: checks if the acting user exists and is active
     private async Task<bool> IsActiveActorAsync(int userId, CancellationToken ct)
     {
         return await _context.UserAccounts
@@ -599,6 +651,7 @@ public sealed class HouseholdService : IHouseholdService
             .AnyAsync(u => u.UserId == userId && u.Status == "ACTIVE", ct);
     }
 
+    // Helper: writes an audit record in the caller's transaction
     private async Task WriteAuditAsync(
         string action,
         string entityType,
@@ -619,6 +672,7 @@ public sealed class HouseholdService : IHouseholdService
         }, ct);
     }
 
+    // Helper: logs a failure entry on an independent connection (survives transaction rollback)
     private async Task LogFailureAsync(
         int actorUserId,
         string action,
@@ -648,6 +702,7 @@ public sealed class HouseholdService : IHouseholdService
         }, ct);
     }
 
+    // Helper: safely rolls back transaction, ignoring secondary exceptions if SQL already rolled back
     private static async Task TryRollbackAsync(
         Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction,
         CancellationToken ct)

@@ -5,6 +5,7 @@ namespace Aris.Application.Citizens.Validators;
 
 public sealed class UpdateCitizenValidator : AbstractValidator<UpdateCitizenDto>
 {
+    // Cehck if FullName, DateOfBirth and Gender are in correct format before update
     public UpdateCitizenValidator()
     {
         RuleFor(x => x.FullName)

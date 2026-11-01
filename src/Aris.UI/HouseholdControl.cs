@@ -1,4 +1,4 @@
-﻿using Aris.Application.Addresses;
+using Aris.Application.Addresses;
 using Aris.Application.Citizens;
 using Aris.Application.Common;
 using Aris.Application.Households;
@@ -11,6 +11,7 @@ namespace Aris.UI;
 /// Household directory: search, register, and open the household profile
 /// (<c>HH-01</c>, <c>HH-06</c>, <c>SRCH-02</c>).
 /// </summary>
+// Screen control for managing households: searching, registering new households, and opening household profiles.
 public partial class HouseholdControl : UserControl
 {
     private readonly IHouseholdService _householdService;
@@ -18,6 +19,7 @@ public partial class HouseholdControl : UserControl
     private readonly IAddressService _addressService;
     private readonly IUserSession _session;
 
+    // Search and filter controls
     private readonly TextBox _search = new();
     private readonly ComboBox _status = new();
     private readonly DataGridView _grid = new();
@@ -43,9 +45,11 @@ public partial class HouseholdControl : UserControl
         lblMessage.Visible = false;
         BuildLayout();
 
+        // Load households on startup
         Load += async (_, _) => await LoadHouseholdsAsync();
     }
 
+    // Sets up the search bar, status dropdown filter, grid, and action buttons
     private void BuildLayout()
     {
         _search.Location = new Point(25, 80);
@@ -106,6 +110,7 @@ public partial class HouseholdControl : UserControl
         _grid.CellDoubleClick += GridCellDoubleClick;
         _status.SelectedIndexChanged += async (_, _) => await LoadHouseholdsAsync();
 
+        // Search on Enter key
         _search.KeyDown += async (_, e) =>
         {
             if (e.KeyCode == Keys.Enter)
@@ -116,6 +121,7 @@ public partial class HouseholdControl : UserControl
         };
     }
 
+    // Fetches households from IHouseholdService according to search criteria
     private async Task LoadHouseholdsAsync()
     {
         if (_loading || IsDisposed)
@@ -131,6 +137,7 @@ public partial class HouseholdControl : UserControl
             var text = _search.Text.Trim();
             var selectedStatus = _status.SelectedItem?.ToString();
 
+            // If the search input is a number, treat it as HouseholdId; otherwise as text search across head/address
             var criteria = new HouseholdSearchCriteria
             {
                 HouseholdId = int.TryParse(text, out var id) ? id : null,
@@ -167,6 +174,7 @@ public partial class HouseholdControl : UserControl
         }
     }
 
+    // Disables buttons during async loading
     private void SetBusy(bool busy)
     {
         _searchButton.Enabled = !busy;
@@ -176,9 +184,11 @@ public partial class HouseholdControl : UserControl
         _status.Enabled = !busy;
     }
 
+    // Helper: gets currently selected HouseholdDto from grid
     private HouseholdDto? GetSelectedHousehold()
         => _grid.CurrentRow?.DataBoundItem as HouseholdDto;
 
+    // Opens registration popup to create a new household with an unassigned citizen as head
     private async void RegisterButton_Click(object? sender, EventArgs e)
     {
         using var form = new RegisterHouseholdForm(
@@ -193,6 +203,7 @@ public partial class HouseholdControl : UserControl
     private void GridCellDoubleClick(object? sender, DataGridViewCellEventArgs e)
         => ViewButton_Click(sender, e);
 
+    // Opens household detail profile (members list, address history, change head, add member)
     private async void ViewButton_Click(object? sender, EventArgs e)
     {
         var selected = GetSelectedHousehold();

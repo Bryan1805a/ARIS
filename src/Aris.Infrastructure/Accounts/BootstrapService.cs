@@ -20,6 +20,7 @@ namespace Aris.Infrastructure.Accounts;
 /// row is written inside the same transaction; a failure is rolled back and audited on an
 /// independent connection (<c>D7</c>).
 /// </remarks>
+// One-time setup service: creates the initial system administrator on a clean database.
 public sealed class BootstrapService : IBootstrapService
 {
     private const string Action = "CREATE_FIRST_ADMIN";
@@ -34,9 +35,11 @@ public sealed class BootstrapService : IBootstrapService
         _audit = audit;
     }
 
+    // Checks if any user accounts exist in the database (used by LoginForm to show/hide the bootstrap button)
     public async Task<bool> HasAnyAccountsAsync(CancellationToken cancellationToken = default)
         => await _context.UserAccounts.AnyAsync(cancellationToken).ConfigureAwait(false);
 
+    // Creates the very first ADMIN account. Rejects if any account already exists!
     public async Task<Result<int>> CreateFirstAdminAsync(
         string username,
         string fullName,
@@ -46,6 +49,7 @@ public sealed class BootstrapService : IBootstrapService
         username = (username ?? string.Empty).Trim();
         fullName = (fullName ?? string.Empty).Trim();
 
+        // 1. Validate username and full name
         if (string.IsNullOrWhiteSpace(username) || username.Length > 50)
         {
             return Result<int>.Failure("Username is required and must be at most 50 characters.");
@@ -56,6 +60,7 @@ public sealed class BootstrapService : IBootstrapService
             return Result<int>.Failure("Full name is required and must be at most 100 characters.");
         }
 
+        // 2. Validate password length against SystemConfiguration
         var minPasswordLength = await GetMinPasswordLengthAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(password) || password.Length < minPasswordLength)
         {
@@ -65,12 +70,14 @@ public sealed class BootstrapService : IBootstrapService
 
         var correlationId = Guid.NewGuid();
 
+        // 3. Open a SERIALIZABLE transaction so two bootstrap attempts cannot race each other
         await using var transaction = await _context.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
             .ConfigureAwait(false);
 
         try
         {
+            // If an account already exists, reject immediately
             if (await _context.UserAccounts.AnyAsync(cancellationToken).ConfigureAwait(false))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
@@ -78,6 +85,7 @@ public sealed class BootstrapService : IBootstrapService
                     "An account already exists. Sign in and create additional accounts from Account Management.");
             }
 
+            // Create initial admin account
             var admin = new UserAccount
             {
                 Username = username,
@@ -93,6 +101,7 @@ public sealed class BootstrapService : IBootstrapService
             _context.UserAccounts.Add(admin);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
+            // Audit row is created in the same transaction
             await _audit.LogAsync(new AuditEntry
             {
                 ActorUserId = admin.UserId,
@@ -117,6 +126,7 @@ public sealed class BootstrapService : IBootstrapService
         }
     }
 
+    // Reads PASSWORD_MIN_LENGTH from SystemConfiguration table
     private async Task<int> GetMinPasswordLengthAsync(CancellationToken cancellationToken)
     {
         var value = await _context.SystemConfigurations
@@ -131,6 +141,7 @@ public sealed class BootstrapService : IBootstrapService
             : DefaultMinPasswordLength;
     }
 
+    // Logs bootstrap failure on an independent connection
     private async Task LogFailureAsync(
         string attemptedUsername,
         Guid correlationId,

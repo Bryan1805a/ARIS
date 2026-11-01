@@ -48,16 +48,23 @@ public sealed class TransferService : ITransferService
         _decisionValidator = decisionValidator;
     }
 
+    // =========================================================================
+    // PHASE 1: Maker creates the transfer request
+    // Note: No citizen tenure or address moves here! Everything sits in PENDING
+    // until another officer reviews and approves it.
+    // =========================================================================
     public async Task<Result<int>> CreateRequestAsync(
         CreateTransferRequestDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Verify that the maker is an active officer
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result<int>.Failure("The authenticated user was not found or is not active.");
         }
 
+        // 2. Validate input DTO (effective date, request type, etc.)
         var validation = await _createValidator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
@@ -67,11 +74,13 @@ public sealed class TransferService : ITransferService
         var type = dto.RequestType;
         var citizenIds = dto.CitizenIds.Distinct().ToList();
 
+        // Ensure no duplicates in the moving citizens list
         if (citizenIds.Count != dto.CitizenIds.Count)
         {
             return Result<int>.Failure("Each citizen may appear only once in a request.");
         }
 
+        // 3. Verify the source household exists and is ACTIVE
         var sourceHousehold = await _context.Households
             .AsNoTracking()
             .FirstOrDefaultAsync(h => h.HouseholdId == dto.SourceHouseholdId, ct);
@@ -81,6 +90,7 @@ public sealed class TransferService : ITransferService
             return Result<int>.Failure("Select an active source household.");
         }
 
+        // Load all current active members in the source household
         var memberships = await _context.HouseholdMemberships
             .AsNoTracking()
             .Where(m => m.HouseholdId == dto.SourceHouseholdId && m.Status == "ACTIVE")
@@ -106,8 +116,10 @@ public sealed class TransferService : ITransferService
         var selectedMemberships = new List<HouseholdMembership>();
         var selectedResidences = new List<Residence>();
 
+        // 4. Validate each moving citizen
         foreach (var citizenId in citizenIds)
         {
+            // Must belong to the source household
             var membership = memberships.FirstOrDefault(m => m.CitizenId == citizenId);
             if (membership is null)
             {
@@ -115,6 +127,7 @@ public sealed class TransferService : ITransferService
                     $"Citizen {citizenId} is not an active member of the source household.");
             }
 
+            // Must have an active residence
             var residence = await _context.Residences
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.CitizenId == citizenId && r.Status == "ACTIVE", ct);
@@ -125,12 +138,14 @@ public sealed class TransferService : ITransferService
                     $"Citizen {citizenId} has no active residence. Run the Golden Invariant check.");
             }
 
+            // Must be ACTIVE
             var citizen = citizens.FirstOrDefault(c => c.CitizenId == citizenId);
             if (citizen is null || citizen.Status != "ACTIVE")
             {
                 return Result<int>.Failure($"Citizen {citizenId} is not ACTIVE.");
             }
 
+            // Effective date must be later than the current tenure start
             if (dto.EffectiveDate <= membership.StartDate
                 || dto.EffectiveDate <= residence.StartDate)
             {
@@ -138,6 +153,7 @@ public sealed class TransferService : ITransferService
                     $"The effective date must be later than citizen {citizenId}'s active tenure start.");
             }
 
+            // A citizen cannot have more than one open PENDING request item at a time!
             if (await _context.TransferRequestItems.AnyAsync(
                     i => i.CitizenId == citizenId && i.Status == "PENDING", ct))
             {
@@ -149,6 +165,7 @@ public sealed class TransferService : ITransferService
             selectedResidences.Add(residence);
         }
 
+        // Special rule for HOUSEHOLD_MOVE: everyone in the household must move together
         if (type == "HOUSEHOLD_MOVE" && memberships.Count != citizenIds.Count)
         {
             return Result<int>.Failure(
@@ -162,12 +179,9 @@ public sealed class TransferService : ITransferService
         var headLeaves = citizenIds.Contains(sourceHead.CitizenId);
         var successorId = dto.SuccessorHeadCitizenId;
 
+        // If the current HEAD is leaving and members remain, a successor HEAD must be nominated
         if (type != "HOUSEHOLD_MOVE" && headLeaves)
         {
-            // When other members remain, the successor is required and can be validated
-            // now. When every member is selected, a successor may still be supplied so
-            // partial approval can reject one of them and keep the source household
-            // headed; that candidate is validated at decision time.
             if (remainingMembers.Count > 0)
             {
                 if (successorId is null)
@@ -198,6 +212,7 @@ public sealed class TransferService : ITransferService
                 "A successor head is only valid when the source head leaves and the request is not a household move.");
         }
 
+        // Validate destination depending on relocation shape
         if (type == "JOIN_EXISTING")
         {
             var destination = await _context.Households
@@ -223,6 +238,7 @@ public sealed class TransferService : ITransferService
         }
         else
         {
+            // For NEW_HOUSEHOLD and HOUSEHOLD_MOVE, a destination address is required
             var destinationAddress = await _context.Addresses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.AddressId == dto.DestinationAddressId, ct);
@@ -233,6 +249,7 @@ public sealed class TransferService : ITransferService
             }
         }
 
+        // For NEW_HOUSEHOLD, the new head must be chosen from the moving citizens
         if (type == "NEW_HOUSEHOLD"
             && (dto.NewHeadCitizenId is not int newHeadId || !citizenIds.Contains(newHeadId)))
         {
@@ -243,6 +260,7 @@ public sealed class TransferService : ITransferService
         var now = DateTime.UtcNow;
         var correlationId = Guid.NewGuid();
 
+        // 5. Insert TransferRequest and TransferRequestItems in PENDING status
         await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
@@ -269,6 +287,7 @@ public sealed class TransferService : ITransferService
             _context.TransferRequests.Add(request);
             await _context.SaveChangesAsync(ct);
 
+            // Add one item line per moving citizen
             foreach (var membership in selectedMemberships)
             {
                 var residence = selectedResidences.First(r => r.CitizenId == membership.CitizenId);
@@ -285,6 +304,7 @@ public sealed class TransferService : ITransferService
 
             await _context.SaveChangesAsync(ct);
 
+            // Audit the request creation
             await WriteAuditAsync(
                 CreateAction,
                 request.RequestId,
@@ -298,7 +318,8 @@ public sealed class TransferService : ITransferService
                     destinationHouseholdId = request.DestinationHouseholdId,
                     destinationAddressId = request.DestinationAddressId,
                     effectiveDate = dto.EffectiveDate,
-                    citizenIds
+                    citizenIds,
+                    itemCount = selectedMemberships.Count
                 },
                 ct);
 
@@ -313,11 +334,17 @@ public sealed class TransferService : ITransferService
         }
     }
 
+    // =========================================================================
+    // PHASE 2: Checker decides (approves or rejects) the transfer
+    // Runs in IsolationLevel.Serializable so no two checkers can approve
+    // conflicting moves at the same time. Supports item-level partial approval!
+    // =========================================================================
     public async Task<Result> DecideAsync(
         TransferDecisionDto dto,
         int currentUserId,
         CancellationToken ct = default)
     {
+        // 1. Verify checker is an active user
         if (!await IsActiveActorAsync(currentUserId, ct))
         {
             return Result.Failure("The authenticated user was not found or is not active.");
@@ -338,6 +365,7 @@ public sealed class TransferService : ITransferService
         var now = DateTime.UtcNow;
         var effective = DateOnly.FromDateTime(DateTime.UtcNow);
 
+        // 2. Open SERIALIZABLE transaction for absolute concurrency protection
         await using var transaction = await _context.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, ct);
 
@@ -352,12 +380,14 @@ public sealed class TransferService : ITransferService
                 return Result.Failure("Transfer request not found.");
             }
 
+            // Request must still be in PENDING state
             if (request.Status != "PENDING")
             {
                 await TryRollbackAsync(transaction, ct);
                 return Result.Failure("This transfer request has already been decided.");
             }
 
+            // DUAL CONTROL: Maker cannot approve their own request!
             if (request.RequestedBy == currentUserId)
             {
                 await TryRollbackAsync(transaction, ct);
@@ -378,6 +408,7 @@ public sealed class TransferService : ITransferService
 
             var decisions = dto.Items.ToDictionary(i => i.ItemId);
 
+            // Ensure every item received a decision
             if (items.Any(i => !decisions.ContainsKey(i.ItemId)))
             {
                 await TryRollbackAsync(transaction, ct);
@@ -390,6 +421,7 @@ public sealed class TransferService : ITransferService
                 return Result.Failure("A decision refers to an item outside this request.");
             }
 
+            // Rejected items must have an explanation reason
             if (dto.Items.Any(i => !i.Approve && string.IsNullOrWhiteSpace(i.RejectReason)))
             {
                 await TryRollbackAsync(transaction, ct);
@@ -399,6 +431,7 @@ public sealed class TransferService : ITransferService
             var approvedItems = items.Where(i => decisions[i.ItemId].Approve).ToList();
             var rejectedItems = items.Where(i => !decisions[i.ItemId].Approve).ToList();
 
+            // Branch A: Entire request is rejected (no items approved)
             if (approvedItems.Count == 0)
             {
                 foreach (var item in items)
@@ -425,6 +458,7 @@ public sealed class TransferService : ITransferService
                 return Result.Success();
             }
 
+            // A household move cannot be partially approved - everyone moves or no one does
             if (request.RequestType == "HOUSEHOLD_MOVE" && rejectedItems.Count > 0)
             {
                 await TryRollbackAsync(transaction, ct);
@@ -435,6 +469,7 @@ public sealed class TransferService : ITransferService
             var approvedCitizenIds = approvedItems.Select(i => i.CitizenId).ToList();
             var isHouseholdMove = request.RequestType == "HOUSEHOLD_MOVE";
 
+            // Re-verify that approved citizens are STILL active in the source household right now
             var sourceMemberships = await _context.HouseholdMemberships
                 .Where(m => approvedCitizenIds.Contains(m.CitizenId) && m.Status == "ACTIVE")
                 .ToListAsync(ct);
@@ -487,6 +522,7 @@ public sealed class TransferService : ITransferService
             var headLeaves = approvedCitizenIds.Contains(sourceHead.CitizenId);
             HouseholdMembership? successor = null;
 
+            // If head leaves and other members remain, check the successor head
             if (!isHouseholdMove && headLeaves && remainingMembers.Count > 0)
             {
                 if (request.SuccessorHeadCitizenId is not int successorId)
@@ -506,6 +542,7 @@ public sealed class TransferService : ITransferService
                 }
             }
 
+            // In NEW_HOUSEHOLD, the nominated head must be among the approved citizens
             if (request.RequestType == "NEW_HOUSEHOLD"
                 && (request.NewHeadCitizenId is not int newHead || !approvedCitizenIds.Contains(newHead)))
             {
@@ -514,9 +551,8 @@ public sealed class TransferService : ITransferService
                     "The new household head was rejected; the request cannot be approved partially.");
             }
 
-            // Close approved tenures first; the filtered unique indexes must see no active
-            // rows before the destination rows are inserted. A HOUSEHOLD_MOVE keeps the
-            // memberships: only the household address and the residences change.
+            // Step 1: Close approved old tenures first!
+            // In HOUSEHOLD_MOVE, memberships stay with the household; only residences and the household address move.
             if (!isHouseholdMove)
             {
                 foreach (var membership in sourceMemberships)
@@ -544,8 +580,10 @@ public sealed class TransferService : ITransferService
                 successor.EndedAt = now;
             }
 
+            // Save closures to the database so unique filtered indexes see the old rows as ENDED
             await _context.SaveChangesAsync(ct);
 
+            // Step 2: Promote successor head in source household if needed
             if (successor is not null)
             {
                 _context.HouseholdMemberships.Add(new HouseholdMembership
@@ -562,6 +600,7 @@ public sealed class TransferService : ITransferService
                 await _context.SaveChangesAsync(ct);
             }
 
+            // Step 3: If the source household is completely emptied out, deactivate it!
             var sourceBecomesEmpty = !isHouseholdMove
                 && headLeaves
                 && remainingMembers.Count == 0;
@@ -594,6 +633,7 @@ public sealed class TransferService : ITransferService
 
             int resultHouseholdId;
 
+            // Step 4: Open new tenures depending on request type
             if (request.RequestType == "JOIN_EXISTING")
             {
                 var destinationHouseholdId = request.DestinationHouseholdId
@@ -609,6 +649,7 @@ public sealed class TransferService : ITransferService
                     return Result.Failure("The destination household has no active address.");
                 }
 
+                // Add each approved citizen to the existing household as MEMBER
                 foreach (var item in approvedItems)
                 {
                     _context.HouseholdMemberships.Add(new HouseholdMembership
@@ -644,6 +685,7 @@ public sealed class TransferService : ITransferService
                 var newHeadCitizenId = request.NewHeadCitizenId
                     ?? throw new InvalidOperationException("NEW_HOUSEHOLD has no new head.");
 
+                // Create the brand-new household
                 var household = new Household
                 {
                     Status = "ACTIVE",
@@ -653,6 +695,7 @@ public sealed class TransferService : ITransferService
                 _context.Households.Add(household);
                 await _context.SaveChangesAsync(ct);
 
+                // Set its active address
                 _context.HouseholdAddresses.Add(new HouseholdAddress
                 {
                     HouseholdId = household.HouseholdId,
@@ -663,6 +706,7 @@ public sealed class TransferService : ITransferService
                     CreatedAt = now
                 });
 
+                // Add members (one is HEAD, rest are MEMBER)
                 foreach (var item in approvedItems)
                 {
                     _context.HouseholdMemberships.Add(new HouseholdMembership
@@ -690,7 +734,7 @@ public sealed class TransferService : ITransferService
                 await _context.SaveChangesAsync(ct);
                 resultHouseholdId = household.HouseholdId;
             }
-            else
+            else // HOUSEHOLD_MOVE
             {
                 var destinationAddressId = request.DestinationAddressId
                     ?? throw new InvalidOperationException("HOUSEHOLD_MOVE has no destination address.");
@@ -705,6 +749,7 @@ public sealed class TransferService : ITransferService
                     return Result.Failure("The source household has no active address to move.");
                 }
 
+                // Close previous household address
                 sourceAddress.EndDate = effective.AddDays(-1);
                 sourceAddress.Status = "ENDED";
                 sourceAddress.EndedBy = currentUserId;
@@ -712,6 +757,7 @@ public sealed class TransferService : ITransferService
 
                 await _context.SaveChangesAsync(ct);
 
+                // Open new household address
                 _context.HouseholdAddresses.Add(new HouseholdAddress
                 {
                     HouseholdId = request.SourceHouseholdId,
@@ -722,6 +768,7 @@ public sealed class TransferService : ITransferService
                     CreatedAt = now
                 });
 
+                // Update physical residences of all moving members
                 foreach (var item in approvedItems)
                 {
                     _context.Residences.Add(new Residence
@@ -739,6 +786,7 @@ public sealed class TransferService : ITransferService
                 resultHouseholdId = request.SourceHouseholdId;
             }
 
+            // Step 5: Update item statuses
             foreach (var item in items)
             {
                 var decision = decisions[item.ItemId];
@@ -747,6 +795,7 @@ public sealed class TransferService : ITransferService
                 item.RejectReason = decision.Approve ? null : decision.RejectReason;
             }
 
+            // Step 6: Mark request as APPROVED
             request.Status = "APPROVED";
             request.DecidedBy = currentUserId;
             request.DecidedAt = now;
@@ -755,6 +804,7 @@ public sealed class TransferService : ITransferService
 
             await _context.SaveChangesAsync(ct);
 
+            // Step 7: Record audit log with the shared correlation ID
             await WriteAuditAsync(
                 ExecuteAction,
                 request.RequestId,
@@ -771,6 +821,7 @@ public sealed class TransferService : ITransferService
                 },
                 ct);
 
+            // Step 8: Commit the serializable transaction!
             await transaction.CommitAsync(ct);
             return Result.Success();
         }
@@ -788,6 +839,7 @@ public sealed class TransferService : ITransferService
         }
     }
 
+    // Cancels a pending request (only the officer who created it can cancel it)
     public async Task<Result> CancelAsync(
         int requestId,
         int currentUserId,
@@ -820,6 +872,7 @@ public sealed class TransferService : ITransferService
                 return Result.Failure("Only a pending request can be cancelled.");
             }
 
+            // Only the original maker can cancel their pending request
             if (request.RequestedBy != currentUserId)
             {
                 await TryRollbackAsync(transaction, ct);
@@ -862,6 +915,7 @@ public sealed class TransferService : ITransferService
         }
     }
 
+    // Retrieves list of transfer requests according to search filters
     public async Task<Result<IEnumerable<TransferRequestSummaryDto>>> GetRequestsAsync(
         TransferSearchCriteria criteria,
         CancellationToken ct = default)
@@ -924,6 +978,7 @@ public sealed class TransferService : ITransferService
         return Result<IEnumerable<TransferRequestSummaryDto>>.Success(requests);
     }
 
+    // Loads single transfer request with full item breakdown
     public async Task<Result<TransferRequestDetailDto?>> GetByIdAsync(
         int requestId,
         CancellationToken ct = default)
@@ -937,6 +992,7 @@ public sealed class TransferService : ITransferService
             return Result<TransferRequestDetailDto?>.Success(null);
         }
 
+        // Look up source household address
         var sourceAddressText = await (
             from ha in _context.HouseholdAddresses.AsNoTracking()
             join a in _context.Addresses.AsNoTracking() on ha.AddressId equals a.AddressId

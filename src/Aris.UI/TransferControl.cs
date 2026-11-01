@@ -1,4 +1,4 @@
-﻿using Aris.Application.Addresses;
+using Aris.Application.Addresses;
 using Aris.Application.Common;
 using Aris.Application.Households;
 using Aris.Application.Transfers;
@@ -11,6 +11,7 @@ namespace Aris.UI;
 /// Maker-checker relocation inbox: create requests, inspect them and decide pending ones
 /// (<c>UC-06</c>).
 /// </summary>
+// Screen control for relocations: list/filter transfer requests, create new requests (maker), and review/decide them (checker).
 public partial class TransferControl : UserControl
 {
     private readonly ITransferService _transferService;
@@ -18,6 +19,7 @@ public partial class TransferControl : UserControl
     private readonly IAddressService _addressService;
     private readonly IUserSession _session;
 
+    // Filter and UI controls
     private readonly ComboBox _status = new();
     private readonly DataGridView _grid = new();
     private readonly Button _refreshButton = new();
@@ -41,9 +43,11 @@ public partial class TransferControl : UserControl
         lblMessage.Visible = false;
         BuildLayout();
 
+        // Load requests on startup
         Load += async (_, _) => await LoadRequestsAsync();
     }
 
+    // Sets up the UI layout (status filter, grid, new request button, and open request button)
     private void BuildLayout()
     {
         _status.Location = new Point(25, 80);
@@ -98,6 +102,7 @@ public partial class TransferControl : UserControl
         _status.SelectedIndexChanged += async (_, _) => await LoadRequestsAsync();
     }
 
+    // Loads transfer requests from ITransferService based on selected status filter
     private async Task LoadRequestsAsync()
     {
         if (_loading || IsDisposed)
@@ -144,6 +149,7 @@ public partial class TransferControl : UserControl
         }
     }
 
+    // Disables controls during async load
     private void SetBusy(bool busy)
     {
         _refreshButton.Enabled = !busy;
@@ -152,9 +158,11 @@ public partial class TransferControl : UserControl
         _status.Enabled = !busy;
     }
 
+    // Helper: gets selected request summary from the grid
     private TransferRequestSummaryDto? GetSelectedRequest()
         => _grid.CurrentRow?.DataBoundItem as TransferRequestSummaryDto;
 
+    // Maker flow: opens the transfer request wizard form to compose a relocation request
     private async void CreateButton_Click(object? sender, EventArgs e)
     {
         using var form = new TransferRequestForm(
@@ -169,6 +177,7 @@ public partial class TransferControl : UserControl
     private void GridCellDoubleClick(object? sender, DataGridViewCellEventArgs e)
         => OpenButton_Click(sender, e);
 
+    // Checker flow: opens the review/decision popup (shows items for approval/rejection or cancellation)
     private async void OpenButton_Click(object? sender, EventArgs e)
     {
         var selected = GetSelectedRequest();

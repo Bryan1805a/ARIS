@@ -23,13 +23,11 @@ public sealed record CitizenDetailDto
     public string? HouseholdRole { get; init; }
 
     /// <summary>Active members of the current household, including this citizen.</summary>
-    public IReadOnlyList<CitizenDto> HouseholdMembers { get; init; }
-        = Array.Empty<CitizenDto>();
+    public IReadOnlyList<CitizenDto> HouseholdMembers { get; init; } = Array.Empty<CitizenDto>();
 
     /// <summary>Canonical address of the current household, resolved through address lineage.</summary>
     public string? CurrentAddressText { get; init; }
 
     /// <summary>Residency history, newest first. Voided rows are excluded.</summary>
-    public IReadOnlyList<ResidencyPeriodDto> ResidencyTimeline { get; init; }
-        = Array.Empty<ResidencyPeriodDto>();
+    public IReadOnlyList<ResidencyPeriodDto> ResidencyTimeline { get; init; } = Array.Empty<ResidencyPeriodDto>();
 }

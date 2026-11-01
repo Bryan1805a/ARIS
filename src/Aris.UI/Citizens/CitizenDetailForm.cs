@@ -8,8 +8,7 @@ using Aris.UI.Localization;
 namespace Aris.UI.Citizens;
 
 /// <summary>Citizen profile with household, canonical address and residency timeline.</summary>
-public sealed partial class CitizenDetailForm : Form
-{
+public sealed partial class CitizenDetailForm : Form {
     private readonly ICitizenService _citizenService;
     private readonly IUserSession _session;
     private readonly int _citizenId;
@@ -20,8 +19,7 @@ public sealed partial class CitizenDetailForm : Form
     public CitizenDetailForm(
         ICitizenService citizenService,
         IUserSession session,
-        int citizenId)
-    {
+        int citizenId) {
         _citizenService = citizenService;
         _session = session;
         _citizenId = citizenId;
@@ -50,12 +48,10 @@ public sealed partial class CitizenDetailForm : Form
         Load += async (_, _) => await LoadCitizenAsync();
     }
 
-    private async Task LoadCitizenAsync()
-    {
+    private async Task LoadCitizenAsync() {
         var result = await _citizenService.GetByIdAsync(_citizenId);
 
-        if (result.IsFailure || result.Value is null)
-        {
+        if (result.IsFailure || result.Value is null) {
             MessageBox.Show(
                 string.Join(Environment.NewLine, result.Errors.DefaultIfEmpty("Citizen not found.")),
                 "Cannot load citizen",
@@ -83,8 +79,7 @@ public sealed partial class CitizenDetailForm : Form
         btnDeactivate.Enabled = !isInactive;
     }
 
-    private static string BuildSummary(CitizenDetailDto detail)
-    {
+    private static string BuildSummary(CitizenDetailDto detail) {
         var builder = new StringBuilder();
 
         builder.AppendLine($"{LanguageManager.T("Created:")}    {detail.CreatedAt:yyyy-MM-dd HH:mm}");
@@ -96,11 +91,9 @@ public sealed partial class CitizenDetailForm : Form
         builder.AppendLine($"{LanguageManager.T("Address:")}    {detail.CurrentAddressText ?? "none"}");
         builder.AppendLine();
 
-        if (detail.HouseholdMembers.Count > 0)
-        {
+        if (detail.HouseholdMembers.Count > 0) {
             builder.AppendLine(LanguageManager.T("Household members:"));
-            foreach (var member in detail.HouseholdMembers)
-            {
+            foreach (var member in detail.HouseholdMembers) {
                 builder.AppendLine($"  {member.FullName} ({member.NationalId}) {member.Status}");
             }
 
@@ -108,14 +101,10 @@ public sealed partial class CitizenDetailForm : Form
         }
 
         builder.AppendLine(LanguageManager.T("Residency timeline:"));
-        if (detail.ResidencyTimeline.Count == 0)
-        {
+        if (detail.ResidencyTimeline.Count == 0) {
             builder.AppendLine($"  {LanguageManager.T("(no residences)")}");
-        }
-        else
-        {
-            foreach (var period in detail.ResidencyTimeline)
-            {
+        } else {
+            foreach (var period in detail.ResidencyTimeline) {
                 var end = period.EndDate?.ToString("yyyy-MM-dd") ?? LanguageManager.T("present");
                 builder.AppendLine(
                     $"  {period.StartDate:yyyy-MM-dd} -> {end}  {period.Status}");
@@ -126,30 +115,24 @@ public sealed partial class CitizenDetailForm : Form
         return builder.ToString();
     }
 
-    private async void SaveButton_Click(object? sender, EventArgs e)
-    {
-        if (_detail is null)
-        {
+    private async void SaveButton_Click(object? sender, EventArgs e) {
+        if (_detail is null) {
             return;
         }
 
         using var form = new CitizenEditForm(_citizenService, _session, _detail);
 
-        if (form.ShowDialog(this) == DialogResult.OK)
-        {
+        if (form.ShowDialog(this) == DialogResult.OK) {
             await LoadCitizenAsync();
         }
     }
 
-    private async void DeactivateButton_Click(object? sender, EventArgs e)
-    {
-        if (_detail is null || _detail.Status == "INACTIVE")
-        {
+    private async void DeactivateButton_Click(object? sender, EventArgs e) {
+        if (_detail is null || _detail.Status == "INACTIVE") {
             return;
         }
 
-        if (_session.UserId is not int userId)
-        {
+        if (_session.UserId is not int userId) {
             MessageBox.Show(
                 "Your session has expired. Sign in again.",
                 "Session expired",
@@ -163,12 +146,10 @@ public sealed partial class CitizenDetailForm : Form
             .Where(m => m.CitizenId != _detail.CitizenId)
             .ToList();
 
-        if (_detail.HouseholdRole == "HEAD" && otherMembers.Count > 0)
-        {
+        if (_detail.HouseholdRole == "HEAD" && otherMembers.Count > 0) {
             using var picker = new SuccessorHeadForm(otherMembers);
 
-            if (picker.ShowDialog(this) != DialogResult.OK)
-            {
+            if (picker.ShowDialog(this) != DialogResult.OK) {
                 return;
             }
 
@@ -185,20 +166,17 @@ public sealed partial class CitizenDetailForm : Form
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
 
-        if (confirmation != DialogResult.Yes)
-        {
+        if (confirmation != DialogResult.Yes) {
             return;
         }
 
         btnDeactivate.Enabled = false;
 
-        try
-        {
+        try {
             var result = await _citizenService.DeactivateCitizenAsync(
                 _detail.CitizenId, userId, successorId);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot deactivate citizen",
@@ -215,17 +193,13 @@ public sealed partial class CitizenDetailForm : Form
 
             DialogResult = DialogResult.OK;
             Close();
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while deactivating the citizen: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             btnDeactivate.Enabled = true;
         }
     }
