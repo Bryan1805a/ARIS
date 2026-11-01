@@ -5,8 +5,7 @@ using Aris.Application.Interfaces;
 namespace Aris.Application.Authentication;
 
 // Handles authentication (login, lockout checks, password verification)
-public class AuthService : BaseService, IAuthService
-{
+public class AuthService : BaseService, IAuthService {
     private readonly IUserAccountRepository _userAccountRepository;
     private readonly ISystemConfigurationRepository _systemConfigurationRepository;
     private readonly IAuditService _auditService;
@@ -14,8 +13,7 @@ public class AuthService : BaseService, IAuthService
     public AuthService(
         IUserAccountRepository userAccountRepository,
         ISystemConfigurationRepository systemConfigurationRepository,
-        IAuditService auditService)
-    {
+        IAuditService auditService) {
         _userAccountRepository = userAccountRepository;
         _systemConfigurationRepository = systemConfigurationRepository;
         _auditService = auditService;
@@ -24,8 +22,7 @@ public class AuthService : BaseService, IAuthService
     // Authenticates the user with username and password, handles failed attempts and lockouts
     public async Task<Result<LoginResult>> LoginAsync(
         string username,
-        string password)
-    {
+        string password) {
         // 1. Look up the account by username
         var account = await _userAccountRepository
             .GetByUsernameAsync(username);
@@ -41,18 +38,15 @@ public class AuthService : BaseService, IAuthService
         if (!int.TryParse(maxFailedLoginsValue, out int maxFailedLogins)
             || maxFailedLogins <= 0
             || !int.TryParse(lockoutMinutesValue, out int lockoutMinutes)
-            || lockoutMinutes <= 0)
-        {
+            || lockoutMinutes <= 0) {
             return Failure<LoginResult>(
                 "Authentication configuration is invalid. Please contact the administrator.");
         }
 
         // 3. User does not exist - record audit failure and return generic error message
-        if (account == null)
-        {
+        if (account == null) {
             await _auditService.LogLoginFailureAsync(
-                new AuditFailureEntry
-                {
+                new AuditFailureEntry {
                     AttemptedUsername = username,
                     Action = "LOGIN",
                     EntityType = "UserAccount",
@@ -64,24 +58,19 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 4. Handle account lockout state
-        if (account.Status == "LOCKED")
-        {
+        if (account.Status == "LOCKED") {
             // If the lockout timer has expired, automatically unlock the account
             if (account.LockedUntil.HasValue &&
-                account.LockedUntil.Value <= DateTime.UtcNow)
-            {
+                account.LockedUntil.Value <= DateTime.UtcNow) {
                 account.Status = "ACTIVE";
                 account.FailedLoginCount = 0;
                 account.LockedUntil = null;
 
                 await _userAccountRepository.UpdateAsync(account);
-            }
-            else
-            {
+            } else {
                 // Account is still in lockout window
                 await _auditService.LogLoginFailureAsync(
-                    new AuditFailureEntry
-                    {
+                    new AuditFailureEntry {
                         ActorUserId = account.UserId,
                         AttemptedUsername = username,
                         Action = "LOGIN",
@@ -95,8 +84,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 5. Account must be ACTIVE to sign in
-        if (account.Status != "ACTIVE")
-        {
+        if (account.Status != "ACTIVE") {
             return Failure<LoginResult>(
                 "This account is not active.");
         }
@@ -104,26 +92,21 @@ public class AuthService : BaseService, IAuthService
         // 6. Verify password using BCrypt against the stored salted hash
         bool isPasswordValid;
 
-        try
-        {
+        try {
             isPasswordValid = BCrypt.Net.BCrypt.Verify(
                 password,
                 account.PasswordHash);
-        }
-        catch (BCrypt.Net.SaltParseException)
-        {
+        } catch (BCrypt.Net.SaltParseException) {
             return Failure<LoginResult>(
                 "Authentication failed. Please contact the administrator.");
         }
 
         // 7. Wrong password - bump failed count and lock account if threshold is reached
-        if (!isPasswordValid)
-        {
+        if (!isPasswordValid) {
             account.FailedLoginCount++;
 
             await _auditService.LogLoginFailureAsync(
-                new AuditFailureEntry
-                {
+                new AuditFailureEntry {
                     ActorUserId = account.UserId,
                     AttemptedUsername = username,
                     Action = "LOGIN",
@@ -133,8 +116,7 @@ public class AuthService : BaseService, IAuthService
                 });
 
             // Reached max allowed failed attempts -> lock the account
-            if (account.FailedLoginCount >= maxFailedLogins)
-            {
+            if (account.FailedLoginCount >= maxFailedLogins) {
                 account.Status = "LOCKED";
                 account.LockedUntil = DateTime.UtcNow
                     .AddMinutes(lockoutMinutes);
@@ -152,8 +134,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 8. Password is valid! Reset failed login count if needed
-        if (account.FailedLoginCount > 0)
-        {
+        if (account.FailedLoginCount > 0) {
             account.FailedLoginCount = 0;
             account.LockedUntil = null;
 
@@ -162,8 +143,7 @@ public class AuthService : BaseService, IAuthService
 
         // 9. Write audit log for successful login
         await _auditService.LogAsync(
-            new AuditEntry
-            {
+            new AuditEntry {
                 ActorUserId = account.UserId,
                 Action = "LOGIN",
                 EntityType = "UserAccount",
@@ -172,8 +152,7 @@ public class AuthService : BaseService, IAuthService
             });
 
         // 10. Return user info for the session (also flags if they need to change password)
-        return Success(new LoginResult
-        {
+        return Success(new LoginResult {
             UserId = account.UserId,
             Username = account.Username,
             Role = account.Role,
