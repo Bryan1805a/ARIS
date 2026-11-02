@@ -9,13 +9,18 @@ namespace Aris.Infrastructure.Resilience;
 /// ARIS runs against a local SQL Server 2022 container, but connections can still
 /// fail transiently: Docker Desktop or the container may restart, the host may be
 /// under load, or a pooled connection may be dropped. Retrying a small, explicit
-/// set of connection-level errors keeps those moments from surfacing as a crash.
+/// set of connection, login and lock-availability errors keeps those moments from
+/// surfacing as a crash.
+///
+/// The policy is deliberately narrower than Microsoft.Data.SqlClient's baseline
+/// transient-error list. The baseline also contains Azure SQL service-tier numbers
+/// (40197, 40501, 40613, 10928/10929, 49918-49920); a local container never returns
+/// them, so including them would only delay a real failure.
 ///
 /// Business failures (constraint violations, trigger guard errors, concurrency
 /// conflicts) are never retried. See <see cref="IsTransientErrorNumber"/>.
 /// </remarks>
-public static class SqlResilience
-{
+public static class SqlResilience {
     /// <summary>Default number of attempts (initial try + retries).</summary>
     public const int DefaultAttempts = 6;
 
@@ -36,23 +41,19 @@ public static class SqlResilience
     public static async Task<SqlConnection> OpenAsync(
         string connectionString,
         int attempts = DefaultAttempts,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
         ArgumentOutOfRangeException.ThrowIfLessThan(attempts, 1);
 
         var connection = new SqlConnection(connectionString);
 
-        try
-        {
+        try {
             await ExecuteAsync(
                 _ => OpenOnceAsync(connection, cancellationToken),
                 attempts,
                 cancellationToken).ConfigureAwait(false);
             return connection;
-        }
-        catch
-        {
+        } catch {
             // Do not hand back a half-open connection to the caller on failure.
             await connection.DisposeAsync().ConfigureAwait(false);
             throw;
@@ -68,21 +69,16 @@ public static class SqlResilience
         Func<CancellationToken, Task<T>> operation,
         int attempts = DefaultAttempts,
         CancellationToken cancellationToken = default,
-        TimeSpan? baseDelay = null)
-    {
+        TimeSpan? baseDelay = null) {
         ArgumentNullException.ThrowIfNull(operation);
         ArgumentOutOfRangeException.ThrowIfLessThan(attempts, 1);
 
         var delay = baseDelay ?? DefaultBaseDelay;
 
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
+        for (var attempt = 1; ; attempt++) {
+            try {
                 return await operation(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (attempt < attempts && IsTransient(ex))
-            {
+            } catch (Exception ex) when (attempt < attempts && IsTransient(ex)) {
                 await Task.Delay(Backoff(attempt, delay), cancellationToken).ConfigureAwait(false);
             }
         }
@@ -93,10 +89,8 @@ public static class SqlResilience
     /// availability problems as specific error numbers; see
     /// <see cref="IsTransientErrorNumber"/>.
     /// </summary>
-    public static bool IsTransient(Exception exception) => exception switch
-    {
-        SqlException sql => sql.Errors.Cast<SqlError>().Any(e => IsTransientErrorNumber(e.Number))
-            || sql.Message.Contains("not currently available", StringComparison.OrdinalIgnoreCase),
+    public static bool IsTransient(Exception exception) => exception switch {
+        SqlException sql => sql.Errors.Cast<SqlError>().Any(e => IsTransientErrorNumber(e.Number)),
         TimeoutException => true,
         _ => exception.InnerException is not null && IsTransient(exception.InnerException)
     };
@@ -108,19 +102,20 @@ public static class SqlResilience
     /// so testing through one would be impossible.
     /// </summary>
     /// <remarks>
-    /// Error numbers that indicate a connection or availability problem rather than a
-    /// defect in the statement. Anything not listed (constraint violations, trigger
-    /// guard errors) is a real bug and must fail fast rather than be retried.
+    /// Kept to the local SQL Server container's connection, login and lock-availability
+    /// failures. Azure SQL service-tier numbers are intentionally absent: they cannot
+    /// occur against the local container, and retrying them would delay a real failure.
+    /// Anything not listed (constraint violations, trigger guard errors) is a real bug
+    /// and must fail fast.
     /// </remarks>
-    public static bool IsTransientErrorNumber(int errorNumber) => errorNumber switch
-    {
-        4060 => true,   // cannot open database requested by the login
-        40197 => true,  // service error processing the request
-        40501 => true,  // service busy
-        40613 => true,  // database not currently available (container starting/restarting)
-        10928 or 10929 => true, // resource limit reached
-        10053 or 10054 or 10060 => true, // connection dropped / timed out
-        49918 or 49919 or 49920 => true, // too many operations for the subscription
+    public static bool IsTransientErrorNumber(int errorNumber) => errorNumber switch {
+        233 => true,   // login process not ready while the server/container starts
+        1205 => true,  // deadlock victim; the transaction was rolled back
+        1222 => true,  // lock request timeout; transient contention
+        4060 => true,  // database not open yet during startup/recovery
+        10053 => true, // connection aborted
+        10054 => true, // connection reset
+        10060 => true, // connection timeout
         _ => false
     };
 
@@ -128,8 +123,7 @@ public static class SqlResilience
     /// Exponential backoff (2s, 4s, 8s ... capped) plus jitter, so several clients
     /// reconnecting after the same container restart do not retry in lockstep.
     /// </summary>
-    private static TimeSpan Backoff(int attempt, TimeSpan baseDelay)
-    {
+    private static TimeSpan Backoff(int attempt, TimeSpan baseDelay) {
         var exponent = Math.Pow(2, attempt - 1);
         var milliseconds = Math.Min(baseDelay.TotalMilliseconds * exponent, DefaultMaxDelay.TotalMilliseconds);
 
@@ -137,8 +131,7 @@ public static class SqlResilience
         return TimeSpan.FromMilliseconds(milliseconds + jitter);
     }
 
-    private static async Task<bool> OpenOnceAsync(SqlConnection connection, CancellationToken cancellationToken)
-    {
+    private static async Task<bool> OpenOnceAsync(SqlConnection connection, CancellationToken cancellationToken) {
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
