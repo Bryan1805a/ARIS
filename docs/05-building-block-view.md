@@ -208,7 +208,8 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The core vertical slices are
-implemented; the remaining gaps are test and UI-automation depth.
+implemented, including the automated end-to-end harness and the manual smoke checklist;
+remaining items are tracked as hardening debt in §11.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -236,6 +237,6 @@ implemented; the remaining gaps are test and UI-automation depth.
 | Optimistic-concurrency integration test (`T9`) | ✔ | — |
 | Schema-object inventory test (`T10`) | ✔ | — |
 | Service-level tests (citizen, household, transfer, account, configuration) | ✔ | — |
-| UI automation | ✘ | `T4` in §11 |
+| End-to-end workflow harness (`T4`) | ✔ | WinForms interactions remain covered by the committed smoke checklist (Appendix E) |
 
 The remaining work is tracked in [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).

@@ -473,4 +473,5 @@ Rules:
 | Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Update system configuration | `SystemConfigurationControl` | `SystemConfigurationService` | `SystemConfigurationRepository`, `UnitOfWork`, `AuditService` | `SystemConfiguration`, `AuditLog` |
+| End-to-end workflow | test runner + Appendix E checklist | citizen, household, transfer, address and rectification services | `ArisDbContext`, `AuditService` | all business tables, `AuditLog`, `vw_GoldenInvariantViolations` |
 | Invariant verification | test runner | — | ADO.NET | `vw_GoldenInvariantViolations` |
