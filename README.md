@@ -25,14 +25,14 @@ append-only historical audit trail.
 | Area | Status |
 |---|---|
 | Database schema, domain model, EF Core mappings | Complete |
-| Audit trail, authentication, accounts, configuration, reports | Complete; richer audit filtering/detail is partial |
+| Audit trail, authentication, accounts, configuration, reports | Complete |
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | Complete |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | Complete |
 | Maker-checker transfer (`UC-06`) | Complete |
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 110 with a database; 94 passed + 16 skipped without |
+| Tests | 115 with a database; 98 passed + 17 skipped without |
 
 ## Documentation
 
@@ -153,6 +153,10 @@ lock/unlock, password reset, self-service password change, and configuration upd
 the acting administrator and before/after details. Passwords and hashes never enter the
 audit log.
 
+The **Audit Logs** screen filters immutable audit entries by date, actor, entity, action,
+and result, and shows the selected row's IDs, correlation ID, and JSON details in a
+read-only panel.
+
 ### Language
 
 The application starts in **Vietnamese**. Use the **English / Tiếng Việt** button on the
@@ -184,14 +188,16 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **110 passed, 0 failed, 0 skipped** with a database, or
-**94 passed, 16 skipped** without one.
+The current suite is **115 passed, 0 failed, 0 skipped** with a database, or
+**98 passed, 17 skipped** without one.
 
 | Suite | Purpose |
 |---|---|
 | `Aris.UnitTests` | `Result<T>`, audit validation, citizen/household/transfer/address validators, EF model vs DDL |
 | `RectificationTests` | Void-and-replace, overlap/no-op guards, active-state limits, correlated audit, and the Golden Invariant |
 | `AdministrationAuditTests` | Account and configuration mutations persist audit rows with the admin actor and no secrets |
+| `AuditQueryFilterTests` | Audit filters by date, actor, entity, action, and result against real SQL Server |
+| `AuditQueryServiceTests` | Audit viewer authorization, criteria validation, and filter normalization |
 | `AccountServiceTests`, `SystemConfigurationServiceTests` | Result-based admin services, authorization, audit metadata, and failure paths with fakes |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |

@@ -297,6 +297,15 @@ through the configured-connection audit path when the transaction throws. Action
 - `aris_app` has `DENY UPDATE ON dbo.AuditLog` and `DENY DELETE ON SCHEMA::dbo`.
 - The application never issues `UPDATE`/`DELETE` against `AuditLog`.
 
+### Audit inspection (`AUD-01`)
+
+The audit viewer is query-only. `AuditQueryService` requires an authenticated `ADMIN`,
+validates the limit (`1`–`1000`) and date range, normalizes blank filters, and delegates to
+`AuditRepository`. Filters cover the from/to time bounds, actor or attempted username,
+entity type, action and result. Rows are ordered newest first and remain read-only; the
+detail pane shows IDs, correlation ID and JSON details. `AuditQueryFilterTests` proves the
+filters against real SQL Server.
+
 ---
 
 ## 8.9 Security
@@ -433,6 +442,8 @@ Rules:
 - Administrative audit is proven at both levels: service unit tests with fakes assert the
   action and safe details; `AdministrationAuditTests` asserts real SQL persistence and
   secret exclusion.
+- `AuditQueryFilterTests` proves the audit viewer filters against real SQL Server;
+  `AuditQueryServiceTests` covers authorization, limit/date validation and normalization.
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
 ---

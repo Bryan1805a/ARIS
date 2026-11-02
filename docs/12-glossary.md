@@ -57,6 +57,7 @@
 |---|---|
 | **arc42** | A template for architecture documentation with twelve fixed sections. |
 | **ADO.NET** | The low-level .NET data-access API (`Microsoft.Data.SqlClient`); used for independent failure auditing. |
+| **Audit viewer** | The admin screen that filters and inspects immutable `AuditLog` rows (`AUD-01`). |
 | **Close-and-open** | See §12.1. |
 | **Composition root** | The single place where the object graph is built; `src/Aris.UI/Program.cs`. |
 | **DBO** | The default database schema owner in SQL Server. |

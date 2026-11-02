@@ -124,6 +124,7 @@ flowchart TB
 | Authorization | Application | Role checks in services |
 | Audit durability | Infrastructure + database | `AuditService`, independent connection, append-only trigger |
 | Administrative mutation auditing | Application + Infrastructure | `AccountService` / `SystemConfigurationService`, `IUnitOfWork`, `AuditService` |
+| Audit inspection | Application + Infrastructure + UI | `AuditQueryService`, `AuditRepository`, `AuditViewerControl` |
 | Configuration | Database + local config | `SystemConfiguration`, user-secrets |
 | Current household address | Database view | `vw_HouseholdCurrent` |
 | Canonical address after boundary change | Database view | `vw_AddressCanonical` |
