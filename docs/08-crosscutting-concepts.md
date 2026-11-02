@@ -430,7 +430,7 @@ environment by default.
 | Project | Scope | Database | Speed |
 |---|---|---|---|
 | `tests/Aris.UnitTests` | Validators, pure domain rules, DTO mapping, `Result<T>`, audit entry validation, account/configuration services with fakes | None / EF InMemory for mapping only | Milliseconds |
-| `tests/Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, Golden Invariant, `rowversion` | Real SQL Server via `ARIS_TEST_CONNECTION` | Seconds |
+| `tests/Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, Golden Invariant, `rowversion`, optimistic concurrency, schema inventory, service flows with a recording audit double | Real SQL Server via `ARIS_TEST_CONNECTION` | Seconds |
 
 Rules:
 
@@ -439,6 +439,11 @@ Rules:
   an in-memory test.
 - Integration tests **skip** when `ARIS_TEST_CONNECTION` is unset. A skip is not a pass
   for release; the release run must execute them.
+- Integration test classes run **sequentially** (`Parallelization(Mode = ParallelMode.None)`)
+  because they share one local database. Parallel execution caused cross-test deadlocks
+  and let the invariant observe another fixture mid-write.
+- `CitizenServiceTests`, `HouseholdServiceTests` and `TransferServiceTests` run the real
+  services against SQL Server with a recording `IAuditService` double.
 - Destructive tests run inside a transaction that is rolled back.
 - The Golden Invariant suite contains both a positive assertion and a negative control.
 - Administrative audit is proven at both levels: service unit tests with fakes assert the

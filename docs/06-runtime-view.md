@@ -146,6 +146,8 @@ Rules and branches:
 
 - **Partial approval.** Rejected items remain in the source household; their status becomes
   `REJECTED` with a non-null `RejectReason` (`CK_TRI_Reject`). Approved items proceed.
+- **Traceable lineage.** Every membership, residence and household-address row opened by
+  the decision records `OpenedByRequestId = RequestId` (`D6`).
 - **Rejected request.** If no item is approved, the request is `REJECTED`; no tenures move.
 - **Entire household moves.** `HOUSEHOLD_MOVE` keeps the `HouseholdId`; only
   `HouseholdAddress` and member `Residence` rows change.

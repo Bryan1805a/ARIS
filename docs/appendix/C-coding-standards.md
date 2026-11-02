@@ -360,9 +360,12 @@ await _context.SaveChangesAsync(ct);   // new active row
 |---|---|---|
 | Validator / pure logic | `Aris.UnitTests` | Input rules, `Result<T>`, audit entry validation, mapping defaults |
 | Database rule | `Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, `rowversion`, Golden Invariant |
+| Service flow | `Aris.Tests` | Orchestration, authorization and audit metadata with a recording audit double and real SQL |
 
 - In-memory EF does **not** enforce database rules. Never use it to prove one.
 - Integration tests skip when `ARIS_TEST_CONNECTION` is unset.
+- Integration test classes run sequentially because they share one local database; do not
+  re-enable collection parallelism for `Aris.Tests`.
 - Use transactions and roll back destructive fixtures.
 - Keep the negative control for the Golden Invariant.
 - Test names state the behaviour: `ChangeHead_ClosesOldRows_And_OpensTwoNewRows`.
