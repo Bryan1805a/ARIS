@@ -594,7 +594,8 @@ public sealed class TransferService : ITransferService
                     StartDate = effective,
                     Status = "ACTIVE",
                     CreatedBy = currentUserId,
-                    CreatedAt = now
+                    CreatedAt = now,
+                    OpenedByRequestId = request.RequestId
                 });
 
                 await _context.SaveChangesAsync(ct);
@@ -660,7 +661,8 @@ public sealed class TransferService : ITransferService
                         StartDate = effective,
                         Status = "ACTIVE",
                         CreatedBy = currentUserId,
-                        CreatedAt = now
+                        CreatedAt = now,
+                        OpenedByRequestId = request.RequestId
                     });
 
                     _context.Residences.Add(new Residence
@@ -670,7 +672,8 @@ public sealed class TransferService : ITransferService
                         StartDate = effective,
                         Status = "ACTIVE",
                         CreatedBy = currentUserId,
-                        CreatedAt = now
+                        CreatedAt = now,
+                        OpenedByRequestId = request.RequestId
                     });
                 }
 
@@ -703,7 +706,8 @@ public sealed class TransferService : ITransferService
                     StartDate = effective,
                     Status = "ACTIVE",
                     CreatedBy = currentUserId,
-                    CreatedAt = now
+                    CreatedAt = now,
+                    OpenedByRequestId = request.RequestId
                 });
 
                 // Add members (one is HEAD, rest are MEMBER)
@@ -717,7 +721,8 @@ public sealed class TransferService : ITransferService
                         StartDate = effective,
                         Status = "ACTIVE",
                         CreatedBy = currentUserId,
-                        CreatedAt = now
+                        CreatedAt = now,
+                        OpenedByRequestId = request.RequestId
                     });
 
                     _context.Residences.Add(new Residence
@@ -727,7 +732,8 @@ public sealed class TransferService : ITransferService
                         StartDate = effective,
                         Status = "ACTIVE",
                         CreatedBy = currentUserId,
-                        CreatedAt = now
+                        CreatedAt = now,
+                        OpenedByRequestId = request.RequestId
                     });
                 }
 
@@ -765,7 +771,8 @@ public sealed class TransferService : ITransferService
                     StartDate = effective,
                     Status = "ACTIVE",
                     CreatedBy = currentUserId,
-                    CreatedAt = now
+                    CreatedAt = now,
+                    OpenedByRequestId = request.RequestId
                 });
 
                 // Update physical residences of all moving members
@@ -778,7 +785,8 @@ public sealed class TransferService : ITransferService
                         StartDate = effective,
                         Status = "ACTIVE",
                         CreatedBy = currentUserId,
-                        CreatedAt = now
+                        CreatedAt = now,
+                        OpenedByRequestId = request.RequestId
                     });
                 }
 
