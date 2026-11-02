@@ -387,7 +387,50 @@ field changes, no-op, and pending-transfer reference.
 
 ---
 
-## 6.11 Scenario-to-component map
+## 6.11 Administrative mutations and audit (`ACC-01`, `SYS-01`, `T14`)
+
+Account administration and system-configuration changes are repository-backed Application
+services. They cannot reference `ArisDbContext`, so they obtain an explicit transaction
+through `IUnitOfWork` (`D20`) and write the success audit row inside it.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Administrator
+    participant F as AccountManagementControl / SystemConfigurationControl
+    participant S as AccountService / SystemConfigurationService
+    participant U as IUnitOfWork
+    participant DB as SQL Server
+
+    A->>F: create, lock/unlock, reset password, change password, or edit a parameter
+    F->>S: service call with the current user
+    S->>S: authorize, validate, capture before state
+    S->>U: ExecuteAsync(...)
+    U->>DB: BEGIN TRANSACTION
+    S->>DB: repository mutation
+    S->>DB: AuditLog SUCCESS (actor, action, JSON details, CorrelationId)
+    U->>DB: COMMIT
+    S-->>F: Result.Success
+```
+
+Rules:
+
+- Actions are `CREATE_ACCOUNT`, `LOCK_ACCOUNT`, `UNLOCK_ACCOUNT`, `RESET_PASSWORD`,
+  `CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`.
+- The active-admin authorization check runs before any mutation. Expected failures return
+  `Result` and write no success audit.
+- Audit details carry IDs, usernames, and before/after values; they never contain a
+  password or password hash (`CON-SEC-01`).
+- On an exception, `IUnitOfWork` rolls back and clears the change tracker. The service
+  writes a `FAILURE` row through `IAuditService.LogFailureIndependentAsync(entry)` using
+  the configured connection, then returns `Result.Failure`.
+- `AdministrationAuditTests` proves persistence against real SQL Server;
+  `AccountServiceTests` and `SystemConfigurationServiceTests` cover success, failure and
+  authorization with fakes.
+
+---
+
+## 6.12 Scenario-to-component map
 
 | Scenario | UI | Application | Infrastructure | Database |
 |---|---|---|---|---|
@@ -399,4 +442,7 @@ field changes, no-op, and pending-transfer reference.
 | Deactivate citizen | `CitizenDetailForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
 | Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
 | Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
+| Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
+| Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
+| Update system configuration | `SystemConfigurationControl` | `SystemConfigurationService` | `SystemConfigurationRepository`, `UnitOfWork`, `AuditService` | `SystemConfiguration`, `AuditLog` |
 | Invariant verification | test runner | — | ADO.NET | `vw_GoldenInvariantViolations` |

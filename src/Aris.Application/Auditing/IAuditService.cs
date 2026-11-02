@@ -128,4 +128,13 @@ public interface IAuditService
     Task LogLoginFailureAsync(
         AuditFailureEntry entry,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records a FAILURE using the configured <c>ArisDb</c> connection on an independent
+    /// connection. Use after a transaction has rolled back when the caller does not hold
+    /// the connection string (repository-backed Application services).
+    /// </summary>
+    Task LogFailureIndependentAsync(
+        AuditFailureEntry entry,
+        CancellationToken cancellationToken = default);
 }

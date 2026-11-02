@@ -2,6 +2,7 @@ using Aris.Application.Accounts;
 using Aris.Application.Addresses;
 using Aris.Application.Auditing;
 using Aris.Application.Citizens;
+using Aris.Application.Common;
 using Aris.Application.Households;
 using Aris.Application.Rectifications;
 using Aris.Application.Transfers;
@@ -66,6 +67,9 @@ public static class DependencyInjection {
 
         // Scoped: AuditService shares the caller's ArisDbContext.
         services.AddScoped<IAuditService, AuditService>();
+
+        // One explicit transaction per repository-backed administration use case.
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Fresh-database setup and demo data (R15/T6/T11).
         services.AddScoped<IBootstrapService, BootstrapService>();

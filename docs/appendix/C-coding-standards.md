@@ -17,10 +17,11 @@ write code that obeys them.
 | `Aris.Infrastructure` | Application, Domain | WinForms |
 | `Aris.UI` | Application; Infrastructure only in `Program.cs` | SQL, `ArisDbContext`, EF Core |
 
-A form calls an Application interface. Its implementation calls a repository-equivalent
-(`ArisDbContext`) and `IAuditService`: repository-backed services live in Application,
-while services that need `ArisDbContext` or a transaction live in Infrastructure
-(`D18`). A domain entity calls nothing.
+A form calls an Application interface. Repository-backed services (`AuthService`,
+`AccountService`, `ReportService`, `AuditQueryService`, `SystemConfigurationService`)
+live in Application and inject `IUnitOfWork` when a mutation and its success audit must
+commit together (`D20`). Services that need `ArisDbContext` or serializable isolation
+live in Infrastructure (`D18`). A domain entity calls nothing.
 
 ---
 
@@ -77,8 +78,9 @@ appendix.
 > service that injects `ArisDbContext` or opens a transaction lives in
 > `Aris.Infrastructure` and implements the Application interface; the interface, DTOs and
 > validators stay in Application. Repository-backed services
-> (`AuthService`, `AccountService`, `ReportService`, `AuditQueryService`) remain in
-> Application.
+> (`AuthService`, `AccountService`, `ReportService`, `AuditQueryService`,
+> `SystemConfigurationService`) remain in Application; those that need a transaction
+> inject `IUnitOfWork` (`D20`).
 
 ```csharp
 public sealed class HouseholdService : IHouseholdService {
@@ -237,6 +239,11 @@ services.AddScoped<IAuditService, AuditService>();
 | Stable action names | Reports group by `Action`; changing a name breaks history. |
 | Entity type | Singular table name (`Citizen`, `Household`, `TransferRequest`). |
 | Failure path | `RollbackAsync` first, then `LogFailureIndependentAsync`. |
+
+Repository-backed services that mutate and audit use the `IUnitOfWork` variant: authorize,
+then run the repository write and `LogAsync` in one `ExecuteAsync` block; after a
+rollback, call `LogFailureIndependentAsync(entry)` with the configured connection and
+return `Result.Failure`. Account and configuration mutations follow this pattern.
 
 ---
 

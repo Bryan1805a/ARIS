@@ -77,7 +77,8 @@ navigation.
 | `Common/ValidationException` | Thrown only for malformed input or programmer error | Implemented |
 | `Common/BaseService` | Shared service scaffolding | Implemented |
 | `Common/IUserSession` | Session contract used by services and view models | Implemented |
-| `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract | Implemented |
+| `Common/IUnitOfWork` | One transaction per repository-backed use case, shared by the mutation and its success audit (`D20`) | Implemented |
+| `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract; success inside the transaction, failure on an independent connection | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
 | `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
 | `Addresses/IAddressService` + DTOs | `ADR-01`–`ADR-03`, `SRCH-03`; `SearchAsync`, `GetByIdAsync`, `RetireAsync`, plus registration and active-address lookup for households (implementation in Infrastructure) | Implemented |
@@ -86,7 +87,7 @@ navigation.
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
 | `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
-| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `AUD-01` (recent view), `SYS-01` | Implemented |
+| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `AUD-01` (recent view), `SYS-01`; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
 | `Accounts/IDemoDataService` | Idempotent demo dataset exposed to administrators (`T11`) | Implemented |
 | `Reporting/IReportService` | `RPT-01`–`RPT-03` | Implemented |
@@ -124,7 +125,8 @@ The Domain layer contains no EF Core attributes and no database code.
 |---|---|---|
 | `Persistence/ArisDbContext` | Eleven `DbSet`s, applies configurations from assembly | Implemented |
 | `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
-| `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection | Implemented |
+| `Persistence/UnitOfWork` | Opens the caller's transaction, commits, rolls back and clears the change tracker (`D20`) | Implemented |
+| `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection, including the configured-connection overload used by repository-backed services | Implemented |
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
@@ -133,7 +135,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, audit, bootstrap/demo, citizen, address, household, transfer and rectification services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, citizen, address, household, transfer and rectification services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -222,7 +224,8 @@ implemented; the remaining gaps are audit filtering and test/UI-automation depth
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
 | Transfer engine (`UC-06`) | ✔ | — |
-| Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; admin mutation auditing (`T14`); report depth |
+| Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; report depth |
+| Account and configuration mutation auditing (`T14`) | ✔ | — |
 | Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✔ | — |
 | Historical rectification (`HIST-01`) | ✔ | — |
 | Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
