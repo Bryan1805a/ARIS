@@ -26,6 +26,7 @@ stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
 | `D17` | EF retry-on-failure disabled because mutations own explicit transactions | Accepted |
 | `D18` | Application interfaces with Infrastructure service implementations | Accepted |
 | `D19` | Rectification uses VOID-and-replace with guarded current state | Accepted |
+| `D20` | Minimal `IUnitOfWork` for repository-backed Application services | Accepted |
 
 ---
 
@@ -371,3 +372,32 @@ transfer item is blocked until the transfer is decided or cancelled.
   non-overlap.
 - The service lives in Infrastructure (`D18`) and is exposed through one shared
   `RectifyTenureForm` in the citizen and household screens.
+
+---
+
+## D20 — Minimal `IUnitOfWork` for repository-backed Application services
+
+**Context.** `D18` keeps repository-backed services in Application and Infrastructure
+services behind the same interfaces. Account administration and system configuration need
+one transaction that covers both the repository mutation and its success audit
+(`CON-ARCH-07`), but Application must not reference `ArisDbContext` or EF Core. The earlier
+rejection of a generic unit-of-work abstraction assumed EF Core's own unit of work was
+sufficient; it is not sufficient when the audit write must join a transaction owned by a
+service that cannot see the context.
+
+**Decision.** Add a narrow `IUnitOfWork` contract in Application:
+`ExecuteAsync(action, ct)` runs one delegate inside a single transaction. Infrastructure
+implements it with `UnitOfWork`, wrapping `ArisDbContext.Database.BeginTransactionAsync`,
+committing on success, rolling back and clearing the change tracker on failure. Inject it
+into repository-backed services that need atomic mutation-plus-audit. Do not introduce a
+generic repository abstraction; EF Core remains the persistence API for Infrastructure
+services.
+
+**Consequences.**
+- Repository-backed Application services keep their layer boundary and still produce
+  transactionally consistent audit rows.
+- The transaction boundary is explicit and testable; unit tests can substitute an
+  immediate unit of work.
+- Only services that need it depend on `IUnitOfWork`; Infrastructure services continue to
+  own their transactions directly.
+- A generic repository layer is still rejected as unnecessary ceremony.

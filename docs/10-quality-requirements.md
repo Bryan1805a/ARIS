@@ -79,10 +79,10 @@ proven, not how it is hoped for.
 | `Q-AUD-03` | A transfer touches several tables. | All audit rows share one correlation ID. | Same `CorrelationId` across rows. | Query test |
 | `Q-AUD-04` | A maker tries to approve their own request. | Rejected before commit. | `CK_TR_Decision` violation; no state change. | Integration test |
 | `Q-AUD-05` | A tenure row is rectified. | One `VOID_*` and one `CORRECT_*` audit row share the use-case correlation ID. | Same `CorrelationId` across both rows. | `RectificationTests` |
+| `Q-AUD-06` | An administrator creates, locks, unlocks, resets a password, or edits configuration, or a user changes their own password. | A `SUCCESS` row names the actor and stores the relevant metadata without credentials. | Row present; no plaintext or hash in `Details`. | `AdministrationAuditTests`, `AccountServiceTests`, `SystemConfigurationServiceTests` |
 
-> `Q-AUD-01` is met for the citizen, household, transfer, address, rectification,
-> bootstrap and demo paths. Account-administration and system-configuration mutations are
-> still unaudited (`T14`).
+> `Q-AUD-01` is met for every implemented mutation path, including citizen, household,
+> transfer, address, rectification, account, password and system-configuration changes.
 
 ### Maintainability and testability
 

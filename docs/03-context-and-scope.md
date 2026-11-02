@@ -123,6 +123,7 @@ flowchart TB
 | Authentication | Application + Infrastructure | `AuthenticationService`, PBKDF2/BCrypt, `UserAccount` |
 | Authorization | Application | Role checks in services |
 | Audit durability | Infrastructure + database | `AuditService`, independent connection, append-only trigger |
+| Administrative mutation auditing | Application + Infrastructure | `AccountService` / `SystemConfigurationService`, `IUnitOfWork`, `AuditService` |
 | Configuration | Database + local config | `SystemConfiguration`, user-secrets |
 | Current household address | Database view | `vw_HouseholdCurrent` |
 | Canonical address after boundary change | Database view | `vw_AddressCanonical` |

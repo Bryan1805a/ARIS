@@ -230,13 +230,13 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 2 — citizen slice | Complete |
 | Phase 3 — household slice | Complete |
 | Phase 4 — transfer engine | Complete |
-| Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer/configuration/basic reports |
+| Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer/configuration/basic reports, including admin mutation audit |
 | Phase 6 — integration | Partially complete; audit filters remain |
 | Phase 7 — hardening | Ongoing; service tests, committed UI automation, concurrency and schema-inventory tests remain |
 
 Known functional gaps: richer `AUD-01` filtering/detail. Vietnamization covers the static
-UI; service-layer validation messages are still English. The test suite is 80 passed /
-15 skipped without a database and 95 passed / 0 skipped against the local container.
+UI; service-layer validation messages are still English. The test suite is 94 passed /
+16 skipped without a database and 110 passed / 0 skipped against the local container.
 
 ---
 

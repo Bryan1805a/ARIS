@@ -114,7 +114,8 @@ Schema-derived rules that must appear in validators:
 
 | Operation | Isolation | Why |
 |---|---|---|
-| Create/update a single aggregate (citizen, address, account) | Default (`ReadCommitted`) + one transaction | Sufficient for a single row or a small consistent set |
+| Create/update a single aggregate (citizen, address) | Default (`ReadCommitted`) + one transaction | Sufficient for a single row or a small consistent set |
+| Account administration and system configuration | Default + one transaction via `IUnitOfWork` | The repository mutation and its success audit must commit together without the Application layer referencing EF Core (`D20`) |
 | Register household, add member, change head, deactivate citizen | Default + one transaction | Multiple tables must commit together |
 | Create transfer request | Default + one transaction | Header and items must commit together |
 | **Execute transfer decision** | **`IsolationLevel.Serializable`** | Overlap triggers read committed data; concurrent approvals must not interleave |
@@ -263,7 +264,8 @@ flowchart TD
 | Method | Connection | When |
 |---|---|---|
 | `LogAsync(AuditEntry)` | Caller's transaction | Success, before commit |
-| `LogFailureIndependentAsync(connectionString, AuditFailureEntry)` | New connection via `SqlResilience` | After rollback |
+| `LogFailureIndependentAsync(connectionString, AuditFailureEntry)` | New connection via `SqlResilience` | After rollback when the caller holds the connection string |
+| `LogFailureIndependentAsync(AuditFailureEntry)` | New connection resolved from configuration | After rollback in repository-backed services that do not see `ArisDbContext` |
 
 ### Mandatory audit fields
 
@@ -281,9 +283,13 @@ flowchart TD
 Never log: passwords, password hashes, connection strings, or full personal data beyond
 what the business record already contains. Prefer IDs and changed field names.
 
-> **Known gap (`T14`).** Account administration and system-configuration mutations are
-> not yet audited, and their services throw for expected business failures instead of
-> returning `Result<T>`. The core citizen/household/transfer/bootstrap paths do audit.
+**Administrative mutations (`T14`).** `AccountService` and
+`SystemConfigurationService` now run each mutation and its success audit inside
+`IUnitOfWork` (`D20`), return `Result` for expected failures, and write a `FAILURE` row
+through the configured-connection audit path when the transaction throws. Actions are
+`CREATE_ACCOUNT`, `LOCK_ACCOUNT`, `UNLOCK_ACCOUNT`, `RESET_PASSWORD`,
+`CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`; password material never enters
+`Details` (`CON-SEC-01`).
 
 ### Append-only enforcement
 
@@ -308,7 +314,8 @@ what the business record already contains. Prefer IDs and changed field names.
 ### Authorization
 
 - `OFFICER` and `ADMIN` roles.
-- Authorization is checked in the **service**, using `IUserSession`, not only by hiding
+- Authorization is checked in the **service**, using the authenticated session
+  (`IUserSession` or the caller's user ID plus a repository role check), not only by hiding
   navigation buttons.
 - Administration screens are additionally hidden from officers (defence in depth).
 
@@ -411,7 +418,7 @@ environment by default.
 
 | Project | Scope | Database | Speed |
 |---|---|---|---|
-| `tests/Aris.UnitTests` | Validators, pure domain rules, DTO mapping, `Result<T>`, audit entry validation | None / EF InMemory for mapping only | Milliseconds |
+| `tests/Aris.UnitTests` | Validators, pure domain rules, DTO mapping, `Result<T>`, audit entry validation, account/configuration services with fakes | None / EF InMemory for mapping only | Milliseconds |
 | `tests/Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, Golden Invariant, `rowversion` | Real SQL Server via `ARIS_TEST_CONNECTION` | Seconds |
 
 Rules:
@@ -423,6 +430,9 @@ Rules:
   for release; the release run must execute them.
 - Destructive tests run inside a transaction that is rolled back.
 - The Golden Invariant suite contains both a positive assertion and a negative control.
+- Administrative audit is proven at both levels: service unit tests with fakes assert the
+  action and safe details; `AdministrationAuditTests` asserts real SQL persistence and
+  secret exclusion.
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
 ---

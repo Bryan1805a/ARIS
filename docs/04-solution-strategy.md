@@ -195,7 +195,7 @@ tests replace it, and each developer can reset without asking permission.
 |---|---|
 | Shared Azure SQL Database | Network fragility, cost, shared-state corruption, slow onboarding (`D15`) |
 | EF Core migrations | A second schema history would conflict with the canonical DDL (`D16`) |
-| Repository/Unit-of-Work abstraction over EF Core | EF Core already is the unit of work; an extra layer adds ceremony without a second implementation |
+| Generic repository abstraction over EF Core | EF Core remains the persistence API for Infrastructure services. Repository-backed Application services use the narrow `IUnitOfWork` boundary (`D20`) only to keep a mutation and its success audit atomic without referencing EF Core. |
 | Storing `CurrentAddressId` on `Household` | Dual source of truth; destroys history (`D4`) |
 | Soft delete on history tables | `Status = 'VOID'` plus a correcting row is richer and keeps intervals honest (`D3`) |
 | CQRS / event sourcing | Far beyond the course scope; the append-only tables already provide the needed temporal record |
