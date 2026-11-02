@@ -11,7 +11,7 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.5 (audit viewer complete) |
+| **Document version** | 3.6 (database hardening tests complete) |
 | **Last updated** | 2026-11-02 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
@@ -113,7 +113,7 @@ mechanisms.
 ```powershell
 dotnet --version                    # must print 10.0.401 (global.json)
 docker compose up -d                # starts SQL Server 2022 on localhost:1433
-.\scripts\deploy-database.ps1       # creates ArisDb, schema, and aris_officer
+.\scripts\deploy_database.ps1       # creates ArisDb, schema, and aris_officer
 dotnet build Aris.slnx              # 0 errors, 0 warnings
 dotnet test  Aris.slnx              # never pass --nologo
 ```

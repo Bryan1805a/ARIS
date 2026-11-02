@@ -21,7 +21,7 @@ flowchart TB
         end
 
         CFG["<b>Configuration</b><br/>appsettings.json (no secrets)<br/>user-secrets: ConnectionStrings:ArisDb<br/>.env: MSSQL_SA_PASSWORD"]
-        REPO["<b>Repository</b><br/>docs/aris_schema_v2.sql<br/>scripts/deploy-database.ps1"]
+        REPO["<b>Repository</b><br/>docs/aris_schema_v2.sql<br/>scripts/deploy_database.ps1"]
 
         APP -->|"TDS · localhost:1433"| SQL
         TEST -->|"TDS · localhost:1433"| SQL
@@ -99,13 +99,13 @@ docker logs aris-sqlserver
 
 ```powershell
 # Show the plan without changing anything
-.\scripts\deploy-database.ps1 -WhatIf
+.\scripts\deploy_database.ps1 -WhatIf
 
 # Deploy
-.\scripts\deploy-database.ps1
+.\scripts\deploy_database.ps1
 ```
 
-The script is idempotent and safe to re-run. It:
+The script performs these steps:
 
 1. verifies Docker, the container, and `docs/aris_schema_v2.sql`;
 2. starts the container if it is not running, then waits for SQL Server to accept
@@ -148,8 +148,16 @@ the login screen or in the main status bar to switch.
 To run the integration tests against the same database:
 
 ```powershell
+.\scripts\create_aris_test_connection.ps1   # reads the sa password from .env
+dotnet test Aris.slnx                        # never pass --nologo
+.\scripts\delete_aris_test_connection.ps1    # clear it when finished
+```
+
+The create/delete helpers set and clear `ARIS_TEST_CONNECTION` in the current PowerShell
+session. You can also assign the variable manually:
+
+```powershell
 $env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<from .env>;TrustServerCertificate=True"
-dotnet test Aris.slnx                  # never pass --nologo
 ```
 
 Using `sa` for tests is acceptable because the tests may need to create deliberate
@@ -207,8 +215,10 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
 | View logs | `docker logs -f aris-sqlserver` |
 | Open a SQL shell as `sa` | `docker exec -it aris-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "<pw>" -C -d ArisDb` |
 | Check the invariant | `SELECT * FROM dbo.vw_GoldenInvariantViolations;` |
-| Re-apply the schema | `.\scripts\deploy-database.ps1 -SkipAppUser` |
-| Reset to a clean database | `docker compose down -v; docker compose up -d; .\scripts\deploy-database.ps1` |
+| Load the test connection from `.env` | `.\scripts\create_aris_test_connection.ps1` |
+| Clear the test connection | `.\scripts\delete_aris_test_connection.ps1` |
+| Re-apply the schema | `.\scripts\deploy_database.ps1 -SkipAppUser` |
+| Reset to a clean database | `docker compose down -v; docker compose up -d; .\scripts\deploy_database.ps1` |
 
 > **`docker compose down -v` deletes the `mssql-data` volume.** Every citizen,
 > household, and audit row is lost. Use it only when you intend a full reset.
@@ -222,7 +232,7 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
 - For a schema change during development, the authoritative sequence is:
   1. edit [`aris_schema_v2.sql`](aris_schema_v2.sql);
   2. reset the local database (`docker compose down -v`);
-  3. redeploy with `.\scripts\deploy-database.ps1`;
+  3. redeploy with `.\scripts\deploy_database.ps1`;
   4. update the EF configuration and Appendix A/B if columns changed;
   5. run the integration suite.
 - **No EF Core migrations.** See `D16` in
@@ -238,11 +248,11 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
 |---|---|---|
 | `port is already allocated` on 1433 | Another SQL Server or container uses the port | Stop it, or change the host port in `docker-compose.yml` and all connection strings |
 | `Login failed for user 'sa'` | Wrong `.env` password, or container started with a different password on an existing volume | Use the original password, or reset with `docker compose down -v` |
-| `Cannot open database "ArisDb"` | Schema/database not deployed | Run `.\scripts\deploy-database.ps1` |
+| `Cannot open database "ArisDb"` | Schema/database not deployed | Run `.\scripts\deploy_database.ps1` |
 | `The certificate chain was issued by an authority that is not trusted` | Missing `TrustServerCertificate=True` | Add it to the local connection string |
 | Container exits immediately | Password fails complexity, or Docker has too little memory | Check `docker logs aris-sqlserver`; raise Docker memory |
-| `Login failed for user 'aris_officer'` | User not created, or wrong generated password | Re-run `.\scripts\deploy-database.ps1`; reset the password if lost |
-| Integration tests report skipped | `ARIS_TEST_CONNECTION` unset | Set it, then re-run |
+| `Login failed for user 'aris_officer'` | User not created, or wrong generated password | Re-run `.\scripts\deploy_database.ps1`; reset the password if lost |
+| Integration tests report skipped | `ARIS_TEST_CONNECTION` unset | Run `.\scripts\create_aris_test_connection.ps1`, then re-run |
 | `dotnet test` says "Zero tests ran" | `--nologo` was passed | Re-run without it |
 | `UPDATE` on `AuditLog` succeeds | Role `DENY` not applied | Re-apply the security section of the DDL; re-run the deployment script |
 | Golden Invariant returns rows | A service wrote a partial or inconsistent state | Read the violation code, fix the service, reset the affected data |

@@ -183,7 +183,7 @@ public sealed class AuditQueryFilterTests {
 
         if (!await TestDatabase.SchemaIsDeployedAsync(connection, Token)) {
             Assert.Skip(
-                "The ARIS schema is not deployed. Run .\\scripts\\deploy-database.ps1 first.");
+                "The ARIS schema is not deployed. Run .\\scripts\\deploy_database.ps1 first.");
         }
 
         if (!await TestDatabase.ObjectExistsAsync(connection, "dbo", "AuditLog", Token)) {

@@ -59,6 +59,7 @@ proven, not how it is hoped for.
 | `Q-INT-05` | A residence is edited in place (`AddressId` changed). | The update is rejected. | SQL error `51001`. | Trigger integration test |
 | `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | `AddressCanonicalTests` query on `vw_AddressCanonical` |
 | `Q-INT-07` | An erroneous tenure row is corrected. | The source becomes `VOID`; a linked replacement is inserted with the corrected values. | One `Corrects...Id` link; no overlap; Golden Invariant still holds. | `RectificationTests` |
+| `Q-INT-08` | Two contexts update the same citizen. | The first save commits; the second raises `DbUpdateConcurrencyException` and does not overwrite. | Original `RowVersion` in `WHERE`; zero rows affected. | `OptimisticConcurrencyTests` |
 
 ### Security
 
@@ -105,7 +106,7 @@ proven, not how it is hoped for.
 | `Q-USA-03` | An officer lacks the admin role. | Admin navigation is absent and the service rejects the call. | Hidden button + `Result.Failure`. | UI + service test |
 | `Q-OPS-01` | A new developer sets up the project. | Database and schema are running from a clean machine. | ≤ 15 minutes excluding the first image pull. | Onboarding dry run |
 | `Q-OPS-02` | The local database is corrupted. | It can be reset without affecting anyone else. | `docker compose down -v` + deploy succeeds. | Manual drill |
-| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | Deployment verification query |
+| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
 
 ---
 
@@ -154,7 +155,7 @@ A feature is done only when all of the following hold.
 | Unit tests | `dotnet test Aris.slnx` | Yes — any failure |
 | Integration tests with local DB | `ARIS_TEST_CONNECTION` set, then `dotnet test` | Yes — before merging to `main` |
 | Golden Invariant | `SELECT * FROM dbo.vw_GoldenInvariantViolations;` | Yes — any row |
-| Schema object inventory | 11 tables, 5 triggers, 3 views | Yes |
+| Schema object inventory | `SchemaInventoryTests`: 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
 | Secret scan | `git status`, reviewer inspection | Yes |
 | Layer scan | no EF Core/SQL under `src/Aris.UI` | Yes |
 | Manual smoke test | login → register citizen → register household → transfer → invariant | Yes for release |

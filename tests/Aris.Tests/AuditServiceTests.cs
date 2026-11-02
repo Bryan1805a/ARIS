@@ -159,7 +159,7 @@ public sealed class AuditServiceTests
         if (!await TestDatabase.ObjectExistsAsync(connection, "dbo", "AuditLog", Token))
         {
             Assert.Skip(
-                "dbo.AuditLog is not deployed. Run .\\scripts\\deploy-database.ps1 first.");
+                "dbo.AuditLog is not deployed. Run .\\scripts\\deploy_database.ps1 first.");
         }
     }
 }
