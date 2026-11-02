@@ -9,11 +9,11 @@ using System.Windows.Forms;
 
 using Aris.Application.Accounts;
 using Aris.Application.Authentication;
+using Aris.Application.Accounts.Dtos;
 
 namespace Aris.UI;
 
-public partial class AccountManagementControl : UserControl
-{
+public partial class AccountManagementControl : UserControl {
     private readonly IAccountService _accountService;
     private readonly IDemoDataService _demoDataService;
     private readonly Button _seedDemoButton = new();
@@ -24,13 +24,14 @@ public partial class AccountManagementControl : UserControl
 
     public AccountManagementControl(
         IAccountService accountService,
-        IDemoDataService demoDataService)
-    {
+        IDemoDataService demoDataService) {
         InitializeComponent();
         _accountService = accountService;
         _demoDataService = demoDataService;
         dgvAccounts.SelectionChanged += dgvAccounts_SelectionChanged;
 
+        // Keep demo seeding separate from normal account administration because
+        // it creates multiple related records and is intended for setup only.
         _seedDemoButton.Text = "Seed demo data";
         _seedDemoButton.Location = new Point(25, 580);
         _seedDemoButton.Size = new Size(180, 35);
@@ -44,13 +45,13 @@ public partial class AccountManagementControl : UserControl
         this.Load += AccountManagementControl_Load;
     }
 
-    private async void SeedDemoButton_Click(object? sender, EventArgs e)
-    {
-        if (CurrentUser is null)
-        {
+    private async void SeedDemoButton_Click(object? sender, EventArgs e) {
+        if (CurrentUser is null) {
             return;
         }
 
+        // Seeding is irreversible sample-data setup, so require explicit
+        // confirmation before disabling the button and calling the service.
         var confirmation = MessageBox.Show(
             "Seed demo addresses, citizens and households? " +
             "This is sample data, it respects the residency invariant, and it can only be run once.",
@@ -58,19 +59,18 @@ public partial class AccountManagementControl : UserControl
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
 
-        if (confirmation != DialogResult.Yes)
-        {
+        if (confirmation != DialogResult.Yes) {
             return;
         }
 
         _seedDemoButton.Enabled = false;
 
-        try
-        {
+        try {
+            // The application service owns the one-time check and transaction;
+            // the control only presents the result to the operator.
             var result = await _demoDataService.SeedAsync(CurrentUser.UserId);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, result.Errors),
                     "Cannot seed demo data",
@@ -79,8 +79,7 @@ public partial class AccountManagementControl : UserControl
                 return;
             }
 
-            if (result.Value is { } summary)
-            {
+            if (result.Value is { } summary) {
                 MessageBox.Show(
                     $"Seeded {summary.Addresses} addresses, {summary.Citizens} citizens and " +
                     $"{summary.Households} households. One citizen is UNASSIGNED for the " +
@@ -89,42 +88,53 @@ public partial class AccountManagementControl : UserControl
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
                 $"Unexpected error while seeding demo data: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
             _seedDemoButton.Enabled = true;
         }
     }
-    private async void AccountManagementControl_Load(object? sender, EventArgs e)
-    {
+    private async void AccountManagementControl_Load(object? sender, EventArgs e) {
+        // Load the list once the control has been initialized and has a session.
         await LoadAccountsAsync();
     }
 
-    private async Task LoadAccountsAsync()
-    {
-        try
-        {
-            if (CurrentUser == null)
-            {
-                throw new UnauthorizedAccessException(
-                    "You must log in to view accounts.");
+    private async Task LoadAccountsAsync() {
+        try {
+            if (CurrentUser == null) {
+                MessageBox.Show(
+                    "You must log in to view accounts.",
+                    "Access Denied",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
             }
 
-            var accounts = await _accountService.GetAllAccountsAsync(
+            // Authorization is enforced by the service as well; the UI check
+            // provides a clearer message when the control has no active session.
+            var result = await _accountService.GetAllAccountsAsync(
                 CurrentUser.UserId);
 
+            if (result.IsFailure) {
+                MessageBox.Show(
+                    string.Join(Environment.NewLine, result.Errors),
+                    "Cannot load accounts",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            var accounts = result.Value ?? new List<AccountDto>();
+
+            // Bind a display projection rather than domain/application objects
+            // so the grid exposes only account-management fields.
             dgvAccounts.AutoGenerateColumns = false;
 
-            dgvAccounts.DataSource = accounts.Select(a => new
-            {
+            dgvAccounts.DataSource = accounts.Select(a => new {
                 a.UserId,
                 a.Username,
                 a.Role,
@@ -132,35 +142,28 @@ public partial class AccountManagementControl : UserControl
                 a.CreatedAt
             }).ToList();
             btnDisableAccount.Text = "Disable Account";
-        }
-        catch (Exception)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
-                "Failed to load accounts.",
+                $"Unexpected error while loading accounts: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
+                MessageBoxIcon.Error);
         }
     }
 
-    private async void btnAddAccount_Click(object sender, EventArgs e)
-    {
-        using (AddAccountForm form = new AddAccountForm(_accountService))
-        {
+    private async void btnAddAccount_Click(object sender, EventArgs e) {
+        using (AddAccountForm form = new AddAccountForm(_accountService)) {
             form.CurrentUser = CurrentUser;
 
-            if (form.ShowDialog(this) == DialogResult.OK)
-            {
+            // Refresh only after the child form reports a successful creation.
+            if (form.ShowDialog(this) == DialogResult.OK) {
                 await LoadAccountsAsync();
             }
         }
     }
 
-    private void btnEditAccount_Click(object sender, EventArgs e)
-    {
-        if (dgvAccounts.CurrentRow == null)
-        {
+    private void btnEditAccount_Click(object sender, EventArgs e) {
+        if (dgvAccounts.CurrentRow == null) {
             MessageBox.Show(
                 "Please select an account to edit.",
                 "No Account Selected",
@@ -170,16 +173,15 @@ public partial class AccountManagementControl : UserControl
             return;
         }
 
-        using (EditAccountForm form = new EditAccountForm())
-        {
+        // Editing is currently delegated to the separate form; keeping the
+        // selection check here prevents opening it without a target row.
+        using (EditAccountForm form = new EditAccountForm()) {
             form.ShowDialog(this);
         }
     }
 
-    private async void btnDisableAccount_Click(object sender, EventArgs e)
-    {
-        if (dgvAccounts.CurrentRow == null)
-        {
+    private async void btnDisableAccount_Click(object sender, EventArgs e) {
+        if (dgvAccounts.CurrentRow == null) {
             MessageBox.Show("Please select an account.");
             return;
         }
@@ -187,14 +189,12 @@ public partial class AccountManagementControl : UserControl
         int userId = Convert.ToInt32(
              dgvAccounts.CurrentRow.Cells[0].Value
         );
-        if (CurrentUser == null)
-        {
+        if (CurrentUser == null) {
             MessageBox.Show("User session not found.");
             return;
         }
 
-        if (CurrentUser.UserId == userId)
-        {
+        if (CurrentUser.UserId == userId) {
             MessageBox.Show(
                 "You cannot disable your own account.",
                 "Action Not Allowed",
@@ -204,8 +204,7 @@ public partial class AccountManagementControl : UserControl
             return;
         }
 
-        string status = Convert.ToString(
-    dgvAccounts.CurrentRow.Cells[3].Value) ?? "";
+        string status = Convert.ToString(dgvAccounts.CurrentRow.Cells[3].Value) ?? "";
 
         bool isLocked = status == "LOCKED";
 
@@ -213,6 +212,8 @@ public partial class AccountManagementControl : UserControl
 
         string action = isLocked ? "activate" : "disable";
 
+        // The same command toggles the two supported states, while the
+        // confirmation text reflects the direction of the transition.
         var confirm = MessageBox.Show(
             $"Are you sure you want to {action} this account?",
             "Confirm",
@@ -220,38 +221,37 @@ public partial class AccountManagementControl : UserControl
             MessageBoxIcon.Question
         );
 
-        if (confirm != DialogResult.Yes)
-        {
+        if (confirm != DialogResult.Yes) {
             return;
         }
 
-        try
-        {
-            bool success = await _accountService
-    .ChangeAccountStatusAsync(
-        userId,
-        newStatus,
-        CurrentUser.UserId
-    );
+        try {
+            // The service performs the authorization, self-lock protection,
+            // persistence, and audit logging for this state transition.
+            var result = await _accountService.ChangeAccountStatusAsync(
+                userId,
+                newStatus,
+                CurrentUser.UserId);
 
-            if (success)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
-                    isLocked
-                        ? "Account activated successfully."
-                        : "Account disabled successfully."
-                );
-                await LoadAccountsAsync();
+                    string.Join(Environment.NewLine, result.Errors),
+                    "Cannot change account status",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
             }
-            else
-            {
-                MessageBox.Show("Account not found.");
-            }
-        }
-        catch (Exception)
-        {
+
             MessageBox.Show(
-                "Failed to disable account.",
+                isLocked
+                    ? "Account activated successfully."
+                    : "Account disabled successfully.");
+
+            // Rebind after the mutation so status text and row data are current.
+            await LoadAccountsAsync();
+        } catch (Exception ex) {
+            MessageBox.Show(
+                $"Unexpected error while changing the account status: {ex.Message}",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error
@@ -259,12 +259,10 @@ public partial class AccountManagementControl : UserControl
         }
     }
 
-    private void btnSearch_Click(object sender, EventArgs e)
-    {
+    private void btnSearch_Click(object sender, EventArgs e) {
         string keyword = txtSearch.Text.Trim();
 
-        if (string.IsNullOrWhiteSpace(keyword))
-        {
+        if (string.IsNullOrWhiteSpace(keyword)) {
             MessageBox.Show(
                 "Please enter a username to search.",
                 "Search",
@@ -275,6 +273,8 @@ public partial class AccountManagementControl : UserControl
             return;
         }
 
+        // Search is intentionally not simulated locally; avoid presenting a
+        // result that is not backed by the account service/database.
         MessageBox.Show(
             "Search functionality will be available after database integration.",
             "Information",
@@ -284,8 +284,7 @@ public partial class AccountManagementControl : UserControl
 
     }
 
-    private void dgvAccounts_SelectionChanged(object? sender, EventArgs e)
-    {
+    private void dgvAccounts_SelectionChanged(object? sender, EventArgs e) {
         if (dgvAccounts.CurrentRow == null)
             return;
 
@@ -293,27 +292,22 @@ public partial class AccountManagementControl : UserControl
             dgvAccounts.CurrentRow.Cells[3].Value
         ) ?? "";
 
-        if (status == "LOCKED")
-        {
+        // Keep the action label synchronized with the selected account's state.
+        if (status == "LOCKED") {
             btnDisableAccount.Text = "Activate Account";
-        }
-        else
-        {
+        } else {
             btnDisableAccount.Text = "Disable Account";
         }
     }
 
-    private async void btnResetPassword_Click(object sender, EventArgs e)
-    {
-        if (CurrentUser == null)
-        {
+    private async void btnResetPassword_Click(object sender, EventArgs e) {
+        if (CurrentUser == null) {
             MessageBox.Show("Please log in first.");
             return;
         }
 
         if (dgvAccounts.CurrentRow == null ||
-            dgvAccounts.CurrentRow.IsNewRow)
-        {
+            dgvAccounts.CurrentRow.IsNewRow) {
             MessageBox.Show("Please select an account.");
             return;
         }
@@ -322,51 +316,44 @@ public partial class AccountManagementControl : UserControl
             dgvAccounts.CurrentRow.Cells["colUserId"].Value
         );
 
-        using (ResetPasswordForm resetForm = new ResetPasswordForm())
-        {
+        // Let the password dialog collect and validate the secret; this control
+        // passes it to the service only after the operator confirms the dialog.
+        using (ResetPasswordForm resetForm = new ResetPasswordForm()) {
             if (resetForm.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            try
-            {
+            try {
                 btnResetPassword.Enabled = false;
 
-                bool success = await _accountService.ResetPasswordAsync(
+                // Password hashing, forced-change policy, and audit details stay
+                // inside the application service rather than the UI layer.
+                var result = await _accountService.ResetPasswordAsync(
                     userId,
                     resetForm.NewPassword,
-                    CurrentUser.UserId
-                );
+                    CurrentUser.UserId);
 
-                if (success)
-                {
+                if (result.IsFailure) {
                     MessageBox.Show(
-                        "Password reset successfully.",
-                        "Success",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information
-                    );
-                }
-                else
-                {
-                    MessageBox.Show(
-                        "Account not found.",
+                        string.Join(Environment.NewLine, result.Errors),
                         "Reset Password Failed",
                         MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
+                        MessageBoxIcon.Warning);
+                    return;
                 }
-            }
-            catch (Exception ex)
-            {
+
                 MessageBox.Show(
-                    ex.Message,
+                    "Password reset successfully.",
+                    "Success",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            } catch (Exception ex) {
+                MessageBox.Show(
+                    $"Unexpected error while resetting the password: {ex.Message}",
                     "Reset Password Failed",
                     MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-            }
-            finally
-            {
+                    MessageBoxIcon.Error);
+            } finally {
                 btnResetPassword.Enabled = true;
             }
         }

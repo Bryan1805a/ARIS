@@ -39,8 +39,7 @@ namespace Aris.Infrastructure.Auditing;
 /// (<c>CON-SEC-01</c>, <c>CON-SEC-02</c>).
 /// </para>
 /// </remarks>
-public sealed class AuditService : IAuditService
-{
+public sealed class AuditService : IAuditService {
     /// <summary><c>CK_Audit_Result</c> value for a completed mutation.</summary>
     private const string SuccessResult = "SUCCESS";
 
@@ -61,8 +60,7 @@ public sealed class AuditService : IAuditService
 
     public AuditService(
     ArisDbContext context,
-    IConfiguration? configuration = null)
-    {
+    IConfiguration? configuration = null) {
         _context = context;
         _configuration = configuration;
     }
@@ -73,15 +71,12 @@ public sealed class AuditService : IAuditService
     /// malformed JSON). Catching it here keeps the failure at the call site instead of
     /// letting SQL Server truncate or reject the row after the business work is done.
     /// </exception>
-    public async Task LogAsync(AuditEntry entry, CancellationToken cancellationToken = default)
-    {
-        if (!AuditEntryValidator.TryValidate(entry, out var errors))
-        {
+    public async Task LogAsync(AuditEntry entry, CancellationToken cancellationToken = default) {
+        if (!AuditEntryValidator.TryValidate(entry, out var errors)) {
             throw new ValidationException(errors);
         }
 
-        _context.AuditLogs.Add(new AuditLog
-        {
+        _context.AuditLogs.Add(new AuditLog {
             ActorUserId = entry.ActorUserId,
             Action = entry.Action,
             EntityType = entry.EntityType,
@@ -112,17 +107,25 @@ public sealed class AuditService : IAuditService
     /// </exception>
     ///
 
-    public async Task LogLoginFailureAsync(
-    AuditFailureEntry entry,
-    CancellationToken cancellationToken = default)
-    {
+    public Task LogLoginFailureAsync(
+        AuditFailureEntry entry,
+        CancellationToken cancellationToken = default)
+        => LogFailureIndependentAsync(entry, cancellationToken);
+
+    /// <summary>
+    /// Resolves the configured <c>ArisDb</c> connection and records a FAILURE on a fresh
+    /// connection. Best-effort: a missing connection string or a failed write is traced
+    /// and ignored, so the caller's original error is never replaced.
+    /// </summary>
+    public async Task LogFailureIndependentAsync(
+        AuditFailureEntry entry,
+        CancellationToken cancellationToken = default) {
         var connectionString =
             _configuration?.GetConnectionString("ArisDb");
 
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
+        if (string.IsNullOrWhiteSpace(connectionString)) {
             Trace.TraceError(
-                "Audit login failure could not be recorded: database connection is not configured.");
+                "Audit failure could not be recorded: database connection is not configured.");
             return;
         }
 
@@ -132,24 +135,20 @@ public sealed class AuditService : IAuditService
             cancellationToken);
     }
 
-
     public async Task LogFailureIndependentAsync(
         string connectionString,
         AuditFailureEntry entry,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        if (!AuditEntryValidator.TryValidate(entry, out var errors))
-        {
+        if (!AuditEntryValidator.TryValidate(entry, out var errors)) {
             Trace.TraceError(
                 "AuditService skipped an invalid independent FAILURE entry: {0}",
                 string.Join(" ", errors));
             return;
         }
 
-        try
-        {
+        try {
             // A fresh connection per attempt: anything bound to the rolled-back business
             // transaction is gone. ExecuteAsync wraps open AND insert, so a connection
             // that drops between the two is retried as one unit; it retries only
@@ -157,8 +156,7 @@ public sealed class AuditService : IAuditService
             // failure (the server committed, the client lost the acknowledgement) may
             // append a duplicate; for an audit trail a duplicate is preferable to silence.
             await SqlResilience.ExecuteAsync(
-                async ct =>
-                {
+                async ct => {
                     await using var connection = new SqlConnection(connectionString);
                     await connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -179,9 +177,7 @@ public sealed class AuditService : IAuditService
                     return true;
                 },
                 cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             // Deliberately swallowed after being reported out-of-band. Losing the failure
             // audit is bad; replacing the original error with an audit exception is worse.
             // The connection string is never logged (CON-SEC-02).
@@ -203,15 +199,12 @@ public sealed class AuditService : IAuditService
         string name,
         SqlDbType type,
         T? value,
-        int size = 0)
-    {
-        var parameter = new SqlParameter(name, type)
-        {
+        int size = 0) {
+        var parameter = new SqlParameter(name, type) {
             Value = value is null ? DBNull.Value : value
         };
 
-        if (size != 0)
-        {
+        if (size != 0) {
             parameter.Size = size;
         }
 

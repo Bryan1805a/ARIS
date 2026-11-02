@@ -1,64 +1,75 @@
 ﻿using Aris.Application.SystemConfiguration;
+using Aris.Application.SystemConfiguration.Dtos;
 
 using System;
 using System.Windows.Forms;
 
 namespace Aris.UI;
 
-public partial class SystemConfigurationControl : UserControl
-{
+public partial class SystemConfigurationControl : UserControl {
     private readonly SystemConfigurationService _service;
 
-    public SystemConfigurationControl(SystemConfigurationService service)
-    {
+    public SystemConfigurationControl(SystemConfigurationService service) {
         InitializeComponent();
 
         _service = service;
 
+        // Wire refresh-sensitive events so the editor always follows the
+        // currently selected configuration row.
         this.Load += SystemConfigurationControl_Load;
         dgvConfigurations.SelectionChanged += dgvConfigurations_SelectionChanged;
         btnSaveChanges.Click += btnSaveChanges_Click;
     }
 
     private async void SystemConfigurationControl_Load(
-        object? sender, EventArgs e)
-    {
-        try
-        {
-            var configurations = await _service.GetAllAsync();
+        object? sender, EventArgs e) {
+        // The service performs the authoritative administrator-session check;
+        // this control only displays the result or access error.
+        await LoadConfigurationsAsync();
+    }
 
-            dgvConfigurations.DataSource = configurations;
-        }
-        catch (Exception ex)
-        {
+    private async Task LoadConfigurationsAsync() {
+        try {
+            var result = await _service.GetAllAsync();
+
+            if (result.IsFailure) {
+                MessageBox.Show(
+                    string.Join(Environment.NewLine, result.Errors),
+                    "Cannot load configuration",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Rebinding replaces the previous snapshot and triggers selection
+            // handling for the first available configuration, if any.
+            dgvConfigurations.DataSource = result.Value?.ToList() ?? new List<SystemConfigurationDto>();
+        } catch (Exception ex) {
             MessageBox.Show(
-                ex.Message,
+                $"Unexpected error while loading configuration: {ex.Message}",
                 "Configuration Error",
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
+                MessageBoxIcon.Error);
         }
     }
+
     private void dgvConfigurations_SelectionChanged(
-    object? sender, EventArgs e)
-    {
-        if (dgvConfigurations.CurrentRow?.DataBoundItem
-            is not Aris.Domain.Entities.SystemConfiguration config)
-        {
+        object? sender, EventArgs e) {
+        if (dgvConfigurations.CurrentRow?.DataBoundItem is not SystemConfigurationDto config) {
+            // Clear stale values when the grid has no valid selected DTO.
             txtConfigValue.Clear();
             btnSaveChanges.Enabled = false;
             return;
         }
 
+        // Load the selected value into the editor without modifying the DTO
+        // until the user explicitly saves.
         txtConfigValue.Text = config.ConfigValue;
         btnSaveChanges.Enabled = true;
     }
 
-    private async void btnSaveChanges_Click(object? sender, EventArgs e)
-    {
-        if (dgvConfigurations.CurrentRow?.DataBoundItem
-            is not Aris.Domain.Entities.SystemConfiguration config)
-        {
+    private async void btnSaveChanges_Click(object? sender, EventArgs e) {
+        if (dgvConfigurations.CurrentRow?.DataBoundItem is not SystemConfigurationDto config) {
             MessageBox.Show(
                 "Please select a configuration.",
                 "Validation",
@@ -69,8 +80,9 @@ public partial class SystemConfigurationControl : UserControl
 
         string newValue = txtConfigValue.Text.Trim();
 
-        if (string.IsNullOrWhiteSpace(newValue))
-        {
+        // Empty input is rejected immediately; numeric/range validation remains
+        // centralized in the application service.
+        if (string.IsNullOrWhiteSpace(newValue)) {
             MessageBox.Show(
                 "Configuration value cannot be empty.",
                 "Validation",
@@ -81,44 +93,42 @@ public partial class SystemConfigurationControl : UserControl
 
         btnSaveChanges.Enabled = false;
 
-        try
-        {
-            bool updated = await _service.UpdateAsync(
+        try {
+            // The service performs authorization, conversion, persistence, and
+            // audit logging for the selected configuration key.
+            var result = await _service.UpdateAsync(
                 config.ConfigKey,
                 newValue);
 
-            if (!updated)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
-                    "Configuration not found.",
+                    string.Join(Environment.NewLine, result.Errors),
                     "Update Failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
                 return;
             }
 
-            dgvConfigurations.DataSource = null;
-            dgvConfigurations.DataSource = await _service.GetAllAsync();
+            // Reload after saving so the grid reflects the committed value and
+            // the selected DTO is not left with stale data.
+            await LoadConfigurationsAsync();
 
             MessageBox.Show(
                 "Configuration updated successfully.",
                 "Success",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             MessageBox.Show(
-                ex.Message,
+                $"Unexpected error while updating configuration: {ex.Message}",
                 "Configuration Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
+        } finally {
+            // Restore editing only when a valid configuration remains selected.
             btnSaveChanges.Enabled =
                 dgvConfigurations.CurrentRow?.DataBoundItem
-                is Aris.Domain.Entities.SystemConfiguration;
+                is SystemConfigurationDto;
         }
     }
 }

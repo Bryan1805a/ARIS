@@ -1,30 +1,39 @@
-﻿using Aris.Domain.Entities;
+﻿using Aris.Application.Accounts.Dtos;
+using Aris.Application.Common;
 
 namespace Aris.Application.Accounts;
 
-public interface IAccountService
-{
-    Task<List<UserAccount>> GetAllAccountsAsync(int currentUserId);
-    Task<bool> CreateAccountAsync(
-    string username,
-    string fullName,
-    string password,
-    string role,
-    int currentUserId);
-    Task<bool> ChangeAccountStatusAsync(
+/// <summary>
+/// Account administration and self-service password change (<c>ACC-01</c>, <c>AUTH-01</c>).
+/// </summary>
+public interface IAccountService {
+    Task<Result<List<AccountDto>>> GetAllAccountsAsync(
+        int currentUserId,
+        CancellationToken ct = default);
+
+    Task<Result<int>> CreateAccountAsync(
+        string username,
+        string fullName,
+        string password,
+        string role,
+        int currentUserId,
+        CancellationToken ct = default);
+
+    Task<Result> ChangeAccountStatusAsync(
         int userId,
         string status,
-        int currentUserId
-    );
-    Task<bool> ResetPasswordAsync(
+        int currentUserId,
+        CancellationToken ct = default);
+
+    Task<Result> ResetPasswordAsync(
         int userId,
         string newPassword,
-        int currentUserId
-     );
+        int currentUserId,
+        CancellationToken ct = default);
 
-    Task<bool> ChangeOwnPasswordAsync(
-    int userId,
-    string currentPassword,
-    string newPassword
-    );
+    Task<Result> ChangeOwnPasswordAsync(
+        int userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken ct = default);
 }
