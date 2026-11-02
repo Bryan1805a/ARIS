@@ -430,7 +430,28 @@ Rules:
 
 ---
 
-## 6.12 Scenario-to-component map
+## 6.12 Audit inspection and filtering (`AUD-01`)
+
+`AuditViewerControl` sends `AuditSearchCriteria` to `AuditQueryService`. The service
+requires an authenticated `ADMIN`, validates the limit (`1`–`1000`) and date range,
+normalizes blank filters to `null`, and delegates to `AuditRepository`. The repository
+filters `AuditLog`, joins `UserAccount` for the actor username, and falls back to
+`AttemptedUsername` for unknown-user login failures.
+
+Rules:
+
+- Filters are a **from** bound (inclusive), a **to** bound (exclusive), actor/attempted
+  username, entity type, action, and result (`SUCCESS` or `FAILURE`).
+- Results are capped and ordered newest first. The grid and detail pane are read-only;
+  selecting a row shows its IDs, correlation ID and JSON details.
+- The viewer never mutates audit rows; `trg_AuditLog_AppendOnly` and the `aris_app` role
+  denials remain the database backstop.
+- `AuditQueryFilterTests` proves the filters against real SQL Server;
+  `AuditQueryServiceTests` covers authorization, validation and criteria normalization.
+
+---
+
+## 6.13 Scenario-to-component map
 
 | Scenario | UI | Application | Infrastructure | Database |
 |---|---|---|---|---|
@@ -442,6 +463,7 @@ Rules:
 | Deactivate citizen | `CitizenDetailForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
 | Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
 | Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
+| Inspect audit log | `AuditViewerControl` | `AuditQueryService` | `AuditRepository` | `AuditLog`, `UserAccount` |
 | Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Update system configuration | `SystemConfigurationControl` | `SystemConfigurationService` | `SystemConfigurationRepository`, `UnitOfWork`, `AuditService` | `SystemConfiguration`, `AuditLog` |

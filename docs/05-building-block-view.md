@@ -59,7 +59,7 @@ flowchart TB
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
 | `BootstrapForm` | One-time first-administrator creation on an empty database | Implemented |
 | `Localization/LanguageManager` | EN/VI switch, default Vietnamese; labels, titles and grid headers | Implemented |
-| `AccountManagementControl`, `AuditViewerControl`, `SystemConfigurationControl` | Admin screens | Implemented |
+| `AccountManagementControl`, `AuditViewerControl`, `SystemConfigurationControl` | Admin screens; the audit viewer filters by date, actor, entity, action and result and shows read-only row detail (`AUD-01`) | Implemented |
 | `ReportsControl` | Report selection, preview, CSV export | Implemented |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 | `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
@@ -87,7 +87,7 @@ navigation.
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
 | `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
-| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `AUD-01` (recent view), `SYS-01`; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
+| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `SYS-01`; `AUD-01` search criteria, result filters and row detail; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
 | `Accounts/IDemoDataService` | Idempotent demo dataset exposed to administrators (`T11`) | Implemented |
 | `Reporting/IReportService` | `RPT-01`–`RPT-03` | Implemented |
@@ -127,6 +127,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
 | `Persistence/UnitOfWork` | Opens the caller's transaction, commits, rolls back and clears the change tracker (`D20`) | Implemented |
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection, including the configured-connection overload used by repository-backed services | Implemented |
+| `Repositories/AuditRepository` | Read-only audit search with actor join, date/text/result filters and newest-first ordering (`AUD-01`) | Implemented |
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
@@ -207,7 +208,7 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The core vertical slices are
-implemented; the remaining gaps are audit filtering and test/UI-automation depth.
+implemented; the remaining gaps are test and UI-automation depth.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -224,7 +225,8 @@ implemented; the remaining gaps are audit filtering and test/UI-automation depth
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | ✔ | — |
 | Transfer engine (`UC-06`) | ✔ | — |
-| Auth, accounts, audit viewer, configuration, reports | ✔ core | `AUD-01` filtering/detail; report depth |
+| Auth, accounts, audit viewer, configuration, reports | ✔ core | Report depth |
+| Audit viewer filters and row detail (`AUD-01`) | ✔ | — |
 | Account and configuration mutation auditing (`T14`) | ✔ | — |
 | Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✔ | — |
 | Historical rectification (`HIST-01`) | ✔ | — |
