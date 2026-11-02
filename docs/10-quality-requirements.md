@@ -97,6 +97,7 @@ proven, not how it is hoped for.
 | `Q-TST-02` | The team runs the suite with a local database. | All tests execute, including triggers and the invariant. | 0 failed, 0 skipped. | `dotnet test` with `ARIS_TEST_CONNECTION` |
 | `Q-TST-03` | The invariant view is broken. | The negative-control test fails. | Test detects the deliberately inserted violation. | `GoldenInvariant_DetectsDeliberateViolation` |
 | `Q-TST-04` | Integration tests share one local database. | Test classes run sequentially; fixtures cannot deadlock or observe each other mid-write. | 0 deadlocks; invariant remains 0 rows. | `Aris.Tests` assembly parallelization setting |
+| `Q-TST-05` | The team runs the release walkthrough. | Citizen → household → transfer → rectification → audit completes, and the WinForms flow matches the checklist. | 0 invariant violations; every checklist item complete. | `EndToEndWorkflowTests` + Appendix E |
 
 ### Usability and operability
 
@@ -159,4 +160,4 @@ A feature is done only when all of the following hold.
 | Schema object inventory | `SchemaInventoryTests`: 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
 | Secret scan | `git status`, reviewer inspection | Yes |
 | Layer scan | no EF Core/SQL under `src/Aris.UI` | Yes |
-| Manual smoke test | login → register citizen → register household → transfer → invariant | Yes for release |
+| Manual smoke test ([Appendix E](appendix/E-smoke-test-checklist.md)) | login → citizen → household → transfer → rectification → audit → invariant | Yes for release |

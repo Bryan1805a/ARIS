@@ -232,11 +232,11 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 4 — transfer engine | Complete |
 | Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer filters and detail/configuration/basic reports, including admin mutation audit |
 | Phase 6 — integration | Complete |
-| Phase 7 — hardening | Ongoing; committed UI automation remains (`T4`) |
+| Phase 7 — hardening | Complete; automated end-to-end harness plus the Appendix E smoke checklist |
 
 Known functional gaps: none. Vietnamization covers the static UI; service-layer validation
-messages are still English. The test suite is 98 passed / 31 skipped without a database and
-129 passed / 0 skipped against the local container.
+messages are still English. The test suite is 98 passed / 32 skipped without a database and
+130 passed / 0 skipped against the local container.
 
 ---
 

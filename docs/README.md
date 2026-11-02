@@ -11,7 +11,7 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.7 (service-level test coverage) |
+| **Document version** | 3.8 (end-to-end harness complete) |
 | **Last updated** | 2026-11-02 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
@@ -44,6 +44,7 @@ Supporting reference material (not part of the twelve sections):
 | [`appendix/B-database-reference.md`](appendix/B-database-reference.md) | Tables, constraints, triggers, error codes, views, EF Core mapping rules |
 | [`appendix/C-coding-standards.md`](appendix/C-coding-standards.md) | Canonical service pattern, auditing code, UI pattern, AI guardrails, PR checklist |
 | [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md) | Roles, RACI, roadmap, Phase 1 task briefs, local onboarding, Git workflow |
+| [`appendix/E-smoke-test-checklist.md`](appendix/E-smoke-test-checklist.md) | Committed end-to-end workflow harness and manual WinForms release/demo checklist |
 
 ---
 
@@ -58,7 +59,8 @@ Choose the path that matches what you are about to do.
 | **Work on the database or EF Core** | Appendix A → Appendix B → 08 → 09 |
 | **Review a pull request** | 08 → 10 → Appendix C (PR checklist) |
 | **Change an architectural rule** | 04 → 09 → 10 → 11 |
-| **Prepare for the course defence** | 01 → 04 → 05 → 06 → 09 → 10 |
+| **Prepare for the course defence** | 01 → 04 → 05 → 06 → 09 → 10 → Appendix E |
+| **Prepare a release or demo** | 07 → 10 → Appendix E |
 
 Do not read all twelve sections front to back on day one. Section 1, section 7, and
 Appendix D are enough to get the application running.

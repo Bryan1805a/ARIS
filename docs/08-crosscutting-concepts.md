@@ -430,7 +430,7 @@ environment by default.
 | Project | Scope | Database | Speed |
 |---|---|---|---|
 | `tests/Aris.UnitTests` | Validators, pure domain rules, DTO mapping, `Result<T>`, audit entry validation, account/configuration services with fakes | None / EF InMemory for mapping only | Milliseconds |
-| `tests/Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, Golden Invariant, `rowversion`, optimistic concurrency, schema inventory, service flows with a recording audit double | Real SQL Server via `ARIS_TEST_CONNECTION` | Seconds |
+| `tests/Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, Golden Invariant, `rowversion`, optimistic concurrency, schema inventory, service flows with a recording audit double, end-to-end workflow | Real SQL Server via `ARIS_TEST_CONNECTION` | Seconds |
 
 Rules:
 
@@ -454,6 +454,9 @@ Rules:
 - `OptimisticConcurrencyTests` proves the stale-`rowversion` path (`D14`, `T9`), and
   `SchemaInventoryTests` asserts the deployed tables, triggers, views, role and seed rows
   (`T10`).
+- `EndToEndWorkflowTests` runs citizen → household → transfer → rectification → audit,
+  then asserts the Golden Invariant is clean (`T4`). WinForms navigation, dialogs and the
+  language switch remain covered by the committed checklist in Appendix E.
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
 ---

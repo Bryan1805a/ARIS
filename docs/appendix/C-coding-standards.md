@@ -361,6 +361,7 @@ await _context.SaveChangesAsync(ct);   // new active row
 | Validator / pure logic | `Aris.UnitTests` | Input rules, `Result<T>`, audit entry validation, mapping defaults |
 | Database rule | `Aris.Tests` | Triggers, CHECK constraints, filtered indexes, views, `rowversion`, Golden Invariant |
 | Service flow | `Aris.Tests` | Orchestration, authorization and audit metadata with a recording audit double and real SQL |
+| End-to-end workflow | `Aris.Tests` | Citizen → household → transfer → rectification → audit; manual WinForms steps live in Appendix E |
 
 - In-memory EF does **not** enforce database rules. Never use it to prove one.
 - Integration tests skip when `ARIS_TEST_CONNECTION` is unset.
@@ -443,6 +444,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] `dotnet build Aris.slnx` → 0 errors, 0 warnings.
 - [ ] `dotnet test Aris.slnx` → 0 failed (never `--nologo`).
 - [ ] Integration tests executed with a local database for schema-sensitive changes.
+- [ ] [Appendix E](E-smoke-test-checklist.md) completed for release-facing UI changes.
 - [ ] `SELECT * FROM dbo.vw_GoldenInvariantViolations;` → 0 rows.
 - [ ] No secrets, `.env`, `bin/`, `obj/`, or `TestResults/` staged.
 - [ ] Formatting matches `.editorconfig` (braces on the same line).

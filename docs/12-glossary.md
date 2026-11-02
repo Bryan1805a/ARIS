@@ -72,6 +72,7 @@
 | **`rowversion`** | SQL Server automatically maintained binary version column. |
 | **`Result<T>`** | The Application-layer return type for expected success or failure. |
 | **Serializable** | Isolation level that makes concurrent transactions behave as if executed sequentially. |
+| **Smoke test** | The committed manual WinForms release/demo checklist in Appendix E, covering navigation, dialogs, validation and the language switch. |
 | **Trigger** | SQL Server code that runs after `INSERT`/`UPDATE`/`DELETE`; used for append-only and overlap rules. |
 | **Unit of work** | The `IUnitOfWork` transaction boundary that keeps a repository mutation and its success audit atomic for Application services (`D20`). |
 | **User-secrets** | .NET configuration provider storing secrets outside the repository. |

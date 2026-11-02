@@ -32,7 +32,7 @@ append-only historical audit trail.
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 129 with a database; 98 passed + 31 skipped without |
+| Tests | 130 with a database; 98 passed + 32 skipped without |
 
 ## Documentation
 
@@ -53,7 +53,7 @@ The architecture documentation follows the **arc42** template. Start at the
 | 10. Quality requirements | [`docs/10-quality-requirements.md`](docs/10-quality-requirements.md) |
 | 11. Risks and technical debt | [`docs/11-risks-and-technical-debt.md`](docs/11-risks-and-technical-debt.md) |
 | 12. Glossary | [`docs/12-glossary.md`](docs/12-glossary.md) |
-| Appendices | [Domain model](docs/appendix/A-domain-model.md) · [Database reference](docs/appendix/B-database-reference.md) · [Coding standards](docs/appendix/C-coding-standards.md) · [Team workflow](docs/appendix/D-team-workflow.md) |
+| Appendices | [Domain model](docs/appendix/A-domain-model.md) · [Database reference](docs/appendix/B-database-reference.md) · [Coding standards](docs/appendix/C-coding-standards.md) · [Team workflow](docs/appendix/D-team-workflow.md) · [Smoke-test checklist](docs/appendix/E-smoke-test-checklist.md) |
 | Canonical schema | [`docs/aris_schema_v2.sql`](docs/aris_schema_v2.sql) |
 | ERD | [`docs/erd_v2.svg`](docs/erd_v2.svg) |
 
@@ -191,8 +191,8 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **129 passed, 0 failed, 0 skipped** with a database, or
-**98 passed, 31 skipped** without one. Integration test classes run sequentially because
+The current suite is **130 passed, 0 failed, 0 skipped** with a database, or
+**98 passed, 32 skipped** without one. Integration test classes run sequentially because
 they share one local database.
 
 | Suite | Purpose |
@@ -205,6 +205,7 @@ they share one local database.
 | `OptimisticConcurrencyTests` | A stale `RowVersion` raises `DbUpdateConcurrencyException` without overwriting |
 | `SchemaInventoryTests` | The deployed database has 11 tables, 5 triggers, 3 views, `aris_app`, and 4 seed rows |
 | `CitizenServiceTests`, `HouseholdServiceTests`, `TransferServiceTests` | Service flows, authorization, audit metadata, and transfer lineage against real SQL with a recording audit double |
+| `EndToEndWorkflowTests` | Citizen → household → transfer → rectification → audit, ending with a clean Golden Invariant |
 | `AccountServiceTests`, `SystemConfigurationServiceTests` | Result-based admin services, authorization, audit metadata, and failure paths with fakes |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
