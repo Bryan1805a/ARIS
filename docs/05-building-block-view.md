@@ -233,6 +233,8 @@ implemented; the remaining gaps are test and UI-automation depth.
 | Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |
+| Optimistic-concurrency integration test (`T9`) | ✔ | — |
+| Schema-object inventory test (`T10`) | ✔ | — |
 | Service-level tests and UI automation | Partial | `T3`, `T4` in §11 |
 
 The remaining work is tracked in [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).

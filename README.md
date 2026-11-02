@@ -32,7 +32,7 @@ append-only historical audit trail.
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 115 with a database; 98 passed + 17 skipped without |
+| Tests | 117 with a database; 98 passed + 19 skipped without |
 
 ## Documentation
 
@@ -74,7 +74,9 @@ tests/
   Aris.UnitTests/              # validators, audit rules, EF mapping; no database
   Aris.Tests/                  # integration tests against real SQL Server
 scripts/
-  deploy-database.ps1          # create ArisDb, apply schema, create aris_officer
+  deploy_database.ps1          # create ArisDb, apply schema, create aris_officer
+  create_aris_test_connection.ps1  # load ARIS_TEST_CONNECTION from .env
+  delete_aris_test_connection.ps1  # clear ARIS_TEST_CONNECTION
 docs/                          # arc42 documentation + canonical DDL + ERD
 ```
 
@@ -105,7 +107,7 @@ docker compose up -d
 docker logs aris-sqlserver        # wait for "ready for client connections"
 
 # 3. Create ArisDb, apply the schema, create the app login
-.\scripts\deploy-database.ps1
+.\scripts\deploy_database.ps1
 
 # 4. Configure the application (secret stays outside Git)
 cd src/Aris.UI
@@ -182,14 +184,15 @@ The application connects as `aris_officer`, a member of the least-privilege role
 ## Testing
 
 ```powershell
-$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<from .env>;TrustServerCertificate=True"
+.\scripts\create_aris_test_connection.ps1   # reads the sa password from .env
 dotnet test Aris.slnx
+.\scripts\delete_aris_test_connection.ps1    # clear it when finished
 ```
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **115 passed, 0 failed, 0 skipped** with a database, or
-**98 passed, 17 skipped** without one.
+The current suite is **117 passed, 0 failed, 0 skipped** with a database, or
+**98 passed, 19 skipped** without one.
 
 | Suite | Purpose |
 |---|---|
@@ -198,6 +201,8 @@ The current suite is **115 passed, 0 failed, 0 skipped** with a database, or
 | `AdministrationAuditTests` | Account and configuration mutations persist audit rows with the admin actor and no secrets |
 | `AuditQueryFilterTests` | Audit filters by date, actor, entity, action, and result against real SQL Server |
 | `AuditQueryServiceTests` | Audit viewer authorization, criteria validation, and filter normalization |
+| `OptimisticConcurrencyTests` | A stale `RowVersion` raises `DbUpdateConcurrencyException` without overwriting |
+| `SchemaInventoryTests` | The deployed database has 11 tables, 5 triggers, 3 views, `aris_app`, and 4 seed rows |
 | `AccountServiceTests`, `SystemConfigurationServiceTests` | Result-based admin services, authorization, audit metadata, and failure paths with fakes |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |

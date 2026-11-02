@@ -28,6 +28,9 @@ SELECT * FROM dbo.SystemConfiguration;                                    -- 4 r
 SELECT * FROM dbo.vw_GoldenInvariantViolations;                           -- 0 rows
 ```
 
+`SchemaInventoryTests` runs the table/trigger/view/role/seed assertions automatically
+against the deployed database (`T10`).
+
 ---
 
 ## B.2 Tables and integrity rules
@@ -290,12 +293,12 @@ algorithm.
 
 ```powershell
 docker compose up -d
-.\scripts\deploy-database.ps1
+.\scripts\deploy_database.ps1
 
 # Full reset (destroys all local data)
 docker compose down -v
 docker compose up -d
-.\scripts\deploy-database.ps1
+.\scripts\deploy_database.ps1
 ```
 
 Full details: [`../07-deployment-view.md`](../07-deployment-view.md).

@@ -238,6 +238,8 @@ Verification requirements:
 - Zero rows affected → `DbUpdateConcurrencyException`.
 - Services catch it, roll back, audit the failure, and return a retryable message.
 - The UI reloads the entity before allowing another edit.
+- `OptimisticConcurrencyTests` proves that a stale save raises
+  `DbUpdateConcurrencyException` and leaves the first writer's value intact (`T9`).
 
 Never "fix" a concurrency exception by overwriting the row. That is last-write-wins and
 defeats the mechanism.
@@ -444,6 +446,9 @@ Rules:
   secret exclusion.
 - `AuditQueryFilterTests` proves the audit viewer filters against real SQL Server;
   `AuditQueryServiceTests` covers authorization, limit/date validation and normalization.
+- `OptimisticConcurrencyTests` proves the stale-`rowversion` path (`D14`, `T9`), and
+  `SchemaInventoryTests` asserts the deployed tables, triggers, views, role and seed rows
+  (`T10`).
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
 ---

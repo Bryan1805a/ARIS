@@ -333,6 +333,10 @@ sequenceDiagram
 No automatic merge is attempted. Silently overwriting a colleague's edit is worse than
 asking the user to retry.
 
+`OptimisticConcurrencyTests` proves the path against real SQL Server: two contexts load the
+same row, the first save commits, and the stale save raises `DbUpdateConcurrencyException`
+without replacing the first writer's value (`T9`).
+
 ---
 
 ## 6.10 Rectify a historical tenure (`HIST-01`)

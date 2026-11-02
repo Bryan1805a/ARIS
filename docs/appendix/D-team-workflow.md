@@ -232,11 +232,11 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 4 — transfer engine | Complete |
 | Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer filters and detail/configuration/basic reports, including admin mutation audit |
 | Phase 6 — integration | Complete |
-| Phase 7 — hardening | Ongoing; service tests, committed UI automation, concurrency and schema-inventory tests remain |
+| Phase 7 — hardening | Ongoing; service tests and committed UI automation remain |
 
 Known functional gaps: none. Vietnamization covers the static UI; service-layer validation
-messages are still English. The test suite is 98 passed / 17 skipped without a database and
-115 passed / 0 skipped against the local container.
+messages are still English. The test suite is 98 passed / 19 skipped without a database and
+117 passed / 0 skipped against the local container.
 
 ---
 
@@ -296,7 +296,7 @@ docker compose up -d
 docker logs aris-sqlserver     # wait for "ready for client connections"
 
 # 4. Deploy schema + application login
-.\scripts\deploy-database.ps1
+.\scripts\deploy_database.ps1
 
 # 5. Configure the app (real connection string stays outside Git)
 cd src/Aris.UI
@@ -305,8 +305,9 @@ cd ../..
 
 # 6. Build, test, run
 dotnet build Aris.slnx
-$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=ArisDb;User Id=sa;Password=<from .env>;TrustServerCertificate=True"
+.\scripts\create_aris_test_connection.ps1
 dotnet test Aris.slnx
+.\scripts\delete_aris_test_connection.ps1
 dotnet run --project src/Aris.UI
 ```
 
@@ -314,7 +315,7 @@ First-day checklist:
 
 - [ ] `dotnet --version` prints `10.0.401`.
 - [ ] `docker compose ps` shows `aris-sqlserver` running.
-- [ ] `.\scripts\deploy-database.ps1` completes and prints the app connection string.
+- [ ] `.\scripts\deploy_database.ps1` completes and prints the app connection string.
 - [ ] `SELECT * FROM dbo.vw_GoldenInvariantViolations;` returns 0 rows.
 - [ ] `dotnet build` is clean.
 - [ ] You have read §1, §7, §8, and your role brief.
@@ -334,10 +335,10 @@ Post in the team channel with:
 |---|---|---|
 | `port is already allocated` | Another SQL Server on 1433 | `docker ps`; stop the other instance |
 | `Login failed for user 'sa'` | Wrong password / old volume | `.env`; reset with `docker compose down -v` |
-| `Cannot open database "ArisDb"` | Schema not deployed | `.\scripts\deploy-database.ps1` |
+| `Cannot open database "ArisDb"` | Schema not deployed | `.\scripts\deploy_database.ps1` |
 | Certificate not trusted | Missing `TrustServerCertificate=True` | Connection string |
 | Container exits immediately | Weak password or low Docker memory | `docker logs aris-sqlserver` |
-| Tests skipped | `ARIS_TEST_CONNECTION` unset | Set it and re-run |
+| Tests skipped | `ARIS_TEST_CONNECTION` unset | Run `.\scripts\create_aris_test_connection.ps1` and re-run |
 | "Zero tests ran" | `--nologo` passed | Re-run without it |
 | `51001`/`51011`/`51021` | In-place history update | Use close-and-open |
 | `51002`/`51012`/`51022` | Overlap | `E > StartDate`; `EndDate = E - 1` |

@@ -80,7 +80,7 @@ flowchart TB
 | `IF-02` | Application/Infrastructure → SQL Server | Outbound | EF Core 10 + `Microsoft.Data.SqlClient` | Persistence, transactions, queries |
 | `IF-03` | Infrastructure → SQL Server (audit failure) | Outbound, independent connection | ADO.NET via `SqlResilience` | Survives the business transaction rollback |
 | `IF-04` | Application configuration | Inbound at startup | `appsettings.json`, user-secrets, environment variables | Connection string and environment settings |
-| `IF-05` | Schema deployment | Outbound, administrative | `sqlcmd` inside the container, driven by `deploy-database.ps1` | Creates tables, constraints, triggers, views, role, seed configuration |
+| `IF-05` | Schema deployment | Outbound, administrative | `sqlcmd` inside the container, driven by `deploy_database.ps1` | Creates tables, constraints, triggers, views, role, seed configuration |
 | `IF-06` | Integration tests → SQL Server | Outbound | ADO.NET | Verifies schema, triggers, and the Golden Invariant against real SQL Server |
 | `IF-07` | Docker volume → SQL Server | Infrastructure | Named volume `mssql-data` | Persists data across container restarts |
 
