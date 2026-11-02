@@ -235,6 +235,7 @@ implemented; the remaining gaps are test and UI-automation depth.
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |
 | Optimistic-concurrency integration test (`T9`) | ✔ | — |
 | Schema-object inventory test (`T10`) | ✔ | — |
-| Service-level tests and UI automation | Partial | `T3`, `T4` in §11 |
+| Service-level tests (citizen, household, transfer, account, configuration) | ✔ | — |
+| UI automation | ✘ | `T4` in §11 |
 
 The remaining work is tracked in [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).

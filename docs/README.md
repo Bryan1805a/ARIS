@@ -11,7 +11,7 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.6 (database hardening tests complete) |
+| **Document version** | 3.7 (service-level test coverage) |
 | **Last updated** | 2026-11-02 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |

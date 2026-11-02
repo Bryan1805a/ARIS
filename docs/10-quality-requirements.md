@@ -54,7 +54,7 @@ proven, not how it is hoped for.
 |---|---|---|---|---|
 | `Q-INT-01` | An officer changes a household head. | Old head and successor rows are closed; two new rows are opened; no identity column is updated. | Historical rows unchanged except `EndDate`/`Status`/`Ended*`; four rows in one commit. | Integration test + trigger `51011` negative test |
 | `Q-INT-02` | A household is registered. | Household, address, `HEAD` membership, residence, and citizen status commit together. | `vw_GoldenInvariantViolations` returns 0 rows. | `Aris.Tests` |
-| `Q-INT-03` | A transfer is approved for two members. | Both tenures move atomically; a failure moves neither. | Zero rows for both citizens after commit; zero partial rows after rollback. | `Aris.Tests` |
+| `Q-INT-03` | A transfer is approved for two members. | Both tenures move atomically; a failure moves neither. | Zero rows for both citizens after commit; zero partial rows after rollback. | `TransferServiceTests` |
 | `Q-INT-04` | Two overlapping residences are inserted for one citizen. | The second insert is rejected. | SQL error `51002`. | Trigger integration test |
 | `Q-INT-05` | A residence is edited in place (`AddressId` changed). | The update is rejected. | SQL error `51001`. | Trigger integration test |
 | `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | `AddressCanonicalTests` query on `vw_AddressCanonical` |
@@ -96,6 +96,7 @@ proven, not how it is hoped for.
 | `Q-TST-01` | The team runs the suite without a database. | Unit tests run; integration tests skip. | 0 failed. | `dotnet test` |
 | `Q-TST-02` | The team runs the suite with a local database. | All tests execute, including triggers and the invariant. | 0 failed, 0 skipped. | `dotnet test` with `ARIS_TEST_CONNECTION` |
 | `Q-TST-03` | The invariant view is broken. | The negative-control test fails. | Test detects the deliberately inserted violation. | `GoldenInvariant_DetectsDeliberateViolation` |
+| `Q-TST-04` | Integration tests share one local database. | Test classes run sequentially; fixtures cannot deadlock or observe each other mid-write. | 0 deadlocks; invariant remains 0 rows. | `Aris.Tests` assembly parallelization setting |
 
 ### Usability and operability
 

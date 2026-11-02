@@ -32,7 +32,7 @@ append-only historical audit trail.
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 117 with a database; 98 passed + 19 skipped without |
+| Tests | 129 with a database; 98 passed + 31 skipped without |
 
 ## Documentation
 
@@ -191,8 +191,9 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **117 passed, 0 failed, 0 skipped** with a database, or
-**98 passed, 19 skipped** without one.
+The current suite is **129 passed, 0 failed, 0 skipped** with a database, or
+**98 passed, 31 skipped** without one. Integration test classes run sequentially because
+they share one local database.
 
 | Suite | Purpose |
 |---|---|
@@ -203,6 +204,7 @@ The current suite is **117 passed, 0 failed, 0 skipped** with a database, or
 | `AuditQueryServiceTests` | Audit viewer authorization, criteria validation, and filter normalization |
 | `OptimisticConcurrencyTests` | A stale `RowVersion` raises `DbUpdateConcurrencyException` without overwriting |
 | `SchemaInventoryTests` | The deployed database has 11 tables, 5 triggers, 3 views, `aris_app`, and 4 seed rows |
+| `CitizenServiceTests`, `HouseholdServiceTests`, `TransferServiceTests` | Service flows, authorization, audit metadata, and transfer lineage against real SQL with a recording audit double |
 | `AccountServiceTests`, `SystemConfigurationServiceTests` | Result-based admin services, authorization, audit metadata, and failure paths with fakes |
 | `GoldenInvariant_HasNoViolations` | The core contract: the violations view returns 0 rows |
 | `GoldenInvariant_DetectsDeliberateViolation` | Negative control: a deliberately invalid citizen is detected |
