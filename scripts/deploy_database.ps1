@@ -47,17 +47,18 @@
     Do not create or verify the application login.
 
 .EXAMPLE
-    .\scripts\deploy-database.ps1
+    .\scripts\deploy_database.ps1
 
 .EXAMPLE
     # Show the plan without starting a container or asking for a password
-    .\scripts\deploy-database.ps1 -WhatIf
+    .\scripts\deploy_database.ps1 -WhatIf
 
 .EXAMPLE
     # Repair only the application login
-    .\scripts\deploy-database.ps1 -SkipSchema
+    .\scripts\deploy_database.ps1 -SkipSchema
 #>
 [CmdletBinding(SupportsShouldProcess)]
+#pragma warning disable PSAvoidUsingPlainTextForPassword
 param(
     [string] $ContainerName = 'aris-sqlserver',
     [string] $Database      = 'ArisDb',
@@ -180,7 +181,8 @@ function Invoke-Sql {
     param(
         [Parameter(Mandatory)][string] $Sqlcmd,
         [Parameter(Mandatory)][string] $Login,
-        [Parameter(Mandatory)][string] $Password,
+        [Parameter(Mandatory)]
+        [string] $Password,
         [string] $Query,
         [string] $InputFile,
         [string] $TargetDatabase = $Database
@@ -207,7 +209,8 @@ function Invoke-Sql {
 function Wait-SqlReady {
     param(
         [Parameter(Mandatory)][string] $Sqlcmd,
-        [Parameter(Mandatory)][string] $Password
+        [Parameter(Mandatory)]
+        [string] $Password
     )
 
     Write-Step "Waiting for SQL Server in '$ContainerName'"
@@ -224,7 +227,9 @@ function Wait-SqlReady {
     throw "SQL Server did not become ready within 120 seconds. Check: docker logs $ContainerName"
 }
 
-function Quote-SqlLiteral {
+#pragma warning restore PSAvoidUsingPlainTextForPassword
+
+function ConvertTo-SqlLiteral {
     param([Parameter(Mandatory)][string] $Value)
     return $Value.Replace("'", "''")
 }
@@ -310,7 +315,7 @@ if ($SkipSchema) {
 elseif ($schemaPresent) {
     Write-Step 'Schema: already present'
     Write-Warn 'Not re-applying the DDL. To rebuild, reset the local database:'
-    Write-Host '           docker compose down -v; docker compose up -d; .\scripts\deploy-database.ps1' -ForegroundColor DarkGray
+    Write-Host '           docker compose down -v; docker compose up -d; .\scripts\deploy_database.ps1' -ForegroundColor DarkGray
 }
 else {
     Write-Step 'Applying schema'
@@ -355,7 +360,7 @@ else {
             $AppPassword = New-StrongPassword
             $generatedPassword = $true
         }
-        $escapedAppPassword = Quote-SqlLiteral $AppPassword
+        $escapedAppPassword = ConvertTo-SqlLiteral $AppPassword
         $loginSql = @"
 CREATE LOGIN [$AppUser] WITH PASSWORD = N'$escapedAppPassword', CHECK_POLICY = ON;
 PRINT 'created login $AppUser';
@@ -363,7 +368,7 @@ PRINT 'created login $AppUser';
         $canVerify = $true
     }
     elseif ($resetPassword) {
-        $escapedAppPassword = Quote-SqlLiteral $AppPassword
+        $escapedAppPassword = ConvertTo-SqlLiteral $AppPassword
         $loginSql = @"
 ALTER LOGIN [$AppUser] WITH PASSWORD = N'$escapedAppPassword';
 PRINT 'reset password for login $AppUser';
@@ -461,7 +466,7 @@ ELSE
 
 Next steps:
   1. Run the integration suite against this database:
-       `$env:ARIS_TEST_CONNECTION = "Server=localhost,1433;Database=$Database;User Id=sa;Password=<from .env>;TrustServerCertificate=True"
+       .\scripts\create_aris_test_connection.ps1
        dotnet test Aris.slnx
 
   2. Point the WinForms app at the database (secret stays outside Git):
@@ -469,10 +474,14 @@ Next steps:
        dotnet user-secrets set "ConnectionStrings:ArisDb" "$connectionString"
        cd ../..
 
+  3. Test without database:
+       .\scripts\delete_aris_test_connection.ps1
+       dotnet test Aris.slnx
+
   3. Reset everything (destroys local data):
        docker compose down -v
        docker compose up -d
-       .\scripts\deploy-database.ps1
+       .\scripts\deploy_database.ps1
 "@ -ForegroundColor Gray
 
         if ($generatedPassword) {
@@ -490,7 +499,7 @@ re-run with -AppPassword to reset it.
 Reset everything (destroys local data):
   docker compose down -v
   docker compose up -d
-  .\scripts\deploy-database.ps1
+  .\scripts\deploy_database.ps1
 "@ -ForegroundColor Gray
     }
 }

@@ -27,7 +27,7 @@ public sealed class AddressCanonicalTests {
         if (!await TestDatabase.ObjectExistsAsync(
                 connection, "dbo", "vw_AddressCanonical", Token)) {
             Assert.Skip(
-                "dbo.vw_AddressCanonical is not deployed. Run .\\scripts\\deploy-database.ps1 first.");
+                "dbo.vw_AddressCanonical is not deployed. Run .\\scripts\\deploy_database.ps1 first.");
         }
 
         await using var transaction =

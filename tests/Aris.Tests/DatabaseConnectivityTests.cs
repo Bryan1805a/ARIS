@@ -35,7 +35,7 @@ public sealed class DatabaseConnectivityTests
         Assert.True(
             await TestDatabase.SchemaIsDeployedAsync(connection, Token),
             $"Connected to '{server}' ({edition}), database '{database}', but the schema is not deployed. " +
-            "Run scripts/deploy-database.ps1 or docs/aris_schema_v2.sql against it.");
+            "Run scripts/deploy_database.ps1 or docs/aris_schema_v2.sql against it.");
     }
 
     private static async Task<string> ScalarAsync(SqlConnection connection, string sql)
