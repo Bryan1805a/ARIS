@@ -32,7 +32,7 @@ append-only historical audit trail.
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 130 with a database; 98 passed + 32 skipped without |
+| Tests | 139 with a database; 107 passed + 32 skipped without |
 
 ## Documentation
 
@@ -191,8 +191,8 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **130 passed, 0 failed, 0 skipped** with a database, or
-**98 passed, 32 skipped** without one. Integration test classes run sequentially because
+The current suite is **139 passed, 0 failed, 0 skipped** with a database, or
+**107 passed, 32 skipped** without one. Integration test classes run sequentially because
 they share one local database.
 
 | Suite | Purpose |
@@ -212,7 +212,7 @@ they share one local database.
 | `Database_IsReachable_And_SchemaIsDeployed` | Diagnoses missing database/schema |
 | `AddressCanonicalTests` | Retiring an address preserves historical residences through the canonical view |
 | `AuditServiceTests` | Success audit commits inside the caller's transaction; failure audit survives on an independent connection |
-| `SqlResilienceTests` | Transient errors are retried; constraint/trigger errors are not |
+| `SqlResilienceTests` | Only the documented local-container transient errors are retried; Azure service-tier and business errors are not |
 
 > **Do not pass `--nologo` to `dotnet test`.** .NET 10 routes `dotnet test` through
 > Microsoft.Testing.Platform, which forwards unknown flags to the xUnit executable and
