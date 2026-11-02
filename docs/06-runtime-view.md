@@ -317,8 +317,10 @@ sequenceDiagram
   it.
 - `LogFailureIndependentAsync` must not throw for business reasons. Losing a failure audit
   must not replace the original error the user needs to see.
-- Trigger errors (`51001`–`51040`) and constraint violations are not transient and are
-  not retried. `SqlResilience` retries only known transient connection errors.
+- Trigger errors (`51001`-`51040`) and constraint violations are not transient and are
+  not retried. `SqlResilience` retries only the documented local-container list (`233`,
+  `1205`, `1222`, `4060`, `10053`, `10054`, `10060`); Azure service-tier numbers are
+  deliberately excluded.
 
 ---
 

@@ -11,7 +11,7 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.8 (end-to-end harness complete) |
+| **Document version** | 3.9 (resilience policy tightened) |
 | **Last updated** | 2026-11-02 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |

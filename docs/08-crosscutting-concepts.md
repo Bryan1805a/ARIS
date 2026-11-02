@@ -146,6 +146,8 @@ Rules:
   `Database.CreateExecutionStrategy().ExecuteAsync(...)`.
 - Constraint and trigger violations are never retried.
 - Never retry a constraint or trigger violation; it will fail again.
+- `SqlResilience` retries only the documented local-container list (`233`, `1205`,
+  `1222`, `4060`, `10053`, `10054`, `10060`). Azure service-tier numbers are excluded.
 
 ---
 

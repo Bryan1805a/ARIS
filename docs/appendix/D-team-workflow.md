@@ -235,8 +235,8 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 7 — hardening | Complete; automated end-to-end harness plus the Appendix E smoke checklist |
 
 Known functional gaps: none. Vietnamization covers the static UI; service-layer validation
-messages are still English. The test suite is 98 passed / 32 skipped without a database and
-130 passed / 0 skipped against the local container.
+messages are still English. The test suite is 107 passed / 32 skipped without a database
+and 139 passed / 0 skipped against the local container.
 
 ---
 

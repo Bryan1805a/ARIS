@@ -135,7 +135,7 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
-| `Resilience/SqlResilience` | Opens connections with exponential backoff for genuinely transient SQL errors | Implemented |
+| `Resilience/SqlResilience` | Opens connections with exponential backoff and retries only the documented local-container transient list; business errors fail fast | Implemented |
 | `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, citizen, address, household, transfer and rectification services | Implemented |
 
 Mapping rules are normative and listed in
@@ -208,8 +208,9 @@ calls a service.
 ## 5.5 Implementation status
 
 This documentation describes the **target architecture**. The core vertical slices are
-implemented, including the automated end-to-end harness and the manual smoke checklist;
-remaining items are tracked as hardening debt in §11.
+implemented, including the automated end-to-end harness and the manual smoke checklist.
+No known functional gaps remain; §11 records the accepted limitations and the resolved
+technical-debt history.
 
 | Area | Implemented | Missing / next |
 |---|---|---|

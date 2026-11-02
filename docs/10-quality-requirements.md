@@ -109,6 +109,7 @@ proven, not how it is hoped for.
 | `Q-OPS-01` | A new developer sets up the project. | Database and schema are running from a clean machine. | ≤ 15 minutes excluding the first image pull. | Onboarding dry run |
 | `Q-OPS-02` | The local database is corrupted. | It can be reset without affecting anyone else. | `docker compose down -v` + deploy succeeds. | Manual drill |
 | `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
+| `Q-OPS-04` | SQL Server or the container restarts during a connection attempt. | Only documented connection/login/lock errors are retried; Azure service-tier and business errors fail fast. | Error-number table matches `SqlResilience.IsTransientErrorNumber`. | `SqlResilienceTests` |
 
 ---
 
