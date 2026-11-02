@@ -34,8 +34,8 @@ public class AuditQueryService : IAuditQueryService {
         }
 
         if (criteria.Limit is < 1 or > 1000) {
-            // Search permits a larger page than GetRecentAsync, but still uses
-            // an explicit upper bound to protect the query and UI.
+            // Search allows a page of up to 1000 rows, but still uses an
+            // explicit upper bound to protect the query and UI.
             return Result<List<AuditLogDto>>.Failure(
                 "Limit must be between 1 and 1000.");
         }
