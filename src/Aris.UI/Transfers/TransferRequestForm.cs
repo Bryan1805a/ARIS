@@ -65,6 +65,7 @@ public sealed class TransferRequestForm : Form
         ClientSize = new Size(720, 680);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Shown += async (_, _) => await LoadInitialAsync();
     }
 

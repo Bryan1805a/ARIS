@@ -13,6 +13,7 @@ public partial class EditAccountForm : Form
     public EditAccountForm()
     {
         InitializeComponent();
+        UiTheme.ApplyScreen(this);
     }
 
     private void btnCancel_Click(object sender, EventArgs e)

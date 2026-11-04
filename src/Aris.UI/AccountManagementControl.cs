@@ -43,6 +43,7 @@ public partial class AccountManagementControl : UserControl {
         Controls.Add(_seedDemoButton);
 
         this.Load += AccountManagementControl_Load;
+        UiTheme.ApplyScreen(this);
     }
 
     private async void SeedDemoButton_Click(object? sender, EventArgs e) {

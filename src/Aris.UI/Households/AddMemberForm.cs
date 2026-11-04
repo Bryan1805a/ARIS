@@ -39,6 +39,7 @@ public sealed class AddMemberForm : Form
         ClientSize = new Size(500, 245);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Shown += async (_, _) => await LoadCandidatesAsync();
     }
 

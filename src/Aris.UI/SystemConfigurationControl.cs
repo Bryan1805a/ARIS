@@ -19,6 +19,7 @@ public partial class SystemConfigurationControl : UserControl {
         this.Load += SystemConfigurationControl_Load;
         dgvConfigurations.SelectionChanged += dgvConfigurations_SelectionChanged;
         btnSaveChanges.Click += btnSaveChanges_Click;
+        UiTheme.ApplyScreen(this);
     }
 
     private async void SystemConfigurationControl_Load(

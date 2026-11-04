@@ -43,6 +43,8 @@ public sealed class CitizenEditForm : Form {
             _dateOfBirth.Value = existing.DateOfBirth.ToDateTime(TimeOnly.MinValue);
             _gender.SelectedItem = existing.Gender;
         }
+
+        Aris.UI.UiTheme.ApplyScreen(this);
     }
 
     // Create an options form and let user choose Register new citizen or Update current one

@@ -39,6 +39,7 @@ public sealed class TransferDecisionForm : Form
         ClientSize = new Size(920, 620);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Load += async (_, _) => await LoadDetailAsync();
     }
 

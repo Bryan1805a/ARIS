@@ -17,6 +17,7 @@ public partial class ChangePasswordForm : Form {
         // Keep the click handler in code so the form can pass the authenticated
         // user ID captured by the parent flow to the application service.
         btnChangePassword.Click += btnChangePassword_Click;
+        UiTheme.ApplyScreen(this);
     }
 
     private void ChangePasswordForm_Load(

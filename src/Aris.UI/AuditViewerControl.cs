@@ -38,6 +38,7 @@ public partial class AuditViewerControl : UserControl {
 
         ConfigureGrid();
         BuildLayout();
+        UiTheme.ApplyScreen(this);
 
         // Selection changes update the detail pane without requiring another
         // database request because the full DTO is already bound to the row.

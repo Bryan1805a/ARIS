@@ -45,6 +45,7 @@ public partial class HouseholdControl : UserControl {
         InitializeComponent();
         lblMessage.Visible = false;
         BuildLayout();
+        UiTheme.ApplyScreen(this);
 
         // Load households on startup
         Load += async (_, _) => await LoadHouseholdsAsync();

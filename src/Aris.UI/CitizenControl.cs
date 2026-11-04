@@ -46,6 +46,7 @@ public partial class CitizenControl : UserControl {
         InitializeComponent();
         lblMessage.Visible = false;
         BuildLayout();
+        UiTheme.ApplyScreen(this);
 
         // Load data on start
         Load += async (_, _) => await LoadCitizensAsync();

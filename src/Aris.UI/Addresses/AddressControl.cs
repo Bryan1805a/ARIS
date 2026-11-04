@@ -1,6 +1,7 @@
 using Aris.Application.Addresses;
 using Aris.Application.Addresses.Dtos;
 using Aris.Application.Common;
+using Aris.UI;
 
 namespace Aris.UI.Addresses;
 
@@ -29,6 +30,7 @@ public sealed class AddressControl : UserControl {
         _session = session;
 
         BuildLayout();
+        UiTheme.ApplyScreen(this);
         Load += async (_, _) => await LoadAddressesAsync();
     }
 
