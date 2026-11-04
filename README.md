@@ -7,6 +7,15 @@ append-only historical audit trail.
 > Academic prototype for a Windows Programming course. It is **not** a production
 > population registry and does not integrate with any national database or VNeID.
 
+## Screenshots
+
+| English | Tiếng Việt |
+|---|---|
+| ![ARIS citizen management in English](screenshot/UI_english.png) | ![ARIS citizen management in Vietnamese](screenshot/UI_vietnamese.png) |
+
+*Citizen directory and profile: household context, canonical address, residency history,
+and the residence rectification action.*
+
 ## Tech stack
 
 | Component | Version / choice |
