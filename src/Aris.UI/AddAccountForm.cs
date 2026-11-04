@@ -11,6 +11,7 @@ public partial class AddAccountForm : Form {
     public AddAccountForm(IAccountService accountService) {
         InitializeComponent();
         _accountService = accountService;
+        UiTheme.ApplyScreen(this);
     }
 
     [Browsable(false)]

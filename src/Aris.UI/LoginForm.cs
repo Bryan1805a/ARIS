@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Aris.Application.Accounts;
 using Aris.Application.Authentication;
 using Aris.Application.Common;
+using Aris.Application.Developer;
 using Aris.UI.Localization;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -33,24 +34,43 @@ public partial class LoginForm : Form
         _userSession = userSession;
         _bootstrapService = bootstrapService;
 
+        UiTheme.ApplyShell(this);
+        UiTheme.StylePrimaryButton(btnLogin);
+        UiTheme.StyleInput(txtUsername);
+        UiTheme.StyleInput(txtPassword);
+
         _bootstrapButton.Text = "Create first administrator";
-        _bootstrapButton.Location = new Point(122, 300);
-        _bootstrapButton.Size = new Size(240, 28);
+        _bootstrapButton.Location = new Point(30, 314);
+        _bootstrapButton.Size = new Size(380, 34);
         _bootstrapButton.Visible = false;
         _bootstrapButton.Click += BootstrapButton_Click;
-        Controls.Add(_bootstrapButton);
+        UiTheme.StyleSecondaryButton(_bootstrapButton);
+        pnlCard.Controls.Add(_bootstrapButton);
 
         var languageButton = new Button
         {
             Text = LanguageManager.SwitchLabel,
-            Location = new Point(370, 318),
-            Size = new Size(95, 26),
-            FlatStyle = FlatStyle.Flat
+            Location = new Point(360, 428),
+            Size = new Size(120, 28)
         };
         languageButton.Click += (_, _) => LanguageManager.Toggle();
         LanguageManager.LanguageChanged += () =>
             languageButton.Text = LanguageManager.SwitchLabel;
+        UiTheme.StyleSecondaryButton(languageButton);
         Controls.Add(languageButton);
+
+        var developerButton = new Button {
+            Text = "Developer mode",
+            Location = new Point(20, 428),
+            Size = new Size(150, 28)
+        };
+        developerButton.Click += (_, _) => {
+            var developerService = _serviceProvider.GetRequiredService<IDeveloperService>();
+            using var tools = new DeveloperToolsForm(developerService);
+            tools.ShowDialog(this);
+        };
+        UiTheme.StyleSecondaryButton(developerButton);
+        Controls.Add(developerButton);
 
         LanguageManager.Apply(this);
 

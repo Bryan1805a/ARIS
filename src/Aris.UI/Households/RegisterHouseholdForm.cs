@@ -46,6 +46,7 @@ public sealed class RegisterHouseholdForm : Form
         ClientSize = new Size(540, 345);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Shown += async (_, _) => await LoadCandidatesAsync();
     }
 

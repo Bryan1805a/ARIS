@@ -48,6 +48,7 @@ public sealed class SuccessorHeadForm : Form {
         CancelButton = _cancelButton;
 
         Controls.AddRange(new Control[] { label, _members, _okButton, _cancelButton });
+        Aris.UI.UiTheme.ApplyScreen(this);
     }
 
     /// <summary>The chosen citizen id after <see cref="DialogResult.OK"/>.</summary>

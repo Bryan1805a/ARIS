@@ -55,6 +55,7 @@ public sealed class HouseholdDetailForm : Form {
         ClientSize = new Size(920, 610);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         // Loading is deferred until the form is displayed so the dialog opens
         // without blocking construction while the household is fetched.
         Load += async (_, _) => await LoadDetailAsync();

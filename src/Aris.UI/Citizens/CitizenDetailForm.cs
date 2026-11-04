@@ -107,6 +107,7 @@ public sealed partial class CitizenDetailForm : Form {
 
         btnSave.Click += SaveButton_Click;
         btnDeactivate.Click += DeactivateButton_Click;
+        Aris.UI.UiTheme.ApplyScreen(this);
 
         // Defer the initial service call until the form is shown so construction
         // remains synchronous and the dialog can report load failures itself.

@@ -26,6 +26,7 @@ public partial class ReportsControl : UserControl
         dtpToDate.Value = DateTime.Today;
 
         UpdateDateFilterVisibility();
+        UiTheme.ApplyScreen(this);
     }
 
     private async void btnGenerateReport_Click(object? sender, EventArgs e)

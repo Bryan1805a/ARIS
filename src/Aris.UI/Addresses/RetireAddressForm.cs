@@ -35,6 +35,7 @@ public sealed class RetireAddressForm : Form {
         ClientSize = new Size(560, 300);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Shown += async (_, _) => await LoadSuccessorsAsync();
     }
 

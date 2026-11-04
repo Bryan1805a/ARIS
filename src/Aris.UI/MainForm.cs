@@ -22,6 +22,7 @@ public partial class MainForm : Form {
     private readonly SystemConfigurationService _configurationService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ToolStripButton _languageButton = new();
+    private Button[] _navButtons = Array.Empty<Button>();
 
     public MainForm(
         IAccountService accountService,
@@ -49,7 +50,73 @@ public partial class MainForm : Form {
         statusStrip1.Items.Add(_languageButton);
         LanguageManager.LanguageChanged += OnLanguageChanged;
 
+        ApplyTheme();
+
         this.Shown += MainForm_Shown;
+    }
+
+    private void ApplyTheme() {
+        UiTheme.ApplyShell(this);
+        pnlSidebar.BackColor = UiTheme.Sidebar;
+        pnlContent.BackColor = UiTheme.Background;
+
+        lblLogo.Text = "ARIS";
+        lblLogo.Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold);
+        lblLogo.ForeColor = Color.White;
+        lblLogo.Location = new Point(22, 22);
+
+        var subtitle = new Label {
+            Name = "lblSidebarSubtitle",
+            Text = LanguageManager.T("RESIDENCE MANAGEMENT SYSTEM"),
+            AutoSize = false,
+            Size = new Size(180, 28),
+            Location = new Point(24, 64),
+            Font = new Font("Segoe UI", 8.25F),
+            ForeColor = Color.FromArgb(148, 163, 184)
+        };
+        pnlSidebar.Controls.Add(subtitle);
+
+        _navButtons = new[] {
+            btnDashboard,
+            btnAccounts,
+            btnReports,
+            btnAuditLogs,
+            btnSystemConfiguration,
+            btnCitizen,
+            btnHousehold,
+            btnAddress,
+            btnTransfer
+        };
+
+        var allSidebarButtons = new[] {
+            btnDashboard,
+            btnAccounts,
+            btnReports,
+            btnAuditLogs,
+            btnSystemConfiguration,
+            btnCitizen,
+            btnHousehold,
+            btnAddress,
+            btnTransfer,
+            btnLogout
+        };
+
+        foreach (var button in allSidebarButtons) {
+            UiTheme.StyleSidebarButton(button);
+        }
+
+        foreach (var button in _navButtons) {
+            button.Click += (_, _) => UiTheme.SetActiveNav(button, _navButtons);
+        }
+
+        UiTheme.SetActiveNav(btnDashboard, _navButtons);
+        UiTheme.StyleStatusStrip(statusStrip1);
+
+        lblStatusUser.ForeColor = Color.White;
+        lblStatusRole.ForeColor = Color.FromArgb(203, 213, 225);
+        lblStatusConnection.ForeColor = Color.White;
+        _languageButton.ForeColor = Color.White;
+        _languageButton.Font = UiTheme.SemiboldFont;
     }
 
     // Refreshes UI text when the user toggles between English and Vietnamese
@@ -122,35 +189,40 @@ public partial class MainForm : Form {
             "ADMIN",
             StringComparison.OrdinalIgnoreCase);
 
+        var card = new Panel {
+            BackColor = UiTheme.Card,
+            Location = new Point(25, 50),
+            Size = new Size(Math.Max(420, pnlContent.ClientSize.Width - 50), 210),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+        };
+
         Label lblDashboard = new Label {
             Text = LanguageManager.T(isAdmin ? "ADMIN Dashboard" : "OFFICER Dashboard"),
-            Font = new Font("Segoe UI", 20, FontStyle.Bold),
-            ForeColor = Color.DarkSlateGray,
             AutoSize = true,
-            Location = new Point(25, 25)
+            Location = new Point(24, 24)
         };
+        UiTheme.StyleTitle(lblDashboard);
 
         Label lblWelcome = new Label {
             Text = $"{LanguageManager.T("Welcome,")} {_userSession.Username}!",
-            Font = new Font("Segoe UI", 12),
-            ForeColor = Color.DimGray,
             AutoSize = true,
-            Location = new Point(25, 80)
+            Location = new Point(26, 84)
         };
+        UiTheme.StyleSubtitle(lblWelcome);
 
         Label lblRole = new Label {
             Text = LanguageManager.T(isAdmin
                 ? "You are logged in as Administrator."
                 : "You are logged in as Officer."),
-            Font = new Font("Segoe UI", 11),
-            ForeColor = Color.DarkSlateGray,
             AutoSize = true,
-            Location = new Point(25, 120)
+            Location = new Point(26, 118)
         };
+        UiTheme.StyleMuted(lblRole);
 
-        pnlContent.Controls.Add(lblDashboard);
-        pnlContent.Controls.Add(lblWelcome);
-        pnlContent.Controls.Add(lblRole);
+        card.Controls.Add(lblDashboard);
+        card.Controls.Add(lblWelcome);
+        card.Controls.Add(lblRole);
+        pnlContent.Controls.Add(card);
     }
 
     // Navigates to User Account Management (ADMIN only)

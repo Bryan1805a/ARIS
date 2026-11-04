@@ -31,6 +31,7 @@ public sealed class AddressEditForm : Form {
         ClientSize = new Size(500, 380);
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
     }
 
     // The new address id after DialogResult.OK

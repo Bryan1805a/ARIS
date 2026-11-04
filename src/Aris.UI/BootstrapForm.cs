@@ -48,6 +48,7 @@ public sealed class BootstrapForm : Form
             languageButton.Text = LanguageManager.SwitchLabel;
         Controls.Add(languageButton);
 
+        UiTheme.ApplyScreen(this);
         LanguageManager.Apply(this);
     }
 

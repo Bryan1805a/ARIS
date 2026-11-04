@@ -71,6 +71,7 @@ public sealed class RectifyTenureForm : Form {
         AutoScaleMode = AutoScaleMode.Font;
 
         BuildLayout();
+        Aris.UI.UiTheme.ApplyScreen(this);
         Load += async (_, _) => await LoadChoicesAsync();
     }
 

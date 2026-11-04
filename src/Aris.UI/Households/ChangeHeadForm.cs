@@ -35,6 +35,7 @@ public sealed class ChangeHeadForm : Form
         ClientSize = new Size(500, 245);
 
         BuildLayout(members);
+        Aris.UI.UiTheme.ApplyScreen(this);
     }
 
     private void BuildLayout(IReadOnlyList<HouseholdMemberDto> members)

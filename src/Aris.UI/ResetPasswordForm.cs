@@ -14,6 +14,7 @@ public partial class ResetPasswordForm : Form
     public ResetPasswordForm()
     {
         InitializeComponent();
+        UiTheme.ApplyScreen(this);
     }
 
     private void btnCancel_Click(object sender, EventArgs e)

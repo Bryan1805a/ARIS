@@ -42,6 +42,7 @@ public partial class TransferControl : UserControl
         InitializeComponent();
         lblMessage.Visible = false;
         BuildLayout();
+        UiTheme.ApplyScreen(this);
 
         // Load requests on startup
         Load += async (_, _) => await LoadRequestsAsync();
