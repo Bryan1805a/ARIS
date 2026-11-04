@@ -3,6 +3,7 @@ using Aris.Application.Addresses;
 using Aris.Application.Auditing;
 using Aris.Application.Citizens;
 using Aris.Application.Common;
+using Aris.Application.Developer;
 using Aris.Application.Households;
 using Aris.Application.Rectifications;
 using Aris.Application.Transfers;
@@ -10,6 +11,7 @@ using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Addresses;
 using Aris.Infrastructure.Auditing;
 using Aris.Infrastructure.Citizens;
+using Aris.Infrastructure.Developer;
 using Aris.Infrastructure.Households;
 using Aris.Infrastructure.Persistence;
 using Aris.Infrastructure.Rectifications;
@@ -87,6 +89,9 @@ public static class DependencyInjection {
 
         // Void-and-correct workflow for append-only tenures (HIST-01).
         services.AddScoped<IRectificationService, RectificationService>();
+
+        // Privileged local developer conveniences (Developer mode on the login screen).
+        services.AddScoped<IDeveloperService, DeveloperService>();
 
         services.AddScoped<IAuditRepository, AuditRepository>();
 
