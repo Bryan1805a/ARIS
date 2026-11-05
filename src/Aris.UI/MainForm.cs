@@ -7,6 +7,7 @@ using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
 using Aris.UI.Localization;
 using Aris.UI.Addresses;
+using Aris.UI.TemporaryResidences;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,6 +43,11 @@ public partial class MainForm : Form {
         _configurationService = configurationService;
         _serviceProvider = serviceProvider;
         btnSystemConfiguration.Click += btnSystemConfiguration_Click;
+
+        BuildMenuAndToolbar();
+
+        statusStrip1.Dock = DockStyle.Bottom;
+        statusStrip1.SendToBack();
 
         // Set up the Vietnamese / English language switch button on the right side of the status bar
         _languageButton.Text = LanguageManager.SwitchLabel;
@@ -85,7 +91,8 @@ public partial class MainForm : Form {
             btnCitizen,
             btnHousehold,
             btnAddress,
-            btnTransfer
+            btnTransfer,
+            btnTemporaryResidence
         };
 
         var allSidebarButtons = new[] {
@@ -98,6 +105,7 @@ public partial class MainForm : Form {
             btnHousehold,
             btnAddress,
             btnTransfer,
+            btnTemporaryResidence,
             btnLogout
         };
 
@@ -163,6 +171,7 @@ public partial class MainForm : Form {
             btnHousehold,
             btnAddress,
             btnTransfer,
+            btnTemporaryResidence,
             btnLogout
         };
 
@@ -380,5 +389,78 @@ public partial class MainForm : Form {
         configurationControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(configurationControl);
+    }
+
+    // Navigates to Temporary Residence Management screen
+    private void btnTemporaryResidence_Click(object? sender, EventArgs e) {
+        pnlContent.Controls.Clear();
+
+        TemporaryResidenceControl tempControl =
+            _serviceProvider.GetRequiredService<TemporaryResidenceControl>();
+        tempControl.Dock = DockStyle.Fill;
+
+        pnlContent.Controls.Add(tempControl);
+    }
+
+    // Xây dựng MenuStrip và ToolStrip theo yêu cầu bắt buộc của tiểu luận Lập trình Windows
+    private void BuildMenuAndToolbar() {
+        // --- 1. MenuStrip ---
+        menuStrip1.Items.Clear();
+
+        // Menu Hệ thống
+        var menuSystem = new ToolStripMenuItem(LanguageManager.T("Hệ thống"));
+        var miAccounts = new ToolStripMenuItem(LanguageManager.T("Quản lý tài khoản"), null, btnAccounts_Click);
+        var miAudit = new ToolStripMenuItem(LanguageManager.T("Nhật ký kiểm toán"), null, btnAuditLogs_Click);
+        var miConfig = new ToolStripMenuItem(LanguageManager.T("Cấu hình hệ thống"), null, btnSystemConfiguration_Click);
+        var miSep1 = new ToolStripSeparator();
+        var miLogout = new ToolStripMenuItem(LanguageManager.T("Đăng xuất"), null, btnLogout_Click);
+        menuSystem.DropDownItems.AddRange(new ToolStripItem[] { miAccounts, miAudit, miConfig, miSep1, miLogout });
+
+        // Menu Nghiệp vụ cư trú
+        var menuOperations = new ToolStripMenuItem(LanguageManager.T("Nghiệp vụ"));
+        var miCitizen = new ToolStripMenuItem(LanguageManager.T("Quản lý công dân"), null, btnCitizen_Click);
+        var miHousehold = new ToolStripMenuItem(LanguageManager.T("Quản lý hộ gia đình"), null, btnHousehold_Click);
+        var miAddress = new ToolStripMenuItem(LanguageManager.T("Quản lý địa chỉ"), null, btnAddress_Click);
+        var miTransfer = new ToolStripMenuItem(LanguageManager.T("Quản lý chuyển hộ"), null, btnTransfer_Click);
+        var miTempRes = new ToolStripMenuItem(LanguageManager.T("Quản lý tạm trú"), null, btnTemporaryResidence_Click);
+        menuOperations.DropDownItems.AddRange(new ToolStripItem[] { miCitizen, miHousehold, miAddress, miTransfer, miTempRes });
+
+        // Menu Thống kê / Báo cáo
+        var menuReports = new ToolStripMenuItem(LanguageManager.T("Báo cáo & Thống kê"));
+        var miReports = new ToolStripMenuItem(LanguageManager.T("Xem báo cáo thống kê"), null, btnReports_Click);
+        menuReports.DropDownItems.Add(miReports);
+
+        // Menu Trợ giúp / Giới thiệu
+        var menuHelp = new ToolStripMenuItem(LanguageManager.T("Trợ giúp"));
+        var miAbout = new ToolStripMenuItem(LanguageManager.T("Giới thiệu thành viên nhóm"), null, (_, _) => {
+            using var about = new AboutForm();
+            about.ShowDialog(this);
+        });
+        menuHelp.DropDownItems.Add(miAbout);
+
+        menuStrip1.Items.AddRange(new ToolStripItem[] { menuSystem, menuOperations, menuReports, menuHelp });
+
+        // --- 2. ToolStrip (Phím tắt thanh công cụ nhanh) ---
+        toolStrip1.Items.Clear();
+        toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
+
+        var tbDashboard = new ToolStripButton(LanguageManager.T("Tổng quan"), null, btnDashboard_Click);
+        var tbCitizen = new ToolStripButton(LanguageManager.T("Công dân"), null, btnCitizen_Click);
+        var tbHousehold = new ToolStripButton(LanguageManager.T("Hộ gia đình"), null, btnHousehold_Click);
+        var tbAddress = new ToolStripButton(LanguageManager.T("Địa chỉ"), null, btnAddress_Click);
+        var tbTransfer = new ToolStripButton(LanguageManager.T("Chuyển hộ"), null, btnTransfer_Click);
+        var tbTempRes = new ToolStripButton(LanguageManager.T("Tạm trú"), null, btnTemporaryResidence_Click);
+        var tbReports = new ToolStripButton(LanguageManager.T("Báo cáo"), null, btnReports_Click);
+        var tbSep = new ToolStripSeparator();
+        var tbAbout = new ToolStripButton(LanguageManager.T("Giới thiệu nhóm"), null, (_, _) => {
+            using var about = new AboutForm();
+            about.ShowDialog(this);
+        });
+        var tbLogout = new ToolStripButton(LanguageManager.T("Đăng xuất"), null, btnLogout_Click);
+
+        toolStrip1.Items.AddRange(new ToolStripItem[] {
+            tbDashboard, tbCitizen, tbHousehold, tbAddress, tbTransfer, tbTempRes,
+            tbReports, tbSep, tbAbout, tbLogout
+        });
     }
 }

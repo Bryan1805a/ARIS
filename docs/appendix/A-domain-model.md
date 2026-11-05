@@ -259,6 +259,29 @@ Append-only. **No `RowVersion`.**
 
 `CK_Audit_Actor` requires `ActorUserId` **or** `AttemptedUsername`.
 
+### A.2.12 `TemporaryResidence`
+
+Registration of temporary residence for a citizen at an address (`TEMP-01`–`TEMP-03`). Bounded by legal max duration (≤ 2 years).
+
+| Property | Type | Null | Meaning |
+|---|---|:---:|---|
+| `TempResId` | `int` | No | PK, IDENTITY |
+| `CitizenId` | `int` | No | FK → `Citizen` |
+| `AddressId` | `int` | No | FK → `Address` |
+| `StartDate` | `date` | No | Start of temporary stay |
+| `EndDate` | `date` | No | End of temporary stay; `EndDate >= StartDate` |
+| `StayReason` | `nvarchar(200)` | No | Reason for stay (rent, work, study, etc.) |
+| `HostInfo` | `nvarchar(200)` | Yes | Landlord / host information |
+| `Status` | `varchar(10)` | No | `ACTIVE`, `EXPIRED`, `CANCELLED` |
+| `Notes` | `nvarchar(500)` | Yes | Additional notes |
+| `CreatedBy` | `int` | No | FK → `UserAccount` |
+| `CreatedAt` | `datetime2(3)` | No | Record creation timestamp |
+| `EndedBy` | `int` | Yes | FK → `UserAccount` |
+| `EndedAt` | `datetime2(3)` | Yes | Cancellation timestamp |
+| `RowVersion` | `rowversion` | No | Concurrency token |
+
+`CK_TempRes_Dates` requires `EndDate >= StartDate`. `CK_TempRes_Status` restricts status to `ACTIVE`, `EXPIRED`, or `CANCELLED`.
+
 ---
 
 ## A.3 Lifecycle state machines

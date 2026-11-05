@@ -139,6 +139,21 @@ public sealed class DemoDataService : IDemoDataService
                 NewResidence(dung.CitizenId, home2.AddressId, start2, currentUserId, now),
                 NewResidence(em.CitizenId, home2.AddressId, start2, currentUserId, now));
 
+            // Temporary residence demo record: Phuc (unassigned) registers temporary residence at home2
+            _context.TemporaryResidences.Add(new TemporaryResidence
+            {
+                CitizenId = phuc.CitizenId,
+                AddressId = home2.AddressId,
+                StartDate = new DateOnly(2025, 1, 15),
+                EndDate = new DateOnly(2026, 1, 15),
+                StayReason = "Thuê nhà trọ / Lao động",
+                HostInfo = "Le Van Dung (Chủ nhà)",
+                Notes = "Hồ sơ đăng ký tạm trú mẫu",
+                Status = "ACTIVE",
+                CreatedBy = currentUserId,
+                CreatedAt = now
+            });
+
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             // --- Audit the seeding operation -------------------------------------

@@ -38,6 +38,8 @@ public sealed class ArisDbContext : DbContext
 
     public DbSet<TransferRequestItem> TransferRequestItems => Set<TransferRequestItem>();
 
+    public DbSet<TemporaryResidence> TemporaryResidences => Set<TemporaryResidence>();
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
