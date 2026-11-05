@@ -471,6 +471,7 @@ Rules:
 | Deactivate citizen | `CitizenDetailForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
 | Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
 | Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
+| Temporary residence | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | `TemporaryResidenceService` | `ArisDbContext`, `AuditService` | `TemporaryResidence`, `Citizen`, `Address`, `AuditLog` |
 | Inspect audit log | `AuditViewerControl` | `AuditQueryService` | `AuditRepository` | `AuditLog`, `UserAccount` |
 | Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |

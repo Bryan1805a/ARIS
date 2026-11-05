@@ -11,6 +11,8 @@ using Aris.Application.Rectifications.Dtos;
 using Aris.Application.Rectifications.Validators;
 using Aris.Application.Reports;
 using Aris.Application.SystemConfiguration;
+using Aris.Application.TemporaryResidences.Dtos;
+using Aris.Application.TemporaryResidences.Validators;
 using Aris.Application.Transfers.Dtos;
 using Aris.Application.Transfers.Validators;
 
@@ -46,6 +48,9 @@ public static class DependencyInjection {
         services.AddScoped<IValidator<RectifyResidenceDto>, RectifyResidenceValidator>();
         services.AddScoped<IValidator<RectifyMembershipDto>, RectifyMembershipValidator>();
         services.AddScoped<IValidator<RectifyHouseholdAddressDto>, RectifyHouseholdAddressValidator>();
+
+        services.AddScoped<IValidator<RegisterTemporaryResidenceDto>, RegisterTemporaryResidenceValidator>();
+        services.AddScoped<IValidator<UpdateTemporaryResidenceDto>, UpdateTemporaryResidenceValidator>();
 
         return services;
     }

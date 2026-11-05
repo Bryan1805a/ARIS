@@ -26,6 +26,9 @@ partial class MainForm {
     /// </summary>
     private void InitializeComponent() {
         pnlSidebar = new Panel();
+        btnTemporaryResidence = new Button();
+        menuStrip1 = new MenuStrip();
+        toolStrip1 = new ToolStrip();
         btnAuditLogs = new Button();
         btnTransfer = new Button();
         btnHousehold = new Button();
@@ -61,6 +64,7 @@ partial class MainForm {
         pnlSidebar.Controls.Add(btnAccounts);
         pnlSidebar.Controls.Add(btnDashboard);
         pnlSidebar.Controls.Add(lblLogo);
+        pnlSidebar.Controls.Add(btnTemporaryResidence);
         pnlSidebar.Controls.Add(btnAddress);
         pnlSidebar.Dock = DockStyle.Left;
         pnlSidebar.Location = new Point(0, 0);
@@ -233,6 +237,7 @@ partial class MainForm {
         statusStrip1.AutoSize = false;
         statusStrip1.BackColor = Color.DarkSlateGray;
         statusStrip1.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        statusStrip1.Dock = DockStyle.Bottom;
         statusStrip1.Items.AddRange(new ToolStripItem[] { lblStatusUser, lblStatusRole, lblStatusConnection });
         statusStrip1.Location = new Point(220, 664);
         statusStrip1.Name = "statusStrip1";
@@ -281,6 +286,36 @@ partial class MainForm {
         btnSystemConfiguration.TextAlign = ContentAlignment.MiddleLeft;
         btnSystemConfiguration.UseVisualStyleBackColor = true;
         // 
+        // btnTemporaryResidence
+        // 
+        btnTemporaryResidence.FlatStyle = FlatStyle.Flat;
+        btnTemporaryResidence.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnTemporaryResidence.ForeColor = Color.White;
+        btnTemporaryResidence.Location = new Point(10, 520);
+        btnTemporaryResidence.Name = "btnTemporaryResidence";
+        btnTemporaryResidence.Size = new Size(200, 45);
+        btnTemporaryResidence.TabIndex = 12;
+        btnTemporaryResidence.Text = "Temporary Residence";
+        btnTemporaryResidence.TextAlign = ContentAlignment.MiddleLeft;
+        btnTemporaryResidence.UseVisualStyleBackColor = true;
+        btnTemporaryResidence.Click += btnTemporaryResidence_Click;
+        // 
+        // menuStrip1
+        // 
+        menuStrip1.Location = new Point(0, 0);
+        menuStrip1.Name = "menuStrip1";
+        menuStrip1.Size = new Size(1024, 24);
+        menuStrip1.TabIndex = 3;
+        menuStrip1.Text = "menuStrip1";
+        // 
+        // toolStrip1
+        // 
+        toolStrip1.Location = new Point(0, 24);
+        toolStrip1.Name = "toolStrip1";
+        toolStrip1.Size = new Size(1024, 25);
+        toolStrip1.TabIndex = 4;
+        toolStrip1.Text = "toolStrip1";
+        // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -289,6 +324,9 @@ partial class MainForm {
         Controls.Add(statusStrip1);
         Controls.Add(pnlContent);
         Controls.Add(pnlSidebar);
+        Controls.Add(toolStrip1);
+        Controls.Add(menuStrip1);
+        MainMenuStrip = menuStrip1;
         Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
         Text = "Administrative Residence Information System (ARIS)";
@@ -321,4 +359,7 @@ partial class MainForm {
     private Button btnAuditLogs = null!;
     private Button btnSystemConfiguration = null!;
     private Button btnAddress = null!;
+    private Button btnTemporaryResidence = null!;
+    private MenuStrip menuStrip1 = null!;
+    private ToolStrip toolStrip1 = null!;
 }
