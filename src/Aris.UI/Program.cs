@@ -51,15 +51,8 @@ internal static class Program
                 services.AddTransient<AuditViewerControl>();
                 services.AddTransient<SystemConfigurationControl>();
                 services.AddTransient<AddressControl>();
-<<<<<<< HEAD
-<<<<<<< HEAD
                 services.AddTransient<TeamIntroductionForm>();
-=======
                 services.AddTransient<TemporaryResidenceControl>();
->>>>>>> 33dd74271a1ff0b588f094e7c84cdd2a59c0fcd0
-=======
->>>>>>> 24468d3162f570f6d89cd97f3adf57d307679893
-
                 services.AddTransient<TemporaryResidenceControl>();
             })
             .Build();
