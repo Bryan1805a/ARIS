@@ -1,6 +1,6 @@
 # 3. Context and Scope
 
-> **arc42 §3** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §3** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 3.1 Business context
 
@@ -33,6 +33,7 @@ flowchart LR
 |---|---|---|
 | Residence officer | Maintains citizens, households, addresses; creates transfer requests; approves requests made by someone else | `CIT-*`, `ADR-*`, `HH-*`, `UC-06`, `SRCH-*`, `RPT-*` |
 | System administrator | Manages accounts and system parameters; reviews audit entries | `ACC-01`, `SYS-01`, `AUD-01`, `PERM-01` |
+| Local demonstrator / developer | Uses the login-screen **Developer mode** to create accounts and seed demo data on the local prototype; no business authority | `D21`, `T11`, `T15` |
 | Development team | Deploys the schema, runs the application, verifies the invariant | §7, Appendix D |
 
 There are no external business systems in scope. VNeID, national population databases,
@@ -104,6 +105,7 @@ flowchart TB
 |---|---|---|
 | Data | Citizens, households, addresses, memberships, residences, transfers, accounts, audit | Vital records, biometrics, tax, land titles |
 | Process | Registration, relocation approval, deactivation, rectification | Legal adjudication, appeals, notifications |
+| Prototype setup | Login-screen Developer mode: create accounts, seed demo data | Production provisioning, remote administration, self-service registration |
 | Users | Local officers and administrators | Citizens (no self-service), external agencies |
 | Deployment | One Windows workstation + one local SQL Server container | Central server, cloud hosting, multi-office sync |
 | Integration | Local database only | VNeID, national APIs, email, SMS, payment gateways |
@@ -120,12 +122,13 @@ flowchart TB
 | Temporal history rules | Database + Application | Guard triggers + close-and-open services |
 | Historical rectification | Application + Infrastructure + database | `RectificationService`, `VOID` status, `Corrects...Id`, guard triggers |
 | Cross-record consistency | Application + database view | Atomic transactions + `vw_GoldenInvariantViolations` |
-| Authentication | Application + Infrastructure | `AuthenticationService`, PBKDF2/BCrypt, `UserAccount` |
+| Authentication | Application + Infrastructure | `AuthService`, BCrypt, `UserAccount` |
 | Authorization | Application | Role checks in services |
 | Audit durability | Infrastructure + database | `AuditService`, independent connection, append-only trigger |
 | Administrative mutation auditing | Application + Infrastructure | `AccountService` / `SystemConfigurationService`, `IUnitOfWork`, `AuditService` |
 | Audit inspection | Application + Infrastructure + UI | `AuditQueryService`, `AuditRepository`, `AuditViewerControl` |
 | Configuration | Database + local config | `SystemConfiguration`, user-secrets |
+| Local prototype setup | Application + Infrastructure | `IDeveloperService` / `DeveloperService` behind the login-screen Developer mode (`D21`); bypasses the administrator check by design and is not a business capability |
 | Current household address | Database view | `vw_HouseholdCurrent` |
 | Canonical address after boundary change | Database view | `vw_AddressCanonical` |
 

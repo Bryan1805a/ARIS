@@ -1,6 +1,6 @@
 # 10. Quality Requirements
 
-> **arc42 §10** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §10** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 10.1 Quality tree
 
@@ -70,6 +70,7 @@ proven, not how it is hoped for.
 | `Q-SEC-03` | The application tries `UPDATE` on `AuditLog`. | The database rejects it. | Permission error / `51030`. | Script verification + integration test |
 | `Q-SEC-04` | A repository is scanned before merge. | No secrets, `.env`, or build output. | Zero matches. | PR checklist + `git status` |
 | `Q-SEC-05` | An `OFFICER` invokes an admin service. | The service returns an authorization failure. | `Result.Failure`, no mutation. | Service unit test |
+| `Q-SEC-06` | A demonstrator creates an account through the login-screen Developer mode. | The account is active with a BCrypt hash and an audited `CREATE_ACCOUNT` row; the screen states that it bypasses normal authorization. | `PasswordHash` is not plaintext; `AuditLog.Details` contains no credentials. | Manual Appendix E step; automation pending (`T15`, `R21`) |
 
 ### Auditability
 
@@ -160,5 +161,6 @@ A feature is done only when all of the following hold.
 | Golden Invariant | `SELECT * FROM dbo.vw_GoldenInvariantViolations;` | Yes — any row |
 | Schema object inventory | `SchemaInventoryTests`: 12 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
 | Secret scan | `git status`, reviewer inspection | Yes |
+| Developer mode review | Warning is visible; scope stays login-screen-only; `D21`/`R21`/`T15` are current | Yes for release |
 | Layer scan | no EF Core/SQL under `src/Aris.UI` | Yes |
 | Manual smoke test ([Appendix E](appendix/E-smoke-test-checklist.md)) | login → citizen → household → transfer → rectification → audit → invariant | Yes for release |

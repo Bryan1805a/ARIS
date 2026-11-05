@@ -1,6 +1,6 @@
 # 12. Glossary
 
-> **arc42 §12** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §12** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 12.1 Domain terms
 
@@ -14,6 +14,7 @@
 | **Citizen** | An individual managed by the residence office. Identity only; no household or address column. |
 | **Close-and-open** | The append-only change pattern: close the old row (`EndDate = E - 1`) and open a new one (`StartDate = E`). |
 | **Correlation ID** | A `Guid` shared by every audit row produced by one business action. |
+| **Developer mode** | A prototype-only login-screen dialog that creates an account or seeds demo data without an administrator session (`D21`, `R21`, `T15`). Not a business feature. |
 | **Effective date (`E`)** | The business date on which a change takes effect. Must be later than the start date of any row being closed. |
 | **Golden Invariant** | Every active citizen has exactly one active membership and one active residence at the household's active canonical address. |
 | **Head of household** | The single active member with `Role = 'HEAD'` in a household. |
@@ -45,6 +46,7 @@
 | `TransferRequest.RequestType` | `JOIN_EXISTING`, `NEW_HOUSEHOLD`, `HOUSEHOLD_MOVE` | Shape enforced by `CK_TR_Shape` |
 | `TransferRequest.Status` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | Decided requests are frozen |
 | `TransferRequestItem.Status` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | `REJECTED` requires `RejectReason` |
+| `TemporaryResidence.Status` | `ACTIVE`, `EXPIRED`, `CANCELLED` | `EXPIRED` is derived when `EndDate` has passed; persisted rows are `ACTIVE` or `CANCELLED` |
 | `UserAccount.Role` | `OFFICER`, `ADMIN` | — |
 | `UserAccount.Status` | `ACTIVE`, `LOCKED` | Bidirectional |
 | `AuditLog.Result` | `SUCCESS`, `FAILURE` | — |
@@ -106,6 +108,7 @@
 | `ADR` | Address requirement | `ADR-03` address lineage |
 | `HH` | Household requirement | `HH-04` change head |
 | `RES` | Residence requirement | `RES-03` view current residence |
+| `TEMP` | Temporary residence requirement | `TEMP-01` register temporary residence |
 | `HIST` | Historical rectification | `HIST-01` void and correct |
 | `AUTH` | Authentication | `AUTH-01` login |
 | `ACC` | Account administration | `ACC-01` manage accounts |

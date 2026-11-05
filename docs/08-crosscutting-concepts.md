@@ -1,6 +1,6 @@
 # 8. Crosscutting Concepts
 
-> **arc42 §8** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §8** · ARIS 3.9 · [Documentation hub](README.md)
 
 These rules apply to every module. They are not suggestions; the PR checklist enforces
 them.
@@ -292,8 +292,15 @@ what the business record already contains. Prefer IDs and changed field names.
 `IUnitOfWork` (`D20`), return `Result` for expected failures, and write a `FAILURE` row
 through the configured-connection audit path when the transaction throws. Actions are
 `CREATE_ACCOUNT`, `LOCK_ACCOUNT`, `UNLOCK_ACCOUNT`, `RESET_PASSWORD`,
-`CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`; password material never enters
-`Details` (`CON-SEC-01`).
+`CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`; the bootstrap path writes
+`CREATE_FIRST_ADMIN`, and login writes `LOGIN` with a `reason` in `Details`. Password
+material never enters `Details` (`CON-SEC-01`).
+
+**Developer mode (`D21`).** The login-screen `DeveloperService` writes `CREATE_ACCOUNT`
+(with `developerMode = true` in `Details`) and `SEED_DEMO_DATA`. It bypasses the
+administrator authorization by design, keeps the success row in the mutation transaction,
+and writes failures independently with `AttemptedUsername = "developer-mode"` or the
+seeding administrator as actor. It is a prototype-only exception (`R21`, `T15`).
 
 ### Append-only enforcement
 
@@ -321,7 +328,9 @@ filters against real SQL Server.
 - Verify with a constant-time comparison.
 - Lockout after `MAX_FAILED_LOGINS`, for `LOCKOUT_MINUTES`.
 - `MustChangePassword` forces a change before any business screen opens.
-- Session timeout is driven by `SESSION_TIMEOUT_MINUTES`.
+- `SESSION_TIMEOUT_MINUTES` is seeded as a parameter, but the current shell does not
+  enforce an idle timeout; the session ends on log out or when the main window closes
+  (`T16`).
 - Login outcomes are audited; credentials are never audited.
 
 ### Authorization
@@ -331,6 +340,11 @@ filters against real SQL Server.
   (`IUserSession` or the caller's user ID plus a repository role check), not only by hiding
   navigation buttons.
 - Administration screens are additionally hidden from officers (defence in depth).
+- **The login-screen Developer mode is the single deliberate exception.** It deliberately
+  skips the administrator check to create accounts and seed demo data on a local
+  prototype (`D21`). It is confined to `LoginForm`/`DeveloperToolsForm`, labelled as
+  development-only, audited, and tracked as `R21`/`T15`; no other service may copy the
+  pattern.
 
 ### Database least privilege
 
@@ -392,7 +406,7 @@ Rules:
 
 ## 8.11 UI conventions
 
-- The shell owns navigation: sidebar, content panel, status strip.
+- The shell owns navigation: sidebar, top menu bar, content panel, status strip.
 - Screens are hosted as non-top-level forms inside `contentPanel`; no nested main windows.
 - Event handlers delegate to an `async` view-model method. Never `.Result` or `.Wait()`.
 - Long operations show a busy indicator and disable the triggering control.
@@ -459,6 +473,9 @@ Rules:
 - `EndToEndWorkflowTests` runs citizen → household → transfer → rectification → audit,
   then asserts the Golden Invariant is clean (`T4`). WinForms navigation, dialogs and the
   language switch remain covered by the committed checklist in Appendix E.
+- Current totals (2026-11-05): **150 passed / 0 failed / 0 skipped** with
+  `ARIS_TEST_CONNECTION`; **118 passed / 32 skipped** without it. The skipped tests are
+  the integration suite that requires real SQL Server.
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
 ---

@@ -24,9 +24,6 @@ public partial class MainForm : Form {
     private readonly IServiceProvider _serviceProvider;
     private readonly ToolStripButton _languageButton = new();
     private Button[] _navButtons = Array.Empty<Button>();
-    private MenuStrip _menuStrip = null!;
-    private ToolStrip _quickToolStrip = null!;
-    private ToolStripMenuItem _miAdministration = null!;
 
     public MainForm(
         IAccountService accountService,
@@ -47,7 +44,7 @@ public partial class MainForm : Form {
         _serviceProvider = serviceProvider;
         btnSystemConfiguration.Click += btnSystemConfiguration_Click;
 
-        BuildMenuAndToolbar();
+        BuildMenu();
 
         statusStrip1.Dock = DockStyle.Bottom;
         statusStrip1.SendToBack();
@@ -60,35 +57,19 @@ public partial class MainForm : Form {
         LanguageManager.LanguageChanged += OnLanguageChanged;
 
         ApplyTheme();
-        InitializeChrome();
+        LanguageManager.Apply(this);
 
         this.Shown += MainForm_Shown;
     }
 
     /// <summary>
-    /// Builds the menu bar and the quick-access toolbar required by the course
-    /// brief (<c>MenuStrip</c>, <c>ToolStrip</c>, <c>StatusStrip</c> on the main
-    /// form) and wires every item to the same navigation methods the sidebar uses.
+    /// Populates the single top menu bar with the shell-level commands that are not
+    /// already reachable from the sidebar. Navigation itself belongs to the sidebar,
+    /// so the menu deliberately does not repeat those items.
     /// </summary>
-    private void InitializeChrome() {
-        _quickToolStrip = BuildQuickToolStrip();
-        _menuStrip = BuildMenuStrip();
-
-        // Docking runs from the highest child index down: adding the menu last makes
-        // it claim the top edge, with the toolbar directly below and the sidebar
-        // underneath both. The status strip stays docked at the bottom.
-        Controls.Add(_quickToolStrip);
-        Controls.Add(_menuStrip);
-
-        LanguageManager.Apply(this);
-    }
-
-    private MenuStrip BuildMenuStrip() {
-        MenuStrip menu = new() {
-            Name = "menuStrip1",
-            Dock = DockStyle.Top
-        };
-        UiTheme.StyleMenuStrip(menu);
+    private void BuildMenu() {
+        menuStrip1.Items.Clear();
+        UiTheme.StyleMenuStrip(menuStrip1);
 
         ToolStripMenuItem system = new("System");
         system.DropDownItems.Add(CreateMenuItem("Overview", btnDashboard_Click));
@@ -96,48 +77,13 @@ public partial class MainForm : Form {
         system.DropDownItems.Add(new ToolStripSeparator());
         system.DropDownItems.Add(CreateMenuItem("Exit", (_, _) => Close()));
 
-        _miAdministration = new ToolStripMenuItem("Administration");
-        _miAdministration.DropDownItems.Add(CreateMenuItem("Accounts", btnAccounts_Click));
-        _miAdministration.DropDownItems.Add(CreateMenuItem("Audit Logs", btnAuditLogs_Click));
-        _miAdministration.DropDownItems.Add(
-            CreateMenuItem("System Configuration", btnSystemConfiguration_Click));
-
         ToolStripMenuItem help = new("Help");
         help.DropDownItems.Add(
             CreateMenuItem("Team introduction", (_, _) => ShowTeamIntroduction()));
         help.DropDownItems.Add(CreateMenuItem("About ARIS", (_, _) => ShowAbout()));
 
-        menu.Items.Add(system);
-        menu.Items.Add(CreateMenuItem("Citizens", btnCitizen_Click));
-        menu.Items.Add(CreateMenuItem("Households", btnHousehold_Click));
-        menu.Items.Add(CreateMenuItem("Addresses", btnAddress_Click));
-        menu.Items.Add(CreateMenuItem("Transfers", btnTransfer_Click));
-        menu.Items.Add(CreateMenuItem("Reports", btnReports_Click));
-        menu.Items.Add(_miAdministration);
-        menu.Items.Add(help);
-
-        return menu;
-    }
-
-    private ToolStrip BuildQuickToolStrip() {
-        ToolStrip strip = new() {
-            Name = "toolStrip1",
-            Dock = DockStyle.Top
-        };
-        UiTheme.StyleToolStrip(strip);
-
-        strip.Items.Add(CreateToolButton("Citizens", btnCitizen_Click));
-        strip.Items.Add(CreateToolButton("Households", btnHousehold_Click));
-        strip.Items.Add(CreateToolButton("Addresses", btnAddress_Click));
-        strip.Items.Add(CreateToolButton("Transfers", btnTransfer_Click));
-        strip.Items.Add(new ToolStripSeparator());
-        strip.Items.Add(CreateToolButton("Reports", btnReports_Click));
-        strip.Items.Add(
-            CreateToolButton("Team introduction", (_, _) => ShowTeamIntroduction()));
-        strip.Items.Add(new ToolStripSeparator());
-        strip.Items.Add(CreateToolButton("Refresh", (_, _) => _ = UpdateConnectionStatusAsync()));
-
-        return strip;
+        menuStrip1.Items.Add(system);
+        menuStrip1.Items.Add(help);
     }
 
     private static ToolStripMenuItem CreateMenuItem(string text, EventHandler onClick) {
@@ -146,15 +92,8 @@ public partial class MainForm : Form {
         return item;
     }
 
-    private static ToolStripButton CreateToolButton(string text, EventHandler onClick) {
-        ToolStripButton button = UiTheme.StyleToolStripButton(new ToolStripButton(text));
-        button.Click += onClick;
-        return button;
-    }
-
     private void ShowTeamIntroduction() {
-        using TeamIntroductionForm form =
-            _serviceProvider.GetRequiredService<TeamIntroductionForm>();
+        using AboutForm form = new();
         form.ShowDialog(this);
     }
 
@@ -264,7 +203,6 @@ public partial class MainForm : Form {
         btnAccounts.Visible = isAdmin;
         btnAuditLogs.Visible = isAdmin;
         btnSystemConfiguration.Visible = isAdmin;
-        _miAdministration.Visible = isAdmin;
 
         // Reposition sidebar buttons smoothly so there are no empty gaps when admin buttons are hidden
         int nextY = btnDashboard.Bottom + 10;
@@ -508,67 +446,5 @@ public partial class MainForm : Form {
         tempControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(tempControl);
-    }
-
-    // Xây dựng MenuStrip và ToolStrip theo yêu cầu bắt buộc của tiểu luận Lập trình Windows
-    private void BuildMenuAndToolbar() {
-        // --- 1. MenuStrip ---
-        menuStrip1.Items.Clear();
-
-        // Menu Hệ thống
-        var menuSystem = new ToolStripMenuItem(LanguageManager.T("Hệ thống"));
-        var miAccounts = new ToolStripMenuItem(LanguageManager.T("Quản lý tài khoản"), null, btnAccounts_Click);
-        var miAudit = new ToolStripMenuItem(LanguageManager.T("Nhật ký kiểm toán"), null, btnAuditLogs_Click);
-        var miConfig = new ToolStripMenuItem(LanguageManager.T("Cấu hình hệ thống"), null, btnSystemConfiguration_Click);
-        var miSep1 = new ToolStripSeparator();
-        var miLogout = new ToolStripMenuItem(LanguageManager.T("Đăng xuất"), null, btnLogout_Click);
-        menuSystem.DropDownItems.AddRange(new ToolStripItem[] { miAccounts, miAudit, miConfig, miSep1, miLogout });
-
-        // Menu Nghiệp vụ cư trú
-        var menuOperations = new ToolStripMenuItem(LanguageManager.T("Nghiệp vụ"));
-        var miCitizen = new ToolStripMenuItem(LanguageManager.T("Quản lý công dân"), null, btnCitizen_Click);
-        var miHousehold = new ToolStripMenuItem(LanguageManager.T("Quản lý hộ gia đình"), null, btnHousehold_Click);
-        var miAddress = new ToolStripMenuItem(LanguageManager.T("Quản lý địa chỉ"), null, btnAddress_Click);
-        var miTransfer = new ToolStripMenuItem(LanguageManager.T("Quản lý chuyển hộ"), null, btnTransfer_Click);
-        var miTempRes = new ToolStripMenuItem(LanguageManager.T("Quản lý tạm trú"), null, btnTemporaryResidence_Click);
-        menuOperations.DropDownItems.AddRange(new ToolStripItem[] { miCitizen, miHousehold, miAddress, miTransfer, miTempRes });
-
-        // Menu Thống kê / Báo cáo
-        var menuReports = new ToolStripMenuItem(LanguageManager.T("Báo cáo & Thống kê"));
-        var miReports = new ToolStripMenuItem(LanguageManager.T("Xem báo cáo thống kê"), null, btnReports_Click);
-        menuReports.DropDownItems.Add(miReports);
-
-        // Menu Trợ giúp / Giới thiệu
-        var menuHelp = new ToolStripMenuItem(LanguageManager.T("Trợ giúp"));
-        var miAbout = new ToolStripMenuItem(LanguageManager.T("Giới thiệu thành viên nhóm"), null, (_, _) => {
-            using var about = new AboutForm();
-            about.ShowDialog(this);
-        });
-        menuHelp.DropDownItems.Add(miAbout);
-
-        menuStrip1.Items.AddRange(new ToolStripItem[] { menuSystem, menuOperations, menuReports, menuHelp });
-
-        // --- 2. ToolStrip (Phím tắt thanh công cụ nhanh) ---
-        toolStrip1.Items.Clear();
-        toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
-
-        var tbDashboard = new ToolStripButton(LanguageManager.T("Tổng quan"), null, btnDashboard_Click);
-        var tbCitizen = new ToolStripButton(LanguageManager.T("Công dân"), null, btnCitizen_Click);
-        var tbHousehold = new ToolStripButton(LanguageManager.T("Hộ gia đình"), null, btnHousehold_Click);
-        var tbAddress = new ToolStripButton(LanguageManager.T("Địa chỉ"), null, btnAddress_Click);
-        var tbTransfer = new ToolStripButton(LanguageManager.T("Chuyển hộ"), null, btnTransfer_Click);
-        var tbTempRes = new ToolStripButton(LanguageManager.T("Tạm trú"), null, btnTemporaryResidence_Click);
-        var tbReports = new ToolStripButton(LanguageManager.T("Báo cáo"), null, btnReports_Click);
-        var tbSep = new ToolStripSeparator();
-        var tbAbout = new ToolStripButton(LanguageManager.T("Giới thiệu nhóm"), null, (_, _) => {
-            using var about = new AboutForm();
-            about.ShowDialog(this);
-        });
-        var tbLogout = new ToolStripButton(LanguageManager.T("Đăng xuất"), null, btnLogout_Click);
-
-        toolStrip1.Items.AddRange(new ToolStripItem[] {
-            tbDashboard, tbCitizen, tbHousehold, tbAddress, tbTransfer, tbTempRes,
-            tbReports, tbSep, tbAbout, tbLogout
-        });
     }
 }

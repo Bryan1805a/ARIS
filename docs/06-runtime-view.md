@@ -1,6 +1,6 @@
 # 6. Runtime View
 
-> **arc42 §6** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §6** · ARIS 3.9 · [Documentation hub](README.md)
 
 This section shows how the important use cases execute across the layers. All sequences
 assume an authenticated session and a working local SQL Server.
@@ -17,7 +17,7 @@ sequenceDiagram
     autonumber
     actor U as User
     participant F as LoginForm
-    participant S as AuthenticationService
+    participant S as AuthService
     participant DB as SQL Server
 
     U->>F: username + password
@@ -38,7 +38,7 @@ sequenceDiagram
         alt MustChangePassword
             S-->>F: Result.Success(requiresPasswordChange = true)
         else
-            S->>DB: AuditLog SUCCESS (LOGIN_SUCCESS)
+            S->>DB: AuditLog SUCCESS (LOGIN, details reason = LOGIN_SUCCESS)
             S-->>F: Result.Success(session)
         end
     end
@@ -48,8 +48,11 @@ Rules:
 
 - Passwords are verified against a salted PBKDF2/BCrypt hash; neither the password nor
   the hash is ever written to the audit log.
-- `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES`, `PASSWORD_MIN_LENGTH`, and
-  `SESSION_TIMEOUT_MINUTES` are read from `SystemConfiguration`, not hardcoded.
+- `MAX_FAILED_LOGINS` and `LOCKOUT_MINUTES` are read from `SystemConfiguration` on each
+  login. `PASSWORD_MIN_LENGTH` is honoured by the first-admin bootstrap, while
+  `AccountService` and `DeveloperService` currently enforce a fixed 8-character minimum;
+  `SESSION_TIMEOUT_MINUTES` is seeded but the shell does not yet enforce an idle timeout
+  (`T16`).
 - Failed logins are expected business outcomes (`Result.Failure`), not exceptions.
 - A failure for an unknown username uses `AuditFailureEntry` with
   `AttemptedUsername`, because `CK_Audit_Actor` requires an actor or an attempted name.
@@ -424,7 +427,8 @@ sequenceDiagram
 Rules:
 
 - Actions are `CREATE_ACCOUNT`, `LOCK_ACCOUNT`, `UNLOCK_ACCOUNT`, `RESET_PASSWORD`,
-  `CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`.
+  `CHANGE_OWN_PASSWORD`, and `UPDATE_SYSTEM_CONFIGURATION`. The bootstrap path writes
+  `CREATE_FIRST_ADMIN` (`T6`), and login writes `LOGIN` with a `reason` in `Details`.
 - The active-admin authorization check runs before any mutation. Expected failures return
   `Result` and write no success audit.
 - Audit details carry IDs, usernames, and before/after values; they never contain a
@@ -432,6 +436,8 @@ Rules:
 - On an exception, `IUnitOfWork` rolls back and clears the change tracker. The service
   writes a `FAILURE` row through `IAuditService.LogFailureIndependentAsync(entry)` using
   the configured connection, then returns `Result.Failure`.
+- The prototype-only `DeveloperService` reuses `CREATE_ACCOUNT` and adds
+  `SEED_DEMO_DATA`, but deliberately skips the administrator check; see §6.14.
 - `AdministrationAuditTests` proves persistence against real SQL Server;
   `AccountServiceTests` and `SystemConfigurationServiceTests` cover success, failure and
   authorization with fakes.
@@ -471,10 +477,64 @@ Rules:
 | Deactivate citizen | `CitizenDetailForm` | `CitizenService` | `ArisDbContext`, `AuditService` | `Citizen`, `HouseholdMembership`, `Residence`, `Household`, `HouseholdAddress` |
 | Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
 | Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
-| Temporary residence | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | `TemporaryResidenceService` | `ArisDbContext`, `AuditService` | `TemporaryResidence`, `Citizen`, `Address`, `AuditLog` |
+| Temporary residence | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | `ITemporaryResidenceService` | `TemporaryResidenceService`, `ArisDbContext`, `AuditService` | `TemporaryResidence`, `Citizen`, `Address`, `AuditLog` |
 | Inspect audit log | `AuditViewerControl` | `AuditQueryService` | `AuditRepository` | `AuditLog`, `UserAccount` |
 | Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Update system configuration | `SystemConfigurationControl` | `SystemConfigurationService` | `SystemConfigurationRepository`, `UnitOfWork`, `AuditService` | `SystemConfiguration`, `AuditLog` |
 | End-to-end workflow | test runner + Appendix E checklist | citizen, household, transfer, address and rectification services | `ArisDbContext`, `AuditService` | all business tables, `AuditLog`, `vw_GoldenInvariantViolations` |
+| Developer mode | `LoginForm`, `DeveloperToolsForm` | `IDeveloperService` | `DeveloperService`, `ArisDbContext`, `AuditService` | `UserAccount`, `AuditLog`; demo tables via `DemoDataService` |
 | Invariant verification | test runner | — | ADO.NET | `vw_GoldenInvariantViolations` |
+
+---
+
+## 6.14 Developer mode (prototype only)
+
+The login screen exposes a **Developer mode** button for local setup. It is not a
+business screen and deliberately bypasses the administrator authorization used by
+`IAccountService` (`D21`, `R21`, `T15`).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor D as Local demonstrator
+    participant L as LoginForm
+    participant F as DeveloperToolsForm
+    participant S as DeveloperService
+    participant DB as SQL Server
+
+    D->>L: Developer mode
+    L->>F: open dialog (IDeveloperService)
+    alt create account
+        D->>F: username, full name, password, role
+        F->>S: CreateAccountAsync(dto)
+        S->>S: validate shape, role, uniqueness
+        S->>DB: BEGIN TRANSACTION
+        S->>DB: INSERT UserAccount (BCrypt hash, ACTIVE, MustChangePassword = 0)
+        S->>DB: AuditLog SUCCESS (CREATE_ACCOUNT, developerMode = true)
+        S->>DB: COMMIT
+        S-->>F: Result.Success(userId)
+    else seed demo data
+        D->>F: Seed demo data
+        F->>S: SeedDemoDataAsync()
+        S->>DB: read most recent active ADMIN
+        S->>DB: DemoDataService seeds addresses, citizens, households
+        S->>DB: AuditLog SUCCESS (SEED_DEMO_DATA) in the same transaction
+        S-->>F: Result.Success(summary)
+    end
+```
+
+Rules:
+
+- **No administrator session is required.** This is the single documented exception to
+  `CON-AUTH-01`/`PERM-01`; the dialog states that it is for local use and bypasses the
+  normal authorization check.
+- A created account is active immediately with `MustChangePassword = 0` and a BCrypt
+  hash; the password is never written to the audit log (`CON-SEC-01`).
+- The success audit row shares the account transaction. On failure the service rolls
+  back and writes an independent `FAILURE` row with
+  `AttemptedUsername = "developer-mode"`.
+- Demo seeding delegates to `IDemoDataService`, which requires an active `ADMIN` actor,
+  is idempotent, and commits data plus audit in one transaction (`T11`).
+- The service is not exposed outside the local desktop client and has no automated
+  tests; removing or gating it is a production prerequisite (`R21`, `T15`).

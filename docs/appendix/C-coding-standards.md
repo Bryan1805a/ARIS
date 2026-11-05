@@ -1,6 +1,6 @@
 # Appendix C — Coding Standards
 
-> ARIS 3.0 · [Documentation hub](../README.md) · Companion: [§8](../08-crosscutting-concepts.md) · [§10](../10-quality-requirements.md)
+> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§8](../08-crosscutting-concepts.md) · [§10](../10-quality-requirements.md)
 
 This appendix is the house style. It merges the former coding conventions, AI guardrails,
 and PR checklist. The architectural rules themselves live in §8; this page shows how to
@@ -22,6 +22,10 @@ A form calls an Application interface. Repository-backed services (`AuthService`
 live in Application and inject `IUnitOfWork` when a mutation and its success audit must
 commit together (`D20`). Services that need `ArisDbContext` or serializable isolation
 live in Infrastructure (`D18`). A domain entity calls nothing.
+
+**Single authorization exception.** `DeveloperService` intentionally skips the
+administrator check for the login-screen Developer mode (`D21`). It may not be copied,
+and no other service may bypass `PERM-01`.
 
 ---
 
@@ -470,7 +474,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Names match the DDL verbatim.
 - [ ] No `Citizen.HouseholdId` or `Household.CurrentAddressId`.
 - [ ] `.HasTrigger(...)` on the five trigger tables.
-- [ ] `.IsRowVersion()` on the nine mutable tables only.
+- [ ] `.IsRowVersion()` on the ten mutable tables only.
 - [ ] `.HasComputedColumnSql(...)` for `AddressText`.
 - [ ] Composite FKs on `TransferRequestItem`.
 - [ ] No cascade deletes.
@@ -492,6 +496,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Failure audit is independent and after rollback.
 - [ ] Passwords are salted hashes; no plaintext.
 - [ ] Service-level role authorization.
+- [ ] Developer mode remains login-screen-only, warning-labelled, and documented (`D21`, `R21`).
 - [ ] No secret in the diff.
 
 ### Twelve automatic rejections

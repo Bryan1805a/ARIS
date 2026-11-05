@@ -1,6 +1,6 @@
 # 11. Risks and Technical Debt
 
-> **arc42 §11** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §11** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 11.1 Risk assessment
 
@@ -29,6 +29,7 @@ closed; it is managed and reviewed.
 | `R18` | **Local data loss** from `docker compose down -v` or a disk failure. | Medium | Low | Intentional resets only; document the command's destructive effect; seed data is replaceable. | All |
 | `R19` | **Invalid audit JSON** rejected by `CK_Audit_Details`. | Medium | Low | Always use `JsonSerializer.Serialize`; `AuditEntryValidator` validates before persistence. | All |
 | `R20` | **Case/accent-insensitive search does not behave as expected** because of collation. | Medium | Medium | Verify the database collation; use `COLLATE` or normalized search columns if needed; test with Vietnamese diacritics. | Coder 1 |
+| `R21` | **The login-screen Developer mode bypasses administrator authorization.** It can create an `ADMIN` account and seed data without a signed-in administrator if the local machine is left unlocked. | Low | High | Confined to the local login screen with a visible warning; every action is audited (`CREATE_ACCOUNT` / `SEED_DEMO_DATA`); documented as `D21`; remove or gate before any non-academic deployment. | Team Leader |
 
 ---
 
@@ -38,7 +39,7 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 
 | ID | Debt | Impact | Plan |
 |---|---|---|---|
-| `T1` | Baseline lacked all 11 entities, `ArisDbContext`, configurations, and `AuditService`. | Blocked every feature. | **Resolved in `P1-DB2`** (entities, context, configurations, both audit paths). |
+| `T1` | Baseline lacked the domain entities, `ArisDbContext`, configurations, and `AuditService`. | Blocked every feature. | **Resolved in `P1-DB2`** (entities, context, configurations, both audit paths). |
 | `T2` | Feature screens and the relocation engine existed only as stubs. | The core relocation workflow could not be demonstrated. | **Resolved:** citizen, household, transfer, auth, admin and report screens are implemented; the maker-checker engine executes all three request shapes. |
 | `T3` | Service-level tests were missing for several core slices. | Regressions were caught late. | **Resolved:** `CitizenServiceTests`, `HouseholdServiceTests` and `TransferServiceTests` exercise the services against real SQL with a recording audit double; `AccountService` and `SystemConfigurationService` have unit tests. Address and rectification remain covered by database-level integration tests. |
 | `T4` | No committed UI automation or end-to-end harness; WinForms flows were verified manually (temporary automation scripts were not in the repository). | UI wiring regressions were caught late. | **Resolved:** `EndToEndWorkflowTests` runs citizen → household → transfer → rectification → audit against real SQL Server; Appendix E is the committed manual WinForms release/demo checklist. |
@@ -47,11 +48,13 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 | `T7` | `SqlResilience` included cloud service-tier error numbers (for example 40613, 49918–49920) that are unlikely to occur against a local container. | It could retry irrelevant errors or miss a restart-specific failure. | **Resolved:** the list is narrowed to local-container failures — `233`, `1205`, `1222`, `4060`, `10053`, `10054`, `10060` — and `SqlResilienceTests` proves the Azure service-tier numbers are no longer transient. |
 | `T8` | Reports and admin screens were implemented, `AUD-01` filtering/detail was completed. | The audit viewer could demonstrate the full required filtering and detail flow. | **Resolved:** the viewer filters by date, actor, entity, action and result, validates criteria, and shows read-only row detail. `AuditQueryFilterTests` and `AuditQueryServiceTests` prove the query paths. |
 | `T9` | No optimistic-concurrency integration test. | `D14` was unproven. | **Resolved:** `OptimisticConcurrencyTests` loads one row in two contexts, commits the first save, and asserts the stale save raises `DbUpdateConcurrencyException` without overwriting. |
-| `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | **Resolved:** `SchemaInventoryTests` asserts 11 tables, 5 triggers, 3 views, the `aris_app` role, and the 4 seed configuration keys. |
+| `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | **Resolved:** `SchemaInventoryTests` asserts 12 tables, 5 triggers, 3 views, the `aris_app` role, and the 4 seed configuration keys. |
 | `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | **Resolved:** `DemoDataService` seeds an idempotent demo dataset; it is exposed as **Accounts → Seed demo data** and keeps the Golden Invariant at zero violations. |
 | `T12` | No localization; UI text was English while domain data is Vietnamese. | Minor usability issue. | **Resolved:** Vietnamese is the default; `LanguageManager` and the login/status-bar buttons switch the static UI between Vietnamese and English. Service validation messages remain English. |
 | `T13` | Restore reported NU1902/NU1903 vulnerabilities from transitive `System.Security.Cryptography.Pkcs` 9.0.4. | The build was not warning-free, so the "0 warnings" gate was unmet. | **Resolved:** `Pkcs` is pinned to 10.0.13, the solution builds with 0 warnings, and CI treats warnings as errors. |
 | `T14` | Account administration and system-configuration mutations were not written to `AuditLog`, and those services threw for expected business failures instead of returning `Result<T>`. | `AUD-01`/`CON-ARCH-07` was completed for admin actions. | **Resolved:** `AccountService` and `SystemConfigurationService` return `Result`, run each mutation and success audit inside `IUnitOfWork` (`D20`), and write independent failure audits. `AdministrationAuditTests` plus service unit tests prove the actions and secret exclusion. |
+| `T15` | The login-screen Developer mode (`D21`) bypasses administrator authorization and has no automated test. | An authorization exception is shipped without a regression guard, so a future change could widen it unnoticed. | Keep the warning visible and the service confined to `LoginForm`; add `DeveloperService` tests (create, duplicate username, weak password, seed) and remove or gate the feature before any non-academic deployment. |
+| `T16` | `PASSWORD_MIN_LENGTH` is honoured only by `BootstrapService`; `AccountService` and `DeveloperService` use a fixed 8-character minimum. `SESSION_TIMEOUT_MINUTES` is seeded but no idle timeout is enforced. | Administrators can change two configuration keys that the runtime does not fully honour. | Either inject `ISystemConfigurationRepository` into the account/developer services and add a shell idle timer, or document the fixed policy explicitly. Keep `Q-SEC-06` and Appendix E aligned with whichever choice is made. |
 
 ---
 
@@ -70,6 +73,9 @@ These are accepted boundaries, not defects:
    local-development choices.
 9. **No legal validity.** The prototype does not create legally binding residence records.
 10. **Windows only.** WinForms and the SDK target `net10.0-windows`.
+11. **Developer mode is a prototype convenience.** The login screen can create accounts
+    and seed demo data without an administrator session (`D21`, `R21`). It is local-only,
+    visibly labelled, audited, and not covered by automated tests (`T15`).
 
 ---
 
@@ -81,6 +87,7 @@ Re-open the risk register when any of the following occurs:
 - the transfer engine changes shape or isolation level;
 - the team moves from local Docker to any shared database;
 - authentication or authorization changes;
+- the Developer mode is removed, gated, or its scope changes (`D21`, `R21`);
 - a production or multi-office deployment is proposed;
 - a defect escapes a release gate;
 - the course scope or deadline changes.

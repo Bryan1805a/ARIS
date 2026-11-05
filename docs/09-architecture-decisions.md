@@ -1,6 +1,6 @@
 # 9. Architecture Decisions
 
-> **arc42 §9** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §9** · ARIS 3.9 · [Documentation hub](README.md)
 
 Each decision records the context, the choice, and the consequences we accept. IDs are
 stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
@@ -27,6 +27,7 @@ stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
 | `D18` | Application interfaces with Infrastructure service implementations | Accepted |
 | `D19` | Rectification uses VOID-and-replace with guarded current state | Accepted |
 | `D20` | Minimal `IUnitOfWork` for repository-backed Application services | Accepted |
+| `D21` | Prototype-only Developer mode on the login screen | Accepted (prototype exception) |
 
 ---
 
@@ -197,7 +198,9 @@ external identity provider.
 seeded by the DDL.
 
 **Consequences.**
-- Administrators can change policy at runtime (`SYS-01`).
+- Administrators can change the lockout policy at runtime (`SYS-01`).
+- Password-length and session-timeout keys are not yet honoured by every path (`T16`):
+  the account services use a fixed 8-character minimum, and no idle timeout is enforced.
 - Configuration reads must tolerate missing keys with documented defaults.
 - Changes to configuration should be audited.
 
@@ -240,7 +243,7 @@ returns zero rows.
 **Context.** Multiple officers may edit the same record. Last-write-wins silently loses
 data; pessimistic locking holds transactions across think time.
 
-**Decision.** Add `rowversion` to all nine mutable tables and map it with
+**Decision.** Add `rowversion` to all ten mutable tables and map it with
 `.IsRowVersion()`. Surface conflicts as `DbUpdateConcurrencyException`.
 
 **Consequences.**
@@ -334,11 +337,11 @@ contradicted the layering table.
 
 **Decision.** Application owns the module contracts: interfaces, DTOs, validators and
 `Result<T>`. Infrastructure implements the services that need persistence primitives
-(`BootstrapService`, `DemoDataService`, `CitizenService`, `AddressService`,
-`HouseholdService`, `TransferService`, `RectificationService`) behind those interfaces.
-Repository-backed services (`AuthService`, `AccountService`, `ReportService`,
-`AuditQueryService`, `SystemConfigurationService`) remain in Application. The UI resolves
-only the Application interfaces through DI.
+(`BootstrapService`, `DemoDataService`, `DeveloperService`, `CitizenService`,
+`AddressService`, `HouseholdService`, `TransferService`, `RectificationService`) behind
+those interfaces. Repository-backed services (`AuthService`, `AccountService`,
+`ReportService`, `AuditQueryService`, `SystemConfigurationService`) remain in Application.
+The UI resolves only the Application interfaces through DI.
 
 **Consequences.**
 - Application remains persistence-free and the UI never sees EF Core.
@@ -401,3 +404,36 @@ services.
 - Only services that need it depend on `IUnitOfWork`; Infrastructure services continue to
   own their transactions directly.
 - A generic repository layer is still rejected as unnecessary ceremony.
+
+---
+
+## D21 — Prototype-only Developer mode on the login screen
+
+**Status.** Accepted, explicitly bounded to the academic prototype.
+
+**Context.** A fresh database has no accounts, and the normal first-run path creates one
+`ADMIN` (`T6`). Demonstrating the maker-checker flow needs a second officer, and teaching
+or grading sessions often need the demo dataset without navigating the full administration
+screens. Creating accounts outside the application is not possible because only the
+application knows the BCrypt hashing convention.
+
+**Decision.** Expose a **Developer mode** button on `LoginForm` that opens
+`DeveloperToolsForm`. It calls `IDeveloperService` (implemented by `DeveloperService` in
+Infrastructure) to:
+- create an active `ADMIN` or `OFFICER` account with a BCrypt hash and
+  `MustChangePassword = 0`, audited as `CREATE_ACCOUNT` with `developerMode = true`; and
+- seed the idempotent demo dataset as the most recently created active administrator,
+  audited as `SEED_DEMO_DATA`.
+
+The service deliberately skips the administrator authorization used by
+`IAccountService`; the dialog displays a local-prototype warning.
+
+**Consequences.**
+- Local setup and classroom demos need no manual SQL or account bootstrapping.
+- This is the only documented exception to `CON-AUTH-01`/`PERM-01`; it is recorded as
+  `R21` and `T15`.
+- Account creation is still transactional and audited, and passwords are never logged
+  (`CON-SEC-01`).
+- The feature has no automated tests and must be removed or gated before any non-academic
+  deployment. It must not be copied by another screen or extended into a remote
+  administration channel.

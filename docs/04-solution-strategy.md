@@ -1,6 +1,6 @@
 # 4. Solution Strategy
 
-> **arc42 §4** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §4** · ARIS 3.9 · [Documentation hub](README.md)
 
 The architecture rests on a small number of ideas. Everything else is a consequence.
 
@@ -136,7 +136,7 @@ drift.
 
 ### 9. Optimistic concurrency everywhere
 
-All nine mutable tables carry `rowversion`, mapped with `.IsRowVersion()`. A stale
+All ten mutable tables carry `rowversion`, mapped with `.IsRowVersion()`. A stale
 `SaveChanges` raises `DbUpdateConcurrencyException`; the UI must reload and retry.
 
 **Why:** officers may work concurrently. Last-write-wins would silently discard a
@@ -200,3 +200,4 @@ tests replace it, and each developer can reset without asking permission.
 | Soft delete on history tables | `Status = 'VOID'` plus a correcting row is richer and keeps intervals honest (`D3`) |
 | CQRS / event sourcing | Far beyond the course scope; the append-only tables already provide the needed temporal record |
 | Microservices / web API | The required deliverable is a single Windows desktop application |
+| Treating the login-screen Developer mode as an administration path | It is a prototype-only convenience that bypasses `PERM-01`; it is documented as `D21`/`R21`, carries a visible warning, and is not part of the business design |
