@@ -29,7 +29,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void Model_maps_the_eleven_tables_from_the_DDL()
+    public void Model_maps_the_twelve_tables_from_the_DDL()
     {
         using var context = CreateContext();
 
@@ -41,7 +41,7 @@ public sealed class ArisDbContextModelTests
         {
             "UserAccount", "SystemConfiguration", "Citizen", "Address", "Household",
             "TransferRequest", "HouseholdAddress", "HouseholdMembership", "Residence",
-            "TransferRequestItem", "AuditLog"
+            "TransferRequestItem", "AuditLog", "TemporaryResidence"
         };
 
         Assert.Equal(expected.Length, tables.Count);
@@ -50,7 +50,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void RowVersion_is_mapped_on_the_nine_mutable_tables_only()
+    public void RowVersion_is_mapped_on_the_ten_mutable_tables_only()
     {
         using var context = CreateContext();
 
@@ -59,7 +59,7 @@ public sealed class ArisDbContextModelTests
             .Select(e => e.GetTableName())
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(9, tablesWithRowVersion.Count);
+        Assert.Equal(10, tablesWithRowVersion.Count);
         Assert.DoesNotContain("AuditLog", tablesWithRowVersion);
         Assert.DoesNotContain("SystemConfiguration", tablesWithRowVersion);
     }

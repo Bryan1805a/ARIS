@@ -39,9 +39,22 @@ and the residence rectification action.*
 | Household slice (`HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02`) | Complete |
 | Maker-checker transfer (`UC-06`) | Complete |
 | Address management (`ADR-01`–`ADR-03`, `SRCH-03`) | Complete |
+| Temporary residence (`TEMP-01`–`TEMP-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
 | Tests | 139 with a database; 107 passed + 32 skipped without |
+
+## Team Members
+
+| STT | Họ và tên | MSSV | Vai trò | Form / Chức năng đảm nhận chính |
+|:---:|---|:---:|---|---|
+| 1 | **Trần Bửu Ngọc** | 231A290130 | Nhóm trưởng (Team Leader) | Form Quản lý Chuyển hộ & Maker-Checker (`TransferControl`) |
+| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | Database Designer / Dev | Form Quản lý Đăng ký Tạm trú (`TemporaryResidenceControl`) & Thiết kế CSDL (12 bảng, triggers, EF Core) |
+| 3 | **Hồ Ngọc Hân** | 231A290010 | Developer | Form Quản lý Công dân / Nhân khẩu (`CitizenControl`) & Tra cứu danh bạ |
+| 4 | **Đoàn Thị Thuý Duy** | 231A290035 | Developer | Form Quản lý Hộ gia đình (`HouseholdControl`) & Lịch sử cư trú |
+| 5 | **Hà Tuyết Trinh** | 231A290045 | Developer | Form Quản lý Tài khoản (`AccountManagementControl`), Đăng nhập & Nhật ký kiểm toán |
+
+> Danh sách phân công 5 thành viên tuân thủ nghiêm ngặt Barem hướng dẫn tiểu luận môn học Lập trình trên Windows: Mỗi thành viên đảm nhận ít nhất 01 Form chức năng độc lập (không tính form Đăng nhập, Giới thiệu và Thống kê).
 
 ## Documentation
 
@@ -158,6 +171,10 @@ append-only membership, residence, and household-address history. A correction v
 erroneous row, inserts a linked replacement with the corrected values, and requires a
 reason. Active rows are limited to start-date corrections; current-state changes still go
 through transfer, change-head, or deactivation.
+
+The **Temporary Residence** screen supports lookup by National ID, full name, or status;
+registration of temporary stay for citizens at an active administrative address with legal duration bounds (≤ 2 years);
+period extension or reason update; and record cancellation when the citizen departs.
 
 The **Accounts** and **System Configuration** screens audit every mutation — create,
 lock/unlock, password reset, self-service password change, and configuration update — with

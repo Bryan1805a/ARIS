@@ -6,15 +6,15 @@
 
 ## D.1 Team and ownership
 
-| Role | Owns | Primary deliverables |
-|---|---|---|
-| **Team Leader** | Architecture, layer boundaries, PR gate | Solution structure, reviews, invariant verification, release gates |
-| **Database Designer** | Schema fidelity, EF Core mappings, audit persistence | 11 entities, `ArisDbContext`, configurations, `AuditService`, seed data, constraint tests |
-| **Coder 1** | Citizen slice and directory search | `CIT-01`–`CIT-04`, `SRCH-01`, reference vertical slice |
-| **Coder 2** | Household, residence, relocations | `HH-01`–`HH-06`, `RES-03`, `UC-06`, `HIST-01` |
-| **Coder 3** | Shell, authentication, admin, reports | `P1-C3`, `AUTH-01`, `ACC-01`, `AUD-01`, `SYS-01`, `RPT-01`–`RPT-03` |
+| STT | Họ và tên | MSSV | Vai trò dự án | Phân công phụ trách chính (Form độc lập & Nhiệm vụ) |
+|:---:|---|:---:|---|---|
+| 1 | **Trần Bửu Ngọc** | 231A290130 | **Nhóm trưởng** (Team Leader) | Form Quản lý Chuyển hộ & Động cơ điều chuyển Maker-Checker (`UC-06`, `TransferControl`), Kiến trúc phân tầng, PR gate |
+| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | **Database Designer** / Dev | Form Quản lý Đăng ký Tạm trú (`TEMP-01`..`TEMP-03`, `TemporaryResidenceControl`), Thiết kế CSDL (12 bảng, Triggers, EF Core mappings), MenuStrip/ToolStrip barem |
+| 3 | **Hồ Ngọc Hân** | 231A290010 | **Coder 1** (Developer) | Form Quản lý Công dân / Nhân khẩu (`CIT-01`..`CIT-04`, `CitizenControl`), Tra cứu danh bạ (`SRCH-01`) |
+| 4 | **Đoàn Thị Thuý Duy** | 231A290035 | **Coder 2** (Developer) | Form Quản lý Hộ gia đình (`HH-01`..`HH-06`, `HouseholdControl`), Theo dõi lịch sử nơi cư trú (`RES-03`, `HIST-01`) |
+| 5 | **Hà Tuyết Trinh** | 231A290045 | **Coder 3** (Developer) | Form Quản lý Tài khoản (`ACC-01`, `AccountManagementControl`), Đăng nhập & Xác thực (`AUTH-01`), Nhật ký kiểm toán (`AUD-01`), Báo cáo thống kê |
 
-Fill in names on the team channel, not in the repository. The roles are what matter.
+> Danh sách phân công 5 thành viên tuân thủ nghiêm ngặt Barem hướng dẫn tiểu luận môn học Lập trình trên Windows: Mỗi thành viên đảm nhận ít nhất 01 Form chức năng độc lập (không tính form Đăng nhập, Giới thiệu và Thống kê).
 
 ---
 
@@ -33,6 +33,7 @@ Fill in names on the team channel, not in the repository. The roles are what mat
 | Residence tracking | A | C | I | **R** | I |
 | Transfer engine (`UC-06`) | A | C | I | **R** | I |
 | Record rectification | A | C | I | **R** | I |
+| Temporary residence management | A | **R** | I | I | I |
 | Authentication and accounts | A | I | I | I | **R** |
 | UI shell and navigation | A | I | C | C | **R** |
 | Reports | A | C | I | I | **R** |

@@ -93,6 +93,14 @@ Requirement IDs are stable and are used by tests, commits, and the PR checklist.
 | `RES-03` | Retrieve the validated current residence address of a citizen. |
 | `HIST-01` | Void an erroneous historical row and insert a corrected row linked by `Corrects...Id`. |
 
+### Temporary residence management
+
+| ID | Requirement |
+|---|---|
+| `TEMP-01` | Register a citizen's temporary residence (`CitizenId`, `AddressId`, `StartDate`, `EndDate`, `StayReason`, `HostInfo`). Duration is bounded by law (≤ 2 years). |
+| `TEMP-02` | Search and filter temporary residence records by National ID, citizen name, or status (`ACTIVE`, `EXPIRED`, `CANCELLED`). |
+| `TEMP-03` | Extend end date or update details of an active temporary residence record; cancel registration when citizen departs. |
+
 ### Search and reporting
 
 | ID | Requirement |
@@ -138,7 +146,7 @@ scenarios.
 | **Residence officer (`OFFICER`)** | Fast lookup, correct registration, safe relocations | Operates citizen, household, address, and transfer screens |
 | **System administrator (`ADMIN`)** | Controlled accounts and parameters | Operates account, configuration, and audit screens |
 | **Team Leader** | Architecture, boundaries, merge quality | Reads all sections; owns PR gate |
-| **Database Designer** | Schema fidelity, mappings, audit persistence | Appendix A/B, §8, §9 |
+| **Database Designer** | Schema fidelity, mappings, audit persistence, Temporary Residence slice | Appendix A/B, §5, §6, §8, §9 |
 | **Coder 1** | Citizen vertical slice | §5, §6, Appendix C |
 | **Coder 2** | Household, residence, transfer engine | §5, §6, Appendix A/C |
 | **Coder 3** | Shell, authentication, admin, reports | §5, §7, Appendix C |
