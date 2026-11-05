@@ -28,7 +28,6 @@ partial class MainForm {
         pnlSidebar = new Panel();
         btnTemporaryResidence = new Button();
         menuStrip1 = new MenuStrip();
-        toolStrip1 = new ToolStrip();
         btnAuditLogs = new Button();
         btnTransfer = new Button();
         btnHousehold = new Button();
@@ -302,19 +301,12 @@ partial class MainForm {
         // 
         // menuStrip1
         // 
+        menuStrip1.Dock = DockStyle.Top;
         menuStrip1.Location = new Point(0, 0);
         menuStrip1.Name = "menuStrip1";
         menuStrip1.Size = new Size(1024, 24);
         menuStrip1.TabIndex = 3;
         menuStrip1.Text = "menuStrip1";
-        // 
-        // toolStrip1
-        // 
-        toolStrip1.Location = new Point(0, 24);
-        toolStrip1.Name = "toolStrip1";
-        toolStrip1.Size = new Size(1024, 25);
-        toolStrip1.TabIndex = 4;
-        toolStrip1.Text = "toolStrip1";
         // 
         // MainForm
         // 
@@ -324,7 +316,6 @@ partial class MainForm {
         Controls.Add(statusStrip1);
         Controls.Add(pnlContent);
         Controls.Add(pnlSidebar);
-        Controls.Add(toolStrip1);
         Controls.Add(menuStrip1);
         MainMenuStrip = menuStrip1;
         Name = "MainForm";
@@ -361,5 +352,4 @@ partial class MainForm {
     private Button btnAddress = null!;
     private Button btnTemporaryResidence = null!;
     private MenuStrip menuStrip1 = null!;
-    private ToolStrip toolStrip1 = null!;
 }
