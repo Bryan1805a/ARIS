@@ -82,6 +82,58 @@ internal static class UiTheme {
         strip.SizingGrip = false;
     }
 
+    public static void StyleMenuStrip(MenuStrip menu) {
+        menu.BackColor = Card;
+        menu.ForeColor = Text;
+        menu.Font = SemiboldFont;
+        menu.Padding = new Padding(8, 2, 0, 2);
+        menu.ShowItemToolTips = true;
+        menu.Renderer = new ToolStripProfessionalRenderer(new ArisColorTable()) {
+            RoundedEdges = false
+        };
+    }
+
+    public static void StyleToolStrip(ToolStrip strip) {
+        strip.BackColor = Color.FromArgb(248, 250, 252);
+        strip.ForeColor = Text;
+        strip.Font = BaseFont;
+        strip.GripStyle = ToolStripGripStyle.Hidden;
+        strip.Padding = new Padding(10, 5, 10, 5);
+        strip.Renderer = new ToolStripProfessionalRenderer(new ArisColorTable()) {
+            RoundedEdges = false
+        };
+    }
+
+    public static ToolStripButton StyleToolStripButton(ToolStripButton button) {
+        button.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        button.Font = SemiboldFont;
+        button.ForeColor = Text;
+        button.AutoSize = false;
+        button.Height = 30;
+        button.Width = TextRenderer.MeasureText(button.Text, SemiboldFont).Width + 26;
+        return button;
+    }
+
+    /// <summary>Flat palette for the menu bar and the quick-access toolbar.</summary>
+    private sealed class ArisColorTable : ProfessionalColorTable {
+        public override Color MenuItemSelected => AccentSoft;
+        public override Color MenuItemSelectedGradientBegin => AccentSoft;
+        public override Color MenuItemSelectedGradientEnd => AccentSoft;
+        public override Color MenuItemPressedGradientBegin => AccentSoft;
+        public override Color MenuItemPressedGradientEnd => AccentSoft;
+        public override Color MenuItemBorder => AccentSoft;
+        public override Color MenuBorder => Border;
+        public override Color ToolStripDropDownBackground => Card;
+        public override Color ImageMarginGradientBegin => Card;
+        public override Color ImageMarginGradientMiddle => Card;
+        public override Color ImageMarginGradientEnd => Card;
+        public override Color ToolStripGradientBegin => Color.FromArgb(248, 250, 252);
+        public override Color ToolStripGradientMiddle => Color.FromArgb(248, 250, 252);
+        public override Color ToolStripGradientEnd => Color.FromArgb(248, 250, 252);
+        public override Color SeparatorDark => Border;
+        public override Color SeparatorLight => Card;
+    }
+
     /// <summary>Styles a screen control and every child it owns.</summary>
     public static void ApplyScreen(Control root) {
         root.BackColor = Background;

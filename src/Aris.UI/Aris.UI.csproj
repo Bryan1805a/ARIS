@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Aris.Application\Aris.Application.csproj" />
@@ -21,6 +21,7 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Assets\aris.ico</ApplicationIcon>
     <UserSecretsId>afdf9573-d4d2-42d3-b856-646379f308a2</UserSecretsId>
   </PropertyGroup>
 

@@ -24,6 +24,9 @@ public partial class MainForm : Form {
     private readonly IServiceProvider _serviceProvider;
     private readonly ToolStripButton _languageButton = new();
     private Button[] _navButtons = Array.Empty<Button>();
+    private MenuStrip _menuStrip = null!;
+    private ToolStrip _quickToolStrip = null!;
+    private ToolStripMenuItem _miAdministration = null!;
 
     public MainForm(
         IAccountService accountService,
@@ -57,8 +60,112 @@ public partial class MainForm : Form {
         LanguageManager.LanguageChanged += OnLanguageChanged;
 
         ApplyTheme();
+        InitializeChrome();
 
         this.Shown += MainForm_Shown;
+    }
+
+    /// <summary>
+    /// Builds the menu bar and the quick-access toolbar required by the course
+    /// brief (<c>MenuStrip</c>, <c>ToolStrip</c>, <c>StatusStrip</c> on the main
+    /// form) and wires every item to the same navigation methods the sidebar uses.
+    /// </summary>
+    private void InitializeChrome() {
+        _quickToolStrip = BuildQuickToolStrip();
+        _menuStrip = BuildMenuStrip();
+
+        // Docking runs from the highest child index down: adding the menu last makes
+        // it claim the top edge, with the toolbar directly below and the sidebar
+        // underneath both. The status strip stays docked at the bottom.
+        Controls.Add(_quickToolStrip);
+        Controls.Add(_menuStrip);
+
+        LanguageManager.Apply(this);
+    }
+
+    private MenuStrip BuildMenuStrip() {
+        MenuStrip menu = new() {
+            Name = "menuStrip1",
+            Dock = DockStyle.Top
+        };
+        UiTheme.StyleMenuStrip(menu);
+
+        ToolStripMenuItem system = new("System");
+        system.DropDownItems.Add(CreateMenuItem("Overview", btnDashboard_Click));
+        system.DropDownItems.Add(CreateMenuItem("Log out", btnLogout_Click));
+        system.DropDownItems.Add(new ToolStripSeparator());
+        system.DropDownItems.Add(CreateMenuItem("Exit", (_, _) => Close()));
+
+        _miAdministration = new ToolStripMenuItem("Administration");
+        _miAdministration.DropDownItems.Add(CreateMenuItem("Accounts", btnAccounts_Click));
+        _miAdministration.DropDownItems.Add(CreateMenuItem("Audit Logs", btnAuditLogs_Click));
+        _miAdministration.DropDownItems.Add(
+            CreateMenuItem("System Configuration", btnSystemConfiguration_Click));
+
+        ToolStripMenuItem help = new("Help");
+        help.DropDownItems.Add(
+            CreateMenuItem("Team introduction", (_, _) => ShowTeamIntroduction()));
+        help.DropDownItems.Add(CreateMenuItem("About ARIS", (_, _) => ShowAbout()));
+
+        menu.Items.Add(system);
+        menu.Items.Add(CreateMenuItem("Citizens", btnCitizen_Click));
+        menu.Items.Add(CreateMenuItem("Households", btnHousehold_Click));
+        menu.Items.Add(CreateMenuItem("Addresses", btnAddress_Click));
+        menu.Items.Add(CreateMenuItem("Transfers", btnTransfer_Click));
+        menu.Items.Add(CreateMenuItem("Reports", btnReports_Click));
+        menu.Items.Add(_miAdministration);
+        menu.Items.Add(help);
+
+        return menu;
+    }
+
+    private ToolStrip BuildQuickToolStrip() {
+        ToolStrip strip = new() {
+            Name = "toolStrip1",
+            Dock = DockStyle.Top
+        };
+        UiTheme.StyleToolStrip(strip);
+
+        strip.Items.Add(CreateToolButton("Citizens", btnCitizen_Click));
+        strip.Items.Add(CreateToolButton("Households", btnHousehold_Click));
+        strip.Items.Add(CreateToolButton("Addresses", btnAddress_Click));
+        strip.Items.Add(CreateToolButton("Transfers", btnTransfer_Click));
+        strip.Items.Add(new ToolStripSeparator());
+        strip.Items.Add(CreateToolButton("Reports", btnReports_Click));
+        strip.Items.Add(
+            CreateToolButton("Team introduction", (_, _) => ShowTeamIntroduction()));
+        strip.Items.Add(new ToolStripSeparator());
+        strip.Items.Add(CreateToolButton("Refresh", (_, _) => _ = UpdateConnectionStatusAsync()));
+
+        return strip;
+    }
+
+    private static ToolStripMenuItem CreateMenuItem(string text, EventHandler onClick) {
+        ToolStripMenuItem item = new(text);
+        item.Click += onClick;
+        return item;
+    }
+
+    private static ToolStripButton CreateToolButton(string text, EventHandler onClick) {
+        ToolStripButton button = UiTheme.StyleToolStripButton(new ToolStripButton(text));
+        button.Click += onClick;
+        return button;
+    }
+
+    private void ShowTeamIntroduction() {
+        using TeamIntroductionForm form =
+            _serviceProvider.GetRequiredService<TeamIntroductionForm>();
+        form.ShowDialog(this);
+    }
+
+    private static void ShowAbout() {
+        MessageBox.Show(
+            "ARIS - Administrative Residence Information System\n" +
+            "Phiên bản 3.9 · .NET 10 · Windows Forms · SQL Server 2022\n\n" +
+            "Tiểu luận học phần Lập trình trên Windows.",
+            "Về hệ thống ARIS",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
     private void ApplyTheme() {
@@ -157,6 +264,7 @@ public partial class MainForm : Form {
         btnAccounts.Visible = isAdmin;
         btnAuditLogs.Visible = isAdmin;
         btnSystemConfiguration.Visible = isAdmin;
+        _miAdministration.Visible = isAdmin;
 
         // Reposition sidebar buttons smoothly so there are no empty gaps when admin buttons are hidden
         int nextY = btnDashboard.Bottom + 10;
