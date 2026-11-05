@@ -48,6 +48,33 @@ public static class LanguageManager {
         ["Connection: Not checked"] = "Kết nối: Chưa kiểm tra",
         ["Language"] = "Ngôn ngữ",
 
+        // Menu bar, quick toolbar and the team introduction screen
+        ["System"] = "Hệ thống",
+        ["Overview"] = "Tổng quan",
+        ["Log out"] = "Đăng xuất",
+        ["Exit"] = "Thoát",
+        ["Citizens"] = "Công dân",
+        ["Households"] = "Hộ gia đình",
+        ["Addresses"] = "Địa chỉ",
+        ["Transfers"] = "Chuyển hộ",
+        ["Administration"] = "Quản trị",
+        ["Help"] = "Trợ giúp",
+        ["Team introduction"] = "Giới thiệu nhóm",
+        ["About ARIS"] = "Về hệ thống ARIS",
+        ["Project information"] = "Thông tin đề tài",
+        ["Members"] = "Thành viên nhóm",
+        ["Member"] = "Thành viên",
+        ["Student ID"] = "MSSV",
+        ["Screens owned"] = "Form phụ trách",
+        ["Course"] = "Học phần",
+        ["Topic"] = "Đề tài",
+        ["Technology"] = "Công nghệ",
+        ["Architecture"] = "Kiến trúc",
+        ["Team"] = "Nhóm",
+        ["Version"] = "Phiên bản",
+        ["Each member owns at least one business screen; login, team introduction and statistics are excluded."] =
+            "Mỗi thành viên phụ trách ít nhất một màn hình nghiệp vụ; không tính Đăng nhập, Giới thiệu nhóm và Thống kê.",
+
         // Common actions
         ["Login"] = "Đăng nhập",
         ["Create"] = "Tạo",

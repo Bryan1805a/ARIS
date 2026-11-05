@@ -50,6 +50,7 @@ internal static class Program
                 services.AddTransient<AuditViewerControl>();
                 services.AddTransient<SystemConfigurationControl>();
                 services.AddTransient<AddressControl>();
+                services.AddTransient<TeamIntroductionForm>();
 
             })
             .Build();
