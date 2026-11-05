@@ -163,23 +163,55 @@ public partial class AccountManagementControl : UserControl {
         }
     }
 
-    private void btnEditAccount_Click(object sender, EventArgs e) {
-        if (dgvAccounts.CurrentRow == null) {
-            MessageBox.Show(
-                "Please select an account to edit.",
-                "No Account Selected",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
+
+    private async void btnEditAccount_Click(object sender, EventArgs e) {
+        if (CurrentUser == null) {
+            MessageBox.Show("Please log in first.");
             return;
         }
 
-        // Editing is currently delegated to the separate form; keeping the
-        // selection check here prevents opening it without a target row.
-        using (EditAccountForm form = new EditAccountForm()) {
-            form.ShowDialog(this);
+        if (dgvAccounts.CurrentRow == null ||
+            dgvAccounts.CurrentRow.IsNewRow) {
+            MessageBox.Show("Please select an account to edit.");
+            return;
+        }
+
+        int userId = Convert.ToInt32(
+            dgvAccounts.CurrentRow.Cells["colUserId"].Value);
+
+        var result = await _accountService.GetAllAccountsAsync(
+            CurrentUser.UserId);
+
+        if (result.IsFailure) {
+            MessageBox.Show(
+                string.Join(Environment.NewLine, result.Errors),
+                "Cannot load account",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
+        var account = result.Value?.FirstOrDefault(
+            a => a.UserId == userId);
+
+        if (account == null) {
+            MessageBox.Show("Account not found.");
+            return;
+        }
+
+        using (var form = new EditAccountForm(
+            _accountService,
+            account.UserId,
+            CurrentUser.UserId,
+            account.Username,
+            account.Role,
+            account.Status)) {
+            if (form.ShowDialog(this) == DialogResult.OK) {
+                await LoadAccountsAsync();
+            }
         }
     }
+
 
     private async void btnDisableAccount_Click(object sender, EventArgs e) {
         if (dgvAccounts.CurrentRow == null) {
@@ -260,29 +292,51 @@ public partial class AccountManagementControl : UserControl {
         }
     }
 
-    private void btnSearch_Click(object sender, EventArgs e) {
+    private async void btnSearch_Click(object sender, EventArgs e) {
         string keyword = txtSearch.Text.Trim();
 
-        if (string.IsNullOrWhiteSpace(keyword)) {
-            MessageBox.Show(
-                "Please enter a username to search.",
-                "Search",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
-            txtSearch.Focus();
+        if (CurrentUser == null) {
+            MessageBox.Show("Please log in first.");
             return;
         }
 
-        // Search is intentionally not simulated locally; avoid presenting a
-        // result that is not backed by the account service/database.
-        MessageBox.Show(
-            "Search functionality will be available after database integration.",
-            "Information",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information
-        );
+        try {
+            var result = await _accountService.GetAllAccountsAsync(
+                CurrentUser.UserId);
 
+            if (result.IsFailure) {
+                MessageBox.Show(
+                    string.Join(Environment.NewLine, result.Errors),
+                    "Search Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            var accounts = result.Value ?? new List<AccountDto>();
+
+            var filteredAccounts = accounts
+                .Where(a => a.Username.Contains(
+                    keyword,
+                    StringComparison.OrdinalIgnoreCase))
+                .Select(a => new {
+                    a.UserId,
+                    a.Username,
+                    a.Role,
+                    a.Status,
+                    a.CreatedAt
+                })
+                .ToList();
+
+            dgvAccounts.DataSource = filteredAccounts;
+        } catch (Exception ex) {
+            MessageBox.Show(
+                $"Search failed: {ex.Message}",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+        }
     }
 
     private void dgvAccounts_SelectionChanged(object? sender, EventArgs e) {
