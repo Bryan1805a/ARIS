@@ -18,6 +18,7 @@ namespace Aris.Application.Accounts;
 /// </remarks>
 public class AccountService : IAccountService {
     private const string CreateAction = "CREATE_ACCOUNT";
+    private const string UpdateAction = "UPDATE_ACCOUNT";
     private const string LockAction = "LOCK_ACCOUNT";
     private const string UnlockAction = "UNLOCK_ACCOUNT";
     private const string ResetPasswordAction = "RESET_PASSWORD";
@@ -147,6 +148,105 @@ public class AccountService : IAccountService {
                 $"The account could not be created: {ex.Message}");
         }
     }
+
+
+    public async Task<Result> UpdateAccountAsync(
+        int userId,
+        string username,
+        string role,
+        int currentUserId,
+        CancellationToken ct = default) {
+        // 1. Check administrator permission
+        if (!await IsActiveAdminAsync(currentUserId)) {
+            return Result.Failure(
+                "You do not have permission to update accounts.");
+        }
+
+        // 2. Normalize input
+        username = (username ?? string.Empty).Trim();
+        role = (role ?? string.Empty).Trim().ToUpperInvariant();
+
+        // 3. Validate input
+        if (string.IsNullOrWhiteSpace(username)) {
+            return Result.Failure("All fields are required.");
+        }
+
+        if (username.Length > MaxUsernameLength) {
+            return Result.Failure(
+                $"Username must be {MaxUsernameLength} characters or fewer.");
+        }
+
+
+        if (role is not ("ADMIN" or "OFFICER")) {
+            return Result.Failure("Invalid account role.");
+        }
+
+        // 4. Find account
+        var account = await _userAccountRepository.GetByIdAsync(userId);
+
+        if (account is null) {
+            return Result.Failure("Account not found.");
+        }
+
+        // 5. Check duplicate username
+        var existing = await _userAccountRepository
+            .GetByUsernameAsync(username);
+
+        if (existing is not null && existing.UserId != userId) {
+            return Result.Failure("Username is already registered.");
+        }
+
+        // Prevent administrator from removing their own admin role
+        if (userId == currentUserId && role != "ADMIN") {
+            return Result.Failure(
+                "You cannot change your own administrator role.");
+        }
+
+        // 6. Save previous values for audit
+        var oldUsername = account.Username;
+        var oldRole = account.Role;
+
+        var correlationId = Guid.NewGuid();
+
+        // 7. Update account
+        account.Username = username;
+        account.Role = role;
+
+        try {
+            await _unitOfWork.ExecuteAsync(async token =>
+            {
+                await _userAccountRepository.UpdateAsync(account);
+
+                await WriteSuccessAuditAsync(
+                    currentUserId,
+                    UpdateAction,
+                    account.UserId,
+                    correlationId,
+                    new {
+                        account.UserId,
+                        oldUsername,
+                        newUsername = username,
+                        oldRole,
+                        newRole = role
+                    },
+                    token);
+            }, ct);
+
+            return Result.Success();
+        } catch (Exception ex) {
+            await LogFailureAsync(
+                currentUserId,
+                UpdateAction,
+                userId,
+                correlationId,
+                ex,
+                ct);
+
+            return Result.Failure(
+                $"The account could not be updated: {ex.Message}");
+        }
+    }
+
 
     public async Task<Result> ChangeAccountStatusAsync(
         int userId,
