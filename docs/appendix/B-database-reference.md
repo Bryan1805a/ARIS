@@ -1,6 +1,6 @@
 # Appendix B — Database Reference
 
-> ARIS 3.0 · [Documentation hub](../README.md) · Canonical DDL: [`../aris_schema_v2.sql`](../aris_schema_v2.sql) · Companion: [Appendix A](A-domain-model.md) · [§8](../08-crosscutting-concepts.md)
+> ARIS 3.9 · [Documentation hub](../README.md) · Canonical DDL: [`../aris_schema_v2.sql`](../aris_schema_v2.sql) · Companion: [Appendix A](A-domain-model.md) · [§8](../08-crosscutting-concepts.md)
 
 **Engine:** Microsoft SQL Server 2022 Developer Edition, local Docker container,
 `localhost,1433`, database `ArisDb`.
@@ -211,7 +211,7 @@ builder.ToTable("TransferRequest",     t => t.HasTrigger("trg_TransferRequest_Fr
 builder.ToTable("AuditLog",            t => t.HasTrigger("trg_AuditLog_AppendOnly"));
 ```
 
-### 2. `rowversion` on the nine mutable tables only
+### 2. `rowversion` on the ten mutable tables only
 
 ```csharp
 builder.Property(e => e.RowVersion).IsRowVersion();
@@ -284,9 +284,11 @@ The DDL seeds four keys:
 | `MAX_FAILED_LOGINS` | `5` | Failures before lockout |
 | `LOCKOUT_MINUTES` | `15` | Lockout duration |
 
-Services must read these values rather than hardcoding them. The first `ADMIN` account is
-created by the application because only the application knows the password-hashing
-algorithm.
+Services must read these values rather than hardcoding them. Current exceptions
+(`T16`): `PASSWORD_MIN_LENGTH` is read by the first-admin bootstrap but the account and
+developer services use a fixed 8-character minimum, and `SESSION_TIMEOUT_MINUTES` is
+seeded but not enforced by the shell. The first `ADMIN` account is created by the
+application because only the application knows the password-hashing algorithm.
 
 ---
 

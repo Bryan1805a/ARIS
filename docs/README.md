@@ -11,11 +11,17 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.9 (resilience policy tightened) |
-| **Last updated** | 2026-11-02 |
+| **Document version** | 3.9 (aligned with the current implementation) |
+| **Last updated** | 2026-11-05 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
 | **ERD** | [`erd_v2.svg`](erd_v2.svg) · [`erd_v2.png`](erd_v2.png) |
+
+> **Revision 2026-11-05.** Aligned the counts with the deployed schema (12 tables and
+> entities, 10 `rowversion` tables), refreshed the test totals (150 with a database;
+> 118 passed + 32 skipped without), documented the prototype-only Developer mode
+> (`D21`, `R21`, `T15`) and the configuration-enforcement gap (`T16`), and completed
+> Appendix E's end-to-end walkthrough.
 
 ---
 
@@ -93,6 +99,12 @@ mechanisms.
 6. **Immutable, failure-resistant auditing.** Every mutation writes an `AuditLog` row.
    A failure is logged on an independent connection **after** the rollback.
 
+> **Prototype-only exception.** The login screen exposes a **Developer mode** that can
+> create an account and seed demo data without an authenticated administrator. It is
+> local-only, visibly labelled, and audited, and it is recorded as `D21`, `R21`, and
+> `T15`. It is not a business feature and must be removed or gated before any
+> non-academic deployment.
+
 ---
 
 ## 4. Documentation rules
@@ -113,12 +125,17 @@ mechanisms.
 ## 5. Verification commands
 
 ```powershell
-dotnet --version                    # must print 10.0.401 (global.json)
+dotnet --version                    # 10.0.401 or a later 10.0.4xx band (currently 10.0.403)
 docker compose up -d                # starts SQL Server 2022 on localhost:1433
 .\scripts\deploy_database.ps1       # creates ArisDb, schema, and aris_officer
 dotnet build Aris.slnx              # 0 errors, 0 warnings
 dotnet test  Aris.slnx              # never pass --nologo
 ```
+
+Current verification snapshot (2026-11-05): build 0 errors / 0 warnings; **150 tests
+passed, 0 failed, 0 skipped** against the local container, and **118 passed / 32 skipped**
+without `ARIS_TEST_CONNECTION`; deployed schema **12 tables, 5 triggers, 3 views**;
+`vw_GoldenInvariantViolations` returns **0 rows**.
 
 After every committed business operation:
 

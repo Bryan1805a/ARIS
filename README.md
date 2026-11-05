@@ -42,7 +42,8 @@ and the residence rectification action.*
 | Temporary residence (`TEMP-01`–`TEMP-03`) | Complete |
 | Historical rectification (`HIST-01`) | Complete |
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
-| Tests | 139 with a database; 107 passed + 32 skipped without |
+| Developer mode (local prototype) | Complete; create accounts and seed demo data from the login screen |
+| Tests | 150 passed with a database; 118 passed + 32 skipped without |
 
 ## Team Members
 
@@ -109,7 +110,7 @@ to Application services through DTOs and `Result<T>`. No EF Core or SQL in UI co
 
 ## Prerequisites
 
-- .NET SDK **10.0.401** (`dotnet --version`)
+- .NET SDK **10.0.401** (or a later `10.0.4xx`; `dotnet --version` currently prints `10.0.403`)
 - Visual Studio 2026 or the .NET CLI
 - Docker Desktop (running, WSL 2 backend, at least 4 GB memory)
 - PowerShell 5.1+
@@ -181,6 +182,13 @@ lock/unlock, password reset, self-service password change, and configuration upd
 the acting administrator and before/after details. Passwords and hashes never enter the
 audit log.
 
+The login screen also offers a **Developer mode** dialog for local setup: it can create an
+`ADMIN` or `OFFICER` account without signing in and seed the demo dataset. It is a
+prototype-only convenience that deliberately bypasses administrator authorization
+(`D21`, `R21`, `T15`); it is local-only, warning-labelled, audited, and must be removed or
+gated for any non-academic deployment. Use **Create first administrator** for the normal
+first-run path.
+
 The **Audit Logs** screen filters immutable audit entries by date, actor, entity, action,
 and result, and shows the selected row's IDs, correlation ID, and JSON details in a
 read-only panel.
@@ -217,8 +225,8 @@ dotnet test Aris.slnx
 
 Without `ARIS_TEST_CONNECTION`, integration tests **skip** — that is not a release pass.
 CI builds with `-p:TreatWarningsAsErrors=true`, so the 0-warning gate is enforced.
-The current suite is **139 passed, 0 failed, 0 skipped** with a database, or
-**107 passed, 32 skipped** without one. Integration test classes run sequentially because
+The current suite is **150 passed, 0 failed, 0 skipped** with a database, or
+**118 passed, 32 skipped** without one. Integration test classes run sequentially because
 they share one local database.
 
 | Suite | Purpose |
@@ -229,7 +237,7 @@ they share one local database.
 | `AuditQueryFilterTests` | Audit filters by date, actor, entity, action, and result against real SQL Server |
 | `AuditQueryServiceTests` | Audit viewer authorization, criteria validation, and filter normalization |
 | `OptimisticConcurrencyTests` | A stale `RowVersion` raises `DbUpdateConcurrencyException` without overwriting |
-| `SchemaInventoryTests` | The deployed database has 11 tables, 5 triggers, 3 views, `aris_app`, and 4 seed rows |
+| `SchemaInventoryTests` | The deployed database has 12 tables, 5 triggers, 3 views, `aris_app`, and 4 seed rows |
 | `CitizenServiceTests`, `HouseholdServiceTests`, `TransferServiceTests` | Service flows, authorization, audit metadata, and transfer lineage against real SQL with a recording audit double |
 | `EndToEndWorkflowTests` | Citizen → household → transfer → rectification → audit, ending with a clean Golden Invariant |
 | `AccountServiceTests`, `SystemConfigurationServiceTests` | Result-based admin services, authorization, audit metadata, and failure paths with fakes |

@@ -1,6 +1,6 @@
 # Appendix A — Domain Model Reference
 
-> ARIS 3.0 · [Documentation hub](../README.md) · Companion: [§5](../05-building-block-view.md) · [Appendix B](B-database-reference.md) · [ERD](../erd_v2.svg)
+> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§5](../05-building-block-view.md) · [Appendix B](B-database-reference.md) · [ERD](../erd_v2.svg)
 
 This appendix is the entity catalogue. The DDL remains the source of truth for names and
 types; this page explains meaning and relationships.
@@ -9,7 +9,8 @@ types; this page explains meaning and relationships.
 
 ## A.1 Mental model
 
-Six core concepts, deliberately decoupled:
+Six core concepts, deliberately decoupled. `TemporaryResidence` (A.2.12) is an ancillary
+bounded record and does not participate in the Golden Invariant.
 
 ```mermaid
 graph TD
@@ -280,7 +281,7 @@ Registration of temporary residence for a citizen at an address (`TEMP-01`–`TE
 | `EndedAt` | `datetime2(3)` | Yes | Cancellation timestamp |
 | `RowVersion` | `rowversion` | No | Concurrency token |
 
-`CK_TempRes_Dates` requires `EndDate >= StartDate`. `CK_TempRes_Status` restricts status to `ACTIVE`, `EXPIRED`, or `CANCELLED`.
+`CK_TempRes_Dates` requires `EndDate >= StartDate`. `CK_TempRes_Status` restricts status to `ACTIVE`, `EXPIRED`, or `CANCELLED`. `EXPIRED` is derived by the service when `EndDate` has passed; the service persists `ACTIVE` on registration and `CANCELLED` on cancellation.
 
 ---
 
@@ -349,6 +350,7 @@ Transitions not listed here are prohibited.
 | `TransferRequest` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | `PENDING → APPROVED/REJECTED/CANCELLED`; decided is frozen | `CK_TR_Decision`, `trg_TransferRequest_Frozen` (51040) |
 | `TransferRequestItem` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | Mirrors the parent resolution; may be rejected individually | `CK_TRI_Status`, `CK_TRI_Reject` |
 | `UserAccount` | `ACTIVE`, `LOCKED` | Bidirectional | `CK_UserAccount_Status` |
+| `TemporaryResidence` | `ACTIVE`, `EXPIRED`, `CANCELLED` | `ACTIVE → CANCELLED`; `EXPIRED` is derived when the end date passes | `CK_TempRes_Status` |
 | `AuditLog` | `SUCCESS`, `FAILURE` rows | Insert only | `trg_AuditLog_AppendOnly` (51030), `DENY UPDATE` |
 
 ---
@@ -361,6 +363,7 @@ Transitions not listed here are prohibited.
 | Address | `Address` | Lineage link | Single row, unless retiring with a successor |
 | Household | `Household` | `HouseholdAddress`, `HouseholdMembership` | Register/add/change/deactivate are atomic |
 | Residence | `Residence` | — | Only inside a household or transfer operation |
+| Temporary residence | `TemporaryResidence` | — | Single row; registration, extension/update and cancellation are independent of the Golden Invariant |
 | Transfer | `TransferRequest` | `TransferRequestItem` | Create request and execute decision are separate transactions; execution touches household and residence aggregates |
 | Account | `UserAccount` | — | Single row |
 | Audit | `AuditLog` | — | Append only; failure path uses an independent connection |

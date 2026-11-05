@@ -1,6 +1,6 @@
 # Appendix D — Team Workflow and Task Briefs
 
-> ARIS 3.0 · [Documentation hub](../README.md) · Companion: [§10](../10-quality-requirements.md) · [Appendix C](C-coding-standards.md) · [§7](../07-deployment-view.md)
+> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§10](../10-quality-requirements.md) · [Appendix C](C-coding-standards.md) · [§7](../07-deployment-view.md)
 
 ---
 
@@ -9,7 +9,7 @@
 | STT | Họ và tên | MSSV | Vai trò dự án | Phân công phụ trách chính (Form độc lập & Nhiệm vụ) |
 |:---:|---|:---:|---|---|
 | 1 | **Trần Bửu Ngọc** | 231A290130 | **Nhóm trưởng** (Team Leader) | Form Quản lý Chuyển hộ & Động cơ điều chuyển Maker-Checker (`UC-06`, `TransferControl`), Kiến trúc phân tầng, PR gate |
-| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | **Database Designer** / Dev | Form Quản lý Đăng ký Tạm trú (`TEMP-01`..`TEMP-03`, `TemporaryResidenceControl`), Thiết kế CSDL (12 bảng, Triggers, EF Core mappings), MenuStrip/ToolStrip barem |
+| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | **Database Designer** / Dev | Form Quản lý Đăng ký Tạm trú (`TEMP-01`..`TEMP-03`, `TemporaryResidenceControl`), Thiết kế CSDL (12 bảng, Triggers, EF Core mappings), MenuStrip + StatusStrip shell (sidebar navigation) |
 | 3 | **Hồ Ngọc Hân** | 231A290010 | **Coder 1** (Developer) | Form Quản lý Công dân / Nhân khẩu (`CIT-01`..`CIT-04`, `CitizenControl`), Tra cứu danh bạ (`SRCH-01`) |
 | 4 | **Đoàn Thị Thuý Duy** | 231A290035 | **Coder 2** (Developer) | Form Quản lý Hộ gia đình (`HH-01`..`HH-06`, `HouseholdControl`), Theo dõi lịch sử nơi cư trú (`RES-03`, `HIST-01`) |
 | 5 | **Hà Tuyết Trinh** | 231A290045 | **Coder 3** (Developer) | Form Quản lý Tài khoản (`ACC-01`, `AccountManagementControl`), Đăng nhập & Xác thực (`AUTH-01`), Nhật ký kiểm toán (`AUD-01`), Báo cáo thống kê |
@@ -98,6 +98,11 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 
 ### D.5.1 Database Designer — `P1-DB2` (critical path)
 
+> **Historical Phase 1 brief.** It created the eleven entities that existed at the time.
+> `TemporaryResidence` is the twelfth entity/table and was added with `TEMP-01`–`TEMP-03`;
+> current counts are in [Appendix B §B.1](B-database-reference.md#b1-object-inventory) and
+> §D.5.6.
+
 **Goal:** unblock the team with entities, mappings, and audit persistence.
 
 1. Add the SQL Server provider:
@@ -106,9 +111,10 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
    dotnet add src/Aris.Infrastructure/Aris.Infrastructure.csproj package Microsoft.EntityFrameworkCore.SqlServer --version 10.0.12
    ```
 
-2. Create 11 entities in `src/Aris.Domain/Entities/`. Nine derive from `EntityBase`;
-   `SystemConfiguration` and `AuditLog` do not. Use `DateOnly` for `date`.
-3. Create `ArisDbContext` with 11 plural `DbSet`s; apply configurations from the assembly.
+2. Create the 11 entities that existed in Phase 1 in `src/Aris.Domain/Entities/`. Nine
+   derive from `EntityBase`; `SystemConfiguration` and `AuditLog` do not. Use `DateOnly`
+   for `date`. (`TemporaryResidence` is the twelfth entity and was added later.)
+3. Create `ArisDbContext` with the matching plural `DbSet`s; apply configurations from the assembly.
 4. Create one `IEntityTypeConfiguration<T>` per entity. Implement the seven rules in
    [Appendix B §B.6](B-database-reference.md#b6-ef-core-mapping-requirements).
 5. Implement `AuditService` with `LogAsync` (current transaction) and
@@ -119,24 +125,23 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 
 **Definition of Done**
 
-- [x] 11 entities; correct `EntityBase` inheritance.
-- [x] 11 `DbSet`s; configurations applied.
+- [x] 11 entities at Phase 1 scope; correct `EntityBase` inheritance.
+- [x] Phase 1 `DbSet`s; configurations applied.
 - [x] Five `.HasTrigger(...)` declarations.
-- [x] `.IsRowVersion()` on the nine mutable tables only.
+- [x] `.IsRowVersion()` on the mutable tables only (nine at the time; ten today).
 - [x] Computed `AddressText`.
 - [x] Composite FKs on `TransferRequestItem`.
 - [x] No cascade deletes.
 - [x] `AuditService` implements both audit paths.
 - [x] Build and tests clean.
 
-**Status (30/10/2026):** `P1-DB2` is complete: entities, context, configurations,
-`AuditService` (both paths), DI registration, and the mapping/audit tests are in place.
-`dotnet build Aris.slnx` reports 0 errors and 0 warnings, and CI enforces
-warnings-as-errors. Without a database, `dotnet test Aris.slnx` reports 77 passed,
-5 skipped; against the local `aris-sqlserver` container it reports **82 passed, 0 failed,
-0 skipped**. Schema inventory verified at 11 tables / 5 triggers / 3 views, and
-`vw_GoldenInvariantViolations` returned 0 rows. Coders 1–3 can use `ArisDbContext` and
-resolve the Application services from DI.
+**Status (30/10/2026, historical):** `P1-DB2` was complete at that date: entities, context,
+configurations, `AuditService` (both paths), DI registration, and the mapping/audit tests
+were in place. `dotnet build Aris.slnx` reported 0 errors and 0 warnings, and CI enforces
+warnings-as-errors. Without a database, `dotnet test Aris.slnx` reported 77 passed,
+5 skipped; against the local `aris-sqlserver` container it reported **82 passed, 0 failed,
+0 skipped**. Schema inventory was verified at 11 tables / 5 triggers / 3 views, and
+`vw_GoldenInvariantViolations` returned 0 rows. Current totals are in §D.5.6.
 
 **Traps:** `Citizen.HouseholdId`, `Household.CurrentAddressId`, `IsRowVersion` on
 `AuditLog`/`SystemConfiguration`, missing `HasTrigger`, cascade deletes, EF migrations,
@@ -223,7 +228,7 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | `P6-TL1` | End-to-end integration and negative controls |
 | `P7-TL1` | Concurrency stress, fresh-machine deployment, acceptance |
 
-### D.5.6 Current implementation status (01/11/2026)
+### D.5.6 Current implementation status (05/11/2026)
 
 | Phase | Status |
 |---|---|
@@ -231,13 +236,16 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 2 — citizen slice | Complete |
 | Phase 3 — household slice | Complete |
 | Phase 4 — transfer engine | Complete |
-| Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer filters and detail/configuration/basic reports, including admin mutation audit |
+| Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer filters and detail/configuration/basic reports, including admin mutation audit and the prototype-only login-screen Developer mode |
 | Phase 6 — integration | Complete |
 | Phase 7 — hardening | Complete; automated end-to-end harness plus the Appendix E smoke checklist |
 
 Known functional gaps: none. Vietnamization covers the static UI; service-layer validation
-messages are still English. The test suite is 107 passed / 32 skipped without a database
-and 139 passed / 0 skipped against the local container.
+messages are still English. The suite is **150 passed / 0 failed / 0 skipped** against the
+local container and **118 passed / 32 skipped** without a database. The deployed schema has
+**12 tables, 5 triggers, and 3 views**, and `vw_GoldenInvariantViolations` returns 0 rows.
+The login-screen Developer mode (`D21`) is a documented prototype exception, not a
+business feature; its missing automated coverage is tracked as `T15`.
 
 ---
 

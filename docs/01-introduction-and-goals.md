@@ -1,6 +1,6 @@
 # 1. Introduction and Goals
 
-> **arc42 §1** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §1** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 1.1 Purpose and vision
 
@@ -31,6 +31,11 @@ It is **not** a production population registry. It stores synthetic data, does n
 integrate with VNeID or any national system, and does not process legally binding
 residence transactions.
 
+A prototype-only **Developer mode** on the login screen supports local setup: it can
+create an `ADMIN` or `OFFICER` account and seed the demo dataset without an authenticated
+administrator. It is documented as an accepted exception in `D21`, `R21`, and `T15`, and
+is not part of the business requirements below.
+
 ---
 
 ## 1.2 Scope
@@ -44,6 +49,7 @@ residence transactions.
 | Maker-checker relocations (`JOIN_EXISTING`, `NEW_HOUSEHOLD`, `HOUSEHOLD_MOVE`) | Mobile or web clients |
 | Append-only audit trail and administrative reports | Payments, fees, or case-management workflow |
 | Authentication, account administration, system configuration | Integration with external identity providers (OIDC, AD) |
+| Login-screen Developer mode for local prototype setup (create accounts, seed demo data) | Production provisioning, remote administration, or self-service registration |
 
 ---
 

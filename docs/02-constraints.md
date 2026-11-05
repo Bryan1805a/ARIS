@@ -1,6 +1,6 @@
 # 2. Constraints
 
-> **arc42 §2** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §2** · ARIS 3.9 · [Documentation hub](README.md)
 
 A constraint is a decision that has already been made and cannot be revisited inside
 this project. Each constraint below is normative: code and documentation must conform.
@@ -12,7 +12,7 @@ this project. Each constraint below is normative: code and documentation must co
 | ID | Constraint | Consequence |
 |---|---|---|
 | `CON-PROJ-01` | **Platform:** .NET 10 (C#), Windows Forms desktop, EF Core, SQL Server 2022. | WinForms is required by the course. The UI is Windows-only. No web or mobile client. |
-| `CON-PROJ-02` | **SDK:** .NET SDK `10.0.401`, pinned in `global.json` with `rollForward: latestFeature`. | A different SDK may change analyzers and test-runner behaviour. `dotnet --version` must print `10.0.401`. |
+| `CON-PROJ-02` | **SDK:** .NET SDK `10.0.401`, pinned in `global.json` with `rollForward: latestFeature`. | A different feature band may change analyzers and test-runner behaviour. `dotnet --version` must print `10.0.401` or a later `10.0.4xx` version; the current machine reports `10.0.403`. |
 | `CON-PROJ-03` | **Database engine:** Microsoft SQL Server 2022 Developer Edition running in a local Docker container (`mcr.microsoft.com/mssql/server:2022-latest`). | The schema may use SQL Server-specific features: `rowversion`, filtered indexes, `CONCAT_WS`, `ISJSON`, `THROW`. |
 | `CON-PROJ-04` | **Database location:** `localhost,1433`, database `ArisDb`, data persisted in the `mssql-data` Docker volume. | Every developer runs their own database. No shared cloud instance, no network dependency, no firewall configuration. |
 | `CON-PROJ-05` | **Schema authority:** [`aris_schema_v2.sql`](aris_schema_v2.sql) is the only DDL. | No EF Core migrations. No hand-edited database that is not in the script. A schema change is a change to the script. |
@@ -33,6 +33,12 @@ this project. Each constraint below is normative: code and documentation must co
 | `CON-DB-01` | **Least-privilege database role.** The application connects as `aris_officer`, a member of `aris_app`. | `GRANT SELECT, INSERT, UPDATE` on `dbo`; `DENY DELETE` on `dbo`; `DENY UPDATE` on `AuditLog`. `DENY` overrides `GRANT`. |
 | `CON-SEC-03` | **The `sa` account is used only for schema deployment**, never by the application and never committed. | The deployment script prompts for or reads the local `sa` password. Runtime configuration uses `aris_officer`. |
 
+> **Prototype-only exception to `CON-AUTH-01`/`CON-AUTH-02`.** The login-screen
+> **Developer mode** (`D21`) can create an account and seed demo data without an
+> authenticated administrator. It is local-only, labelled as development-only, writes audit rows, and
+> is recorded as `R21` and `T15`. It must be removed or gated before any non-academic
+> deployment, and it is not an acceptable pattern for any other screen or service.
+
 ---
 
 ## 2.3 Architectural constraints
@@ -49,7 +55,7 @@ These are the rules introduced in §1.3 of the hub and detailed in
 | `CON-ARCH-05` | **Maker-checker** on every relocation: `DecidedBy <> RequestedBy`, enforced by `CK_TR_Decision`. |
 | `CON-ARCH-06` | **Relocations execute in one `IsolationLevel.Serializable` transaction.** |
 | `CON-ARCH-07` | **Every mutation is audited.** Success inside the transaction; failure on an independent connection after rollback. |
-| `CON-ARCH-08` | **Optimistic concurrency:** all nine mutable tables map `RowVersion` with `.IsRowVersion()`; conflicts surface as `DbUpdateConcurrencyException`. |
+| `CON-ARCH-08` | **Optimistic concurrency:** all ten mutable tables map `RowVersion` with `.IsRowVersion()`; conflicts surface as `DbUpdateConcurrencyException`. |
 
 ---
 

@@ -1,6 +1,6 @@
 # 5. Building Block View
 
-> **arc42 §5** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §5** · ARIS 3.9 · [Documentation hub](README.md)
 
 The view is described at three levels: the system as a whole, the layers and their
 components, and the database objects. Entity columns live in
@@ -51,9 +51,9 @@ flowchart TB
 | Component | Responsibility | Status |
 |---|---|---|
 | `Program` | Composition root: configuration (including user-secrets), DI, start the shell | Implemented |
-| `MainForm` + `MainForm.Designer` | Sidebar navigation, content host, status bar (user, role, connection), language button | Implemented |
+| `MainForm` + `MainForm.Designer` | Sidebar navigation, top menu bar (System/Help), content host, status bar (user, role, connection), language button | Implemented |
 | `IUserSession` implementation (`Session/UserSession`) | Holds the authenticated user for the lifetime of the shell | Implemented |
-| `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm` | Citizen directory, profile with residency history, create/update, residence rectification (`HIST-01`) | Implemented |
+| `CitizenControl`, `CitizenDetailForm`, `CitizenEditForm`, `SuccessorHeadForm` | Citizen directory, profile with residency history, create/update, successor-head selection, residence rectification (`HIST-01`) | Implemented |
 | `HouseholdControl`, `HouseholdDetailForm`, `RegisterHouseholdForm`, `AddMemberForm`, `ChangeHeadForm`, `AddressEditForm` | Household, member, head-change and address screens, including membership/address rectification (`HIST-01`) | Implemented |
 | `TransferControl`, `TransferRequestForm`, `TransferDecisionForm` | Maker wizard and checker inbox | Implemented |
 | `LoginForm`, `ChangePasswordForm` | Authentication screens | Implemented |
@@ -64,12 +64,17 @@ flowchart TB
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 | `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
 | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | Temporary residence directory, search, registration, extension and cancellation (`TEMP-01`–`TEMP-03`) | Implemented |
-| `AboutForm` | Course assignment required team member introduction and task allocation dialog | Implemented |
+| `AboutForm` | Course assignment required team member introduction and task allocation dialog, opened from Help → Team introduction | Implemented |
+| `DeveloperToolsForm` | Login-screen Developer mode: create an `ADMIN`/`OFFICER` account without an administrator session and seed demo data; prototype only (`D21`, `R21`) | Implemented |
 | `RectifyTenureForm` | Void-and-correct dialog for membership, household address and residence rows (`HIST-01`); active rows are limited to start-date corrections | Implemented |
 
-**Rule:** every screen is registered as a transient in `Program.cs`; the shell resolves
-it and hosts it in `contentPanel`. A screen never opens another top-level window for
-navigation.
+**Rule:** every navigable screen is registered as a transient in `Program.cs`; the shell
+resolves it and hosts it in `contentPanel`. Modal dialogs (`AboutForm`,
+`DeveloperToolsForm`, and the detail/edit dialogs) are constructed by their owning screen.
+A screen never opens another top-level window for navigation. Navigation itself is
+sidebar-only: the top menu carries shell commands (Overview, Log out, Exit, Team
+introduction, About ARIS) and deliberately does not repeat the sidebar destinations. The
+current shell has no quick-access toolbar.
 
 ### 5.2.2 Application layer (`src/Aris.Application/`)
 
@@ -80,6 +85,7 @@ navigation.
 | `Common/BaseService` | Shared service scaffolding | Implemented |
 | `Common/IUserSession` | Session contract used by services and view models | Implemented |
 | `Common/IUnitOfWork` | One transaction per repository-backed use case, shared by the mutation and its success audit (`D20`) | Implemented |
+| `Interfaces/IUserAccountRepository`, `ISystemConfigurationRepository`, `IAuditRepository`, `IReportRepository`, `IDatabaseConnectionService` | Narrow persistence contracts for repository-backed Application services and the shell status bar (implemented in Infrastructure, `D18`) | Implemented |
 | `Auditing/IAuditService`, `AuditEntry`, `AuditFailureEntry` | Audit contract; success inside the transaction, failure on an independent connection | Implemented |
 | `Auditing/AuditEntryValidator` | Enforces column widths and required actor before SQL sees the row | Implemented |
 | `Citizens/ICitizenService` + DTOs + validators | `CIT-01`–`CIT-04`, `SRCH-01` (implementation in Infrastructure) | Implemented |
@@ -90,9 +96,10 @@ navigation.
 | `TemporaryResidences/ITemporaryResidenceService` + DTOs + validators | `TEMP-01`–`TEMP-03` registration, search, update and cancellation (implementation in Infrastructure) | Implemented |
 | `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
-| `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `SYS-01`; `AUD-01` search criteria, result filters and row detail; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
+| `Accounts/IAccountService`, `Auditing/IAuditQueryService`, `SystemConfiguration/SystemConfigurationService` | `ACC-01`, `SYS-01`; `AUD-01` search criteria, result filters and row detail; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
 | `Accounts/IDemoDataService` | Idempotent demo dataset exposed to administrators (`T11`) | Implemented |
+| `Developer/IDeveloperService` + `CreateDeveloperAccountDto` | Prototype-only privileged setup behind the login-screen Developer mode: create an account, seed demo data (`D21`, `R21`) | Implemented |
 | `Reporting/IReportService` | `RPT-01`–`RPT-03` | Implemented |
 
 Application owns the interfaces, DTOs and validators. Services that need `ArisDbContext`,
@@ -132,6 +139,8 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Persistence/UnitOfWork` | Opens the caller's transaction, commits, rolls back and clears the change tracker (`D20`) | Implemented |
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection, including the configured-connection overload used by repository-backed services | Implemented |
 | `Repositories/AuditRepository` | Read-only audit search with actor join, date/text/result filters and newest-first ordering (`AUD-01`) | Implemented |
+| `Repositories/UserAccountRepository`, `SystemConfigurationRepository`, `ReportRepository` | Persistence behind the repository-backed Application services (`D18`) | Implemented |
+| `Persistence/DatabaseConnectionService` | Lightweight connectivity probe used by the shell status bar | Implemented |
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
 | `Accounts/DemoDataService` | Idempotent demo addresses, citizens, households and temporary residence with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
@@ -140,8 +149,9 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `TemporaryResidences/TemporaryResidenceService` | Temporary residence registration, search, update, cancellation, and transactional auditing | Implemented |
 | `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
+| `Developer/DeveloperService` | Privileged local account creation and demo seeding behind `IDeveloperService`; bypasses the administrator check by design (`D21`) | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff and retries only the documented local-container transient list; business errors fail fast | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, citizen, address, household, transfer, temporary residence and rectification services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, developer, citizen, address, household, transfer, temporary residence and rectification services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -165,7 +175,9 @@ The table-level structure is owned by the DDL. Read it together with:
 
 - [`appendix/A-domain-model.md`](appendix/A-domain-model.md) — entities, columns, state machines
 - [`appendix/B-database-reference.md`](appendix/B-database-reference.md) — constraints, triggers, views, error codes, mapping rules
-- [`erd_v2.svg`](erd_v2.svg) — visual entity relationship diagram
+- [`erd_v2.svg`](erd_v2.svg) — visual entity relationship diagram (predates
+  `TemporaryResidence`; see [Appendix A.2.12](appendix/A-domain-model.md#a212-temporaryresidence)
+  for that table)
 
 ```mermaid
 erDiagram
@@ -212,10 +224,10 @@ calls a service.
 
 ## 5.5 Implementation status
 
-This documentation describes the **target architecture**. The core vertical slices are
+The documentation describes the **current implementation**. The core vertical slices are
 implemented, including the automated end-to-end harness and the manual smoke checklist.
-No known functional gaps remain; §11 records the accepted limitations and the resolved
-technical-debt history.
+No known functional gaps remain; §11 records the accepted limitations (including the
+prototype-only Developer mode) and the technical-debt history.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -224,9 +236,10 @@ technical-debt history.
 | `EntityBase` | ✔ | — |
 | `IAuditService` + `AuditEntryValidator` + `AuditService` | ✔ | — |
 | First-admin bootstrap + demo seed | ✔ | — |
+| Login-screen Developer mode (`D21`) | ✔ | Prototype-only; no automated tests (`T15`) |
 | `SqlResilience` | ✔ | — |
 | DI composition | ✔ | — |
-| Domain entities | ✔ | All 11 |
+| Domain entities | ✔ | All 12 |
 | `ArisDbContext` + configurations | ✔ | All |
 | EF Core SQL Server provider | ✔ | — |
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |

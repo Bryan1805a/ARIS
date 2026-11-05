@@ -1,6 +1,6 @@
 # 7. Deployment View
 
-> **arc42 §7** · ARIS 3.0 · [Documentation hub](README.md)
+> **arc42 §7** · ARIS 3.9 · [Documentation hub](README.md)
 
 ## 7.1 Development topology
 
@@ -54,7 +54,7 @@ flowchart TB
 
 | Requirement | Check |
 |---|---|
-| .NET SDK `10.0.401` | `dotnet --version` |
+| .NET SDK `10.0.401` (later `10.0.4xx` accepted by `rollForward`) | `dotnet --version` — currently prints `10.0.403` |
 | Visual Studio 2026 **or** the .NET CLI | `dotnet build Aris.slnx` |
 | Docker Desktop with WSL 2 backend, running | `docker version` |
 | At least 4 GB assigned to Docker | Docker Desktop → Settings → Resources |
@@ -144,6 +144,11 @@ dotnet run --project src/Aris.UI
 administrator**. After signing in, open **Accounts → Seed demo data** to load the demo
 dataset. The application starts in Vietnamese; use the **English / Tiếng Việt** button on
 the login screen or in the main status bar to switch.
+
+The login screen also offers a **Developer mode** button for local setup. It can create
+an `ADMIN` or `OFFICER` account without signing in and can seed the demo data; it is a
+prototype-only convenience (`D21`, `R21`, `T15`), not an administration feature. Use
+**Create first administrator** for the normal first-run path.
 
 To run the integration tests against the same database:
 
@@ -237,6 +242,9 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
   5. run the integration suite.
 - **No EF Core migrations.** See `D16` in
   [`09-architecture-decisions.md`](09-architecture-decisions.md).
+- `scripts/add_temporary_residence.sql` is a historical one-off migration. The
+  `TemporaryResidence` table is already part of `aris_schema_v2.sql`; do not apply that
+  script instead of redeploying the canonical DDL (`D16`).
 - Each developer owns their local database. There is no shared state to coordinate, so a
   destructive reset is always safe.
 
@@ -256,6 +264,8 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
 | `dotnet test` says "Zero tests ran" | `--nologo` was passed | Re-run without it |
 | `UPDATE` on `AuditLog` succeeds | Role `DENY` not applied | Re-apply the security section of the DDL; re-run the deployment script |
 | Golden Invariant returns rows | A service wrote a partial or inconsistent state | Read the violation code, fix the service, reset the affected data |
+| Developer mode cannot seed demo data | No active `ADMIN` exists to act as the audit actor | Create the first administrator, then seed again |
+| Developer mode account creation fails | Username already registered, password shorter than 8 characters, or the database is unavailable | Use a unique username and a stronger password; check the connection |
 
 ---
 
@@ -269,6 +279,7 @@ ARIS is a course prototype. A production deployment would additionally require:
 - a secrets manager instead of user-secrets;
 - OS-level access control and audit retention policy;
 - installer/signing and update distribution for the WinForms client;
+- removal or gating of the login-screen Developer mode (`D21`, `R21`);
 - load, penetration, and disaster-recovery testing.
 
 None of these are required for the course, and none should be claimed as delivered.
