@@ -15,7 +15,6 @@ public partial class EditAccountForm : Form
     private readonly IAccountService _accountService;
     private readonly int _userId;
     private readonly int _currentUserId;
-    private readonly string _fullName;
 
     public EditAccountForm(
         IAccountService accountService,
