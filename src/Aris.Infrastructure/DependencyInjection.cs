@@ -6,6 +6,7 @@ using Aris.Application.Common;
 using Aris.Application.Developer;
 using Aris.Application.Households;
 using Aris.Application.Rectifications;
+using Aris.Application.TemporaryResidences;
 using Aris.Application.Transfers;
 using Aris.Infrastructure.Accounts;
 using Aris.Infrastructure.Addresses;
@@ -15,6 +16,7 @@ using Aris.Infrastructure.Developer;
 using Aris.Infrastructure.Households;
 using Aris.Infrastructure.Persistence;
 using Aris.Infrastructure.Rectifications;
+using Aris.Infrastructure.TemporaryResidences;
 using Aris.Infrastructure.Transfers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -89,6 +91,9 @@ public static class DependencyInjection {
 
         // Void-and-correct workflow for append-only tenures (HIST-01).
         services.AddScoped<IRectificationService, RectificationService>();
+
+        // Temporary residence management.
+        services.AddScoped<ITemporaryResidenceService, TemporaryResidenceService>();
 
         // Privileged local developer conveniences (Developer mode on the login screen).
         services.AddScoped<IDeveloperService, DeveloperService>();

@@ -41,6 +41,7 @@ public sealed class SchemaInventoryTests {
                 "HouseholdMembership",
                 "Residence",
                 "SystemConfiguration",
+                "TemporaryResidence",
                 "TransferRequest",
                 "TransferRequestItem",
                 "UserAccount"

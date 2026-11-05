@@ -108,7 +108,7 @@ proven, not how it is hoped for.
 | `Q-USA-03` | An officer lacks the admin role. | Admin navigation is absent and the service rejects the call. | Hidden button + `Result.Failure`. | UI + service test |
 | `Q-OPS-01` | A new developer sets up the project. | Database and schema are running from a clean machine. | ≤ 15 minutes excluding the first image pull. | Onboarding dry run |
 | `Q-OPS-02` | The local database is corrupted. | It can be reset without affecting anyone else. | `docker compose down -v` + deploy succeeds. | Manual drill |
-| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
+| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 12 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
 | `Q-OPS-04` | SQL Server or the container restarts during a connection attempt. | Only documented connection/login/lock errors are retried; Azure service-tier and business errors fail fast. | Error-number table matches `SqlResilience.IsTransientErrorNumber`. | `SqlResilienceTests` |
 
 ---
@@ -158,7 +158,7 @@ A feature is done only when all of the following hold.
 | Unit tests | `dotnet test Aris.slnx` | Yes — any failure |
 | Integration tests with local DB | `ARIS_TEST_CONNECTION` set, then `dotnet test` | Yes — before merging to `main` |
 | Golden Invariant | `SELECT * FROM dbo.vw_GoldenInvariantViolations;` | Yes — any row |
-| Schema object inventory | `SchemaInventoryTests`: 11 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
+| Schema object inventory | `SchemaInventoryTests`: 12 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
 | Secret scan | `git status`, reviewer inspection | Yes |
 | Layer scan | no EF Core/SQL under `src/Aris.UI` | Yes |
 | Manual smoke test ([Appendix E](appendix/E-smoke-test-checklist.md)) | login → citizen → household → transfer → rectification → audit → invariant | Yes for release |

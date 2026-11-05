@@ -1,6 +1,7 @@
 using Aris.Application;
 using Aris.Infrastructure;
 using Aris.UI.Addresses;
+using Aris.UI.TemporaryResidences;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +51,11 @@ internal static class Program
                 services.AddTransient<AuditViewerControl>();
                 services.AddTransient<SystemConfigurationControl>();
                 services.AddTransient<AddressControl>();
+<<<<<<< HEAD
                 services.AddTransient<TeamIntroductionForm>();
+=======
+                services.AddTransient<TemporaryResidenceControl>();
+>>>>>>> 33dd74271a1ff0b588f094e7c84cdd2a59c0fcd0
 
             })
             .Build();

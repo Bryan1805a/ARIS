@@ -11,8 +11,8 @@
 
 | Object type | Count | Objects |
 |---|:---:|---|
-| Tables | 11 | `UserAccount`, `SystemConfiguration`, `Citizen`, `Address`, `Household`, `TransferRequest`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequestItem`, `AuditLog` |
-| Mutable tables with `rowversion` | 9 | All except `SystemConfiguration` and `AuditLog` |
+| Tables | 12 | `UserAccount`, `SystemConfiguration`, `Citizen`, `Address`, `Household`, `TransferRequest`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequestItem`, `AuditLog`, `TemporaryResidence` |
+| Mutable tables with `rowversion` | 10 | All except `SystemConfiguration` and `AuditLog` |
 | Triggers | 5 | `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard`, `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly` |
 | Views | 3 | `vw_AddressCanonical`, `vw_HouseholdCurrent`, `vw_GoldenInvariantViolations` |
 | Roles | 1 | `aris_app` |
@@ -21,7 +21,7 @@
 Verification:
 
 ```sql
-SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo');       -- 11
+SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo');       -- 12
 SELECT COUNT(*) FROM sys.triggers WHERE parent_class = 1;                 -- 5
 SELECT COUNT(*) FROM sys.views WHERE schema_id = SCHEMA_ID('dbo');        -- 3
 SELECT * FROM dbo.SystemConfiguration;                                    -- 4 rows
@@ -48,6 +48,7 @@ against the deployed database (`T10`).
 | `Residence` | Citizen address history | One active per citizen; no overlap per citizen; append-only |
 | `TransferRequestItem` | Moving citizens in a request | Unique per request/citizen; one open item per citizen; composite FKs to source tenure |
 | `AuditLog` | Immutable audit trail | Actor required; result check; JSON check; insert-only |
+| `TemporaryResidence` | Temporary residence registrations | Dates check (`EndDate >= StartDate`); status check (`ACTIVE`, `EXPIRED`, `CANCELLED`); FK to `Citizen`, `Address`, `UserAccount` |
 
 ### Filtered unique indexes
 

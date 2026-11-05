@@ -63,6 +63,8 @@ flowchart TB
 | `ReportsControl` | Report selection, preview, CSV export | Implemented |
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 | `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
+| `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | Temporary residence directory, search, registration, extension and cancellation (`TEMP-01`–`TEMP-03`) | Implemented |
+| `AboutForm` | Course assignment required team member introduction and task allocation dialog | Implemented |
 | `RectifyTenureForm` | Void-and-correct dialog for membership, household address and residence rows (`HIST-01`); active rows are limited to start-date corrections | Implemented |
 
 **Rule:** every screen is registered as a transient in `Program.cs`; the shell resolves
@@ -85,6 +87,7 @@ navigation.
 | `Households/IHouseholdService` + DTOs | `HH-01`, `HH-02`, `HH-04`, `HH-06`, `SRCH-02` (implementation in Infrastructure) | Implemented |
 | `Residences/IResidenceService` | `RES-03` current-residence query | Not a separate service; exposed through `CitizenService.GetByIdAsync` |
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
+| `TemporaryResidences/ITemporaryResidenceService` + DTOs + validators | `TEMP-01`–`TEMP-03` registration, search, update and cancellation (implementation in Infrastructure) | Implemented |
 | `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
 | `Administration/IAccountService`, `IAuditQueryService`, `SystemConfigurationService` | `ACC-01`, `SYS-01`; `AUD-01` search criteria, result filters and row detail; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
@@ -103,13 +106,14 @@ rollback.
 
 | Component | Responsibility |
 |---|---|
-| `Common/EntityBase` | `RowVersion` for the nine mutable entities |
+| `Common/EntityBase` | `RowVersion` for the ten mutable entities |
 | `Entities/Citizen` | Person identity and lifecycle (`UNASSIGNED`, `ACTIVE`, `INACTIVE`) |
 | `Entities/Household` | Legal family unit (`ACTIVE`, `INACTIVE`) |
 | `Entities/Address` | Normalized location, validity, successor link, computed text |
 | `Entities/HouseholdAddress` | Append-only household location history |
 | `Entities/HouseholdMembership` | Append-only citizen–household tenure and role |
 | `Entities/Residence` | Append-only citizen–address tenure |
+| `Entities/TemporaryResidence` | Bounded temporary residence tenure of a citizen at an address |
 | `Entities/TransferRequest` | Relocation header, maker-checker state |
 | `Entities/TransferRequestItem` | One moving citizen per line, partial approval |
 | `Entities/UserAccount` | Local account, role, lockout, password state |
@@ -123,20 +127,21 @@ The Domain layer contains no EF Core attributes and no database code.
 
 | Component | Responsibility | Status |
 |---|---|---|
-| `Persistence/ArisDbContext` | Eleven `DbSet`s, applies configurations from assembly | Implemented |
+| `Persistence/ArisDbContext` | Twelve `DbSet`s, applies configurations from assembly | Implemented |
 | `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
 | `Persistence/UnitOfWork` | Opens the caller's transaction, commits, rolls back and clears the change tracker (`D20`) | Implemented |
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection, including the configured-connection overload used by repository-backed services | Implemented |
 | `Repositories/AuditRepository` | Read-only audit search with actor join, date/text/result filters and newest-first ordering (`AUD-01`) | Implemented |
 | `Accounts/BootstrapService` | Serialized first-admin creation with transactional audit | Implemented |
-| `Accounts/DemoDataService` | Idempotent demo addresses, citizens and households with invariant-safe tenures | Implemented |
+| `Accounts/DemoDataService` | Idempotent demo addresses, citizens, households and temporary residence with invariant-safe tenures | Implemented |
 | `Citizens/CitizenService` | Citizen registration, search, profile, update and deactivation | Implemented |
 | `Addresses/AddressService` | Address registration, search, detail, retirement and active-address lookup | Implemented |
 | `Households/HouseholdService` | Household registration, add member, change head, search and history | Implemented |
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
+| `TemporaryResidences/TemporaryResidenceService` | Temporary residence registration, search, update, cancellation, and transactional auditing | Implemented |
 | `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff and retries only the documented local-container transient list; business errors fail fast | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, citizen, address, household, transfer and rectification services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, citizen, address, household, transfer, temporary residence and rectification services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -145,7 +150,7 @@ Mapping rules are normative and listed in
 
 | Object group | Members |
 |---|---|
-| Mutable tables (9) | `UserAccount`, `Citizen`, `Address`, `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequest`, `TransferRequestItem` |
+| Mutable tables (10) | `UserAccount`, `Citizen`, `Address`, `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequest`, `TransferRequestItem`, `TemporaryResidence` |
 | Non-versioned tables (2) | `SystemConfiguration`, `AuditLog` |
 | Enforcement triggers (5) | `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard`, `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly` |
 | Views (3) | `vw_AddressCanonical`, `vw_HouseholdCurrent`, `vw_GoldenInvariantViolations` |
