@@ -8,10 +8,7 @@ append-only historical audit trail.
 > population registry and does not integrate with any national database or VNeID.
 
 ## Screenshots
-
-| English | Tiếng Việt |
-|---|---|
-| ![ARIS citizen management in English](screenshot/UI_english.png) | ![ARIS citizen management in Vietnamese](screenshot/UI_vietnamese.png) |
+![ARIS citizen management](screenshot/citizen_management_form.png)
 
 *Citizen directory and profile: household context, canonical address, residency history,
 and the residence rectification action.*
@@ -44,18 +41,6 @@ and the residence rectification action.*
 | UI language | Vietnamese by default; English/Vietnamese switch for static UI |
 | Developer mode (local prototype) | Complete; create accounts and seed demo data from the login screen |
 | Tests | 150 passed with a database; 118 passed + 32 skipped without |
-
-## Team Members
-
-| STT | Họ và tên | MSSV | Vai trò | Form / Chức năng đảm nhận chính |
-|:---:|---|:---:|---|---|
-| 1 | **Trần Bửu Ngọc** | 231A290130 | Nhóm trưởng (Team Leader) | Form Quản lý Chuyển hộ & Maker-Checker (`TransferControl`) |
-| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | Database Designer / Dev | Form Quản lý Đăng ký Tạm trú (`TemporaryResidenceControl`) & Thiết kế CSDL (12 bảng, triggers, EF Core) |
-| 3 | **Hồ Ngọc Hân** | 231A290010 | Developer | Form Quản lý Công dân / Nhân khẩu (`CitizenControl`) & Tra cứu danh bạ |
-| 4 | **Đoàn Thị Thuý Duy** | 231A290035 | Developer | Form Quản lý Hộ gia đình (`HouseholdControl`) & Lịch sử cư trú |
-| 5 | **Hà Tuyết Trinh** | 231A290045 | Developer | Form Quản lý Tài khoản (`AccountManagementControl`), Đăng nhập & Nhật ký kiểm toán |
-
-> Danh sách phân công 5 thành viên tuân thủ nghiêm ngặt Barem hướng dẫn tiểu luận môn học Lập trình trên Windows: Mỗi thành viên đảm nhận ít nhất 01 Form chức năng độc lập (không tính form Đăng nhập, Giới thiệu và Thống kê).
 
 ## Documentation
 
