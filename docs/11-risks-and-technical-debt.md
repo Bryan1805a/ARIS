@@ -1,6 +1,6 @@
 # 11. Risks and Technical Debt
 
-> **arc42 §11** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §11** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 11.1 Risk assessment
 
@@ -48,13 +48,14 @@ Debt is recorded deliberately. Each item has a plan; none is silently accepted f
 | `T7` | `SqlResilience` included cloud service-tier error numbers (for example 40613, 49918–49920) that are unlikely to occur against a local container. | It could retry irrelevant errors or miss a restart-specific failure. | **Resolved:** the list is narrowed to local-container failures — `233`, `1205`, `1222`, `4060`, `10053`, `10054`, `10060` — and `SqlResilienceTests` proves the Azure service-tier numbers are no longer transient. |
 | `T8` | Reports and admin screens were implemented, `AUD-01` filtering/detail was completed. | The audit viewer could demonstrate the full required filtering and detail flow. | **Resolved:** the viewer filters by date, actor, entity, action and result, validates criteria, and shows read-only row detail. `AuditQueryFilterTests` and `AuditQueryServiceTests` prove the query paths. |
 | `T9` | No optimistic-concurrency integration test. | `D14` was unproven. | **Resolved:** `OptimisticConcurrencyTests` loads one row in two contexts, commits the first save, and asserts the stale save raises `DbUpdateConcurrencyException` without overwriting. |
-| `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | **Resolved:** `SchemaInventoryTests` asserts 12 tables, 5 triggers, 3 views, the `aris_app` role, and the 4 seed configuration keys. |
+| `T10` | No automated schema-object inventory test. | A missing trigger could go unnoticed. | **Resolved:** `SchemaInventoryTests` asserts 13 tables, 5 triggers, 3 views, the `aris_app` role, and the 4 seed configuration keys. |
 | `T11` | Seed data is minimal (configuration only). | Demos require manual data entry. | **Resolved:** `DemoDataService` seeds an idempotent demo dataset; it is exposed as **Accounts → Seed demo data** and keeps the Golden Invariant at zero violations. |
 | `T12` | No localization; UI text was English while domain data is Vietnamese. | Minor usability issue. | **Resolved:** Vietnamese is the default; `LanguageManager` and the login/status-bar buttons switch the static UI between Vietnamese and English. Service validation messages remain English. |
 | `T13` | Restore reported NU1902/NU1903 vulnerabilities from transitive `System.Security.Cryptography.Pkcs` 9.0.4. | The build was not warning-free, so the "0 warnings" gate was unmet. | **Resolved:** `Pkcs` is pinned to 10.0.13, the solution builds with 0 warnings, and CI treats warnings as errors. |
 | `T14` | Account administration and system-configuration mutations were not written to `AuditLog`, and those services threw for expected business failures instead of returning `Result<T>`. | `AUD-01`/`CON-ARCH-07` was completed for admin actions. | **Resolved:** `AccountService` and `SystemConfigurationService` return `Result`, run each mutation and success audit inside `IUnitOfWork` (`D20`), and write independent failure audits. `AdministrationAuditTests` plus service unit tests prove the actions and secret exclusion. |
 | `T15` | The login-screen Developer mode (`D21`) bypasses administrator authorization and has no automated test. | An authorization exception is shipped without a regression guard, so a future change could widen it unnoticed. | Keep the warning visible and the service confined to `LoginForm`; add `DeveloperService` tests (create, duplicate username, weak password, seed) and remove or gate the feature before any non-academic deployment. |
 | `T16` | `PASSWORD_MIN_LENGTH` is honoured only by `BootstrapService`; `AccountService` and `DeveloperService` use a fixed 8-character minimum. `SESSION_TIMEOUT_MINUTES` is seeded but no idle timeout is enforced. | Administrators can change two configuration keys that the runtime does not fully honour. | Either inject `ISystemConfigurationRepository` into the account/developer services and add a shell idle timer, or document the fixed policy explicitly. Keep `Q-SEC-06` and Appendix E aligned with whichever choice is made. |
+| `T17` | `CivilStatusSearchCriteria` supports `FromDate`/`ToDate`, but `CivilStatusControl` exposes only text, record type and status; legal correction beyond cancellation is out of scope. | Users cannot narrow the civil-status directory by event date from the UI. | Add date pickers to the screen (or remove the unused service parameters) and document the legal-correction boundary. Keep Appendix E and `CIV-02` aligned. |
 
 ---
 
@@ -65,7 +66,9 @@ These are accepted boundaries, not defects:
 1. **Single-office, single-database.** No synchronization between offices.
 2. **No shared live dataset.** Each developer has a local database by design (`D15`).
 3. **N → 1 address mergers only.** Splitting one address into several is out of scope.
-4. **No vital records.** Birth, death, and marriage are not modelled.
+4. **Civil status is a register, not legal adjudication.** Birth, death, and marriage
+   events are recorded and non-death records can be cancelled, but divorce, adoption,
+   legal correction, and other vital-record workflows are out of scope.
 5. **No external identity.** Accounts are local; no SSO, MFA, or directory integration.
 6. **No notifications.** Officers poll the transfer inbox; nothing is pushed or emailed.
 7. **No backup/restore.** The Docker volume is disposable; production backup is out of scope.
@@ -85,6 +88,7 @@ Re-open the risk register when any of the following occurs:
 
 - a new table, trigger, or cross-table rule is added;
 - the transfer engine changes shape or isolation level;
+- the civil-status lifecycle, record types, or uniqueness rules change;
 - the team moves from local Docker to any shared database;
 - authentication or authorization changes;
 - the Developer mode is removed, gated, or its scope changes (`D21`, `R21`);

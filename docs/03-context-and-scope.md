@@ -1,11 +1,12 @@
 # 3. Context and Scope
 
-> **arc42 §3** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §3** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 3.1 Business context
 
 ARIS is a single-user-at-a-time desktop application used inside one administrative
-office. Officers register and maintain residence records. Administrators manage accounts,
+office. Officers register and maintain residence records and civil-status events.
+Administrators manage accounts,
 configuration, and audit inspection. There is no server tier, no public API, and no
 external identity provider.
 
@@ -15,7 +16,7 @@ flowchart LR
     Admin["System Administrator<br/>(ADMIN)"]
     Team["Development Team<br/>(build, deploy, test)"]
 
-    ARIS["<b>ARIS</b><br/>Citizen · Household · Residence<br/>Address lineage · Transfers<br/>Audit · Reports"]
+    ARIS["<b>ARIS</b><br/>Citizen · Household · Residence<br/>Address lineage · Transfers<br/>Civil status · Audit · Reports"]
 
     DB[("SQL Server 2022<br/>Docker container<br/>ArisDb")]
     Files["Local configuration<br/>appsettings.json · user-secrets · .env"]
@@ -31,7 +32,7 @@ flowchart LR
 
 | Actor | Responsibility | Relevant requirements |
 |---|---|---|
-| Residence officer | Maintains citizens, households, addresses; creates transfer requests; approves requests made by someone else | `CIT-*`, `ADR-*`, `HH-*`, `UC-06`, `SRCH-*`, `RPT-*` |
+| Residence officer | Maintains citizens, households, addresses and civil-status records; creates transfer requests; approves requests made by someone else | `CIT-*`, `ADR-*`, `HH-*`, `CIV-*`, `UC-06`, `SRCH-*`, `RPT-*` |
 | System administrator | Manages accounts and system parameters; reviews audit entries | `ACC-01`, `SYS-01`, `AUD-01`, `PERM-01` |
 | Local demonstrator / developer | Uses the login-screen **Developer mode** to create accounts and seed demo data on the local prototype; no business authority | `D21`, `T11`, `T15` |
 | Development team | Deploys the schema, runs the application, verifies the invariant | §7, Appendix D |
@@ -103,8 +104,8 @@ flowchart TB
 
 | Boundary | Inside ARIS | Outside ARIS |
 |---|---|---|
-| Data | Citizens, households, addresses, memberships, residences, transfers, accounts, audit | Vital records, biometrics, tax, land titles |
-| Process | Registration, relocation approval, deactivation, rectification | Legal adjudication, appeals, notifications |
+| Data | Citizens, households, addresses, memberships, residences, transfers, civil-status records, accounts, audit | Legal adjudication of civil status, biometrics, tax, land titles |
+| Process | Registration, relocation approval, deactivation, civil-status registration/cancellation, rectification | Legal adjudication, appeals, notifications |
 | Prototype setup | Login-screen Developer mode: create accounts, seed demo data | Production provisioning, remote administration, self-service registration |
 | Users | Local officers and administrators | Citizens (no self-service), external agencies |
 | Deployment | One Windows workstation + one local SQL Server container | Central server, cloud hosting, multi-office sync |
@@ -121,6 +122,7 @@ flowchart TB
 | Data shape and identity rules | Domain + database | Entities, CHECK constraints, FKs |
 | Temporal history rules | Database + Application | Guard triggers + close-and-open services |
 | Historical rectification | Application + Infrastructure + database | `RectificationService`, `VOID` status, `Corrects...Id`, guard triggers |
+| Civil status registration | Application + Infrastructure + database | `CivilStatusService`, CHECK constraints, filtered unique indexes |
 | Cross-record consistency | Application + database view | Atomic transactions + `vw_GoldenInvariantViolations` |
 | Authentication | Application + Infrastructure | `AuthService`, BCrypt, `UserAccount` |
 | Authorization | Application | Role checks in services |

@@ -489,3 +489,7 @@ test_note.txt
 
 # report
 report/
+
+screenshot/test_header.png
+screenshot/test_title.png
+screenshot/title_crop.png

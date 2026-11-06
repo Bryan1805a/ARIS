@@ -18,11 +18,14 @@ using Aris.Infrastructure.Persistence;
 using Aris.Infrastructure.Rectifications;
 using Aris.Infrastructure.TemporaryResidences;
 using Aris.Infrastructure.Transfers;
+using Aris.Application.CivilStatuses;
+using Aris.Application.Interfaces;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using Aris.Application.Interfaces;
+using Aris.Infrastructure.CivilStatuses;
 using Aris.Infrastructure.Repositories;
 
 namespace Aris.Infrastructure;
@@ -102,6 +105,8 @@ public static class DependencyInjection {
 
         services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
         services.AddScoped<IReportRepository, ReportRepository>();
+
+        services.AddScoped<ICivilStatusService, CivilStatusService>();
 
         return services;
     }

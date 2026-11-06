@@ -8,6 +8,7 @@ using Aris.Application.SystemConfiguration;
 using Aris.UI.Localization;
 using Aris.UI.Addresses;
 using Aris.UI.TemporaryResidences;
+using Aris.UI.CivilStatuses;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -111,6 +112,7 @@ public partial class MainForm : Form {
         UiTheme.ApplyShell(this);
         pnlSidebar.BackColor = UiTheme.Sidebar;
         pnlContent.BackColor = UiTheme.Background;
+        pnlSidebar.AutoScroll = true;
 
         lblLogo.Text = "ARIS";
         lblLogo.Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold);
@@ -138,7 +140,8 @@ public partial class MainForm : Form {
             btnHousehold,
             btnAddress,
             btnTransfer,
-            btnTemporaryResidence
+            btnTemporaryResidence,
+            btnCivilStatus
         };
 
         var allSidebarButtons = new[] {
@@ -152,6 +155,7 @@ public partial class MainForm : Form {
             btnAddress,
             btnTransfer,
             btnTemporaryResidence,
+            btnCivilStatus,
             btnLogout
         };
 
@@ -218,6 +222,7 @@ public partial class MainForm : Form {
             btnAddress,
             btnTransfer,
             btnTemporaryResidence,
+            btnCivilStatus,
             btnLogout
         };
 
@@ -231,7 +236,7 @@ public partial class MainForm : Form {
             }
 
             button.Top = nextY;
-            nextY += button.Height + 8;
+            nextY += button.Height + 4;
         }
     }
 
@@ -389,6 +394,16 @@ public partial class MainForm : Form {
         transferControl.Dock = DockStyle.Fill;
 
         pnlContent.Controls.Add(transferControl);
+    }
+
+    private void btnCivilStatus_Click(object? sender, EventArgs e) {
+        pnlContent.Controls.Clear();
+
+        CivilStatusControl control =
+            _serviceProvider.GetRequiredService<CivilStatusControl>();
+        control.Dock = DockStyle.Fill;
+
+        pnlContent.Controls.Add(control);
     }
 
     // Navigates to Audit Log viewer (ADMIN only)

@@ -27,6 +27,7 @@ partial class MainForm {
     private void InitializeComponent() {
         pnlSidebar = new Panel();
         btnTemporaryResidence = new Button();
+        btnCivilStatus = new Button();
         menuStrip1 = new MenuStrip();
         btnAuditLogs = new Button();
         btnTransfer = new Button();
@@ -65,6 +66,7 @@ partial class MainForm {
         pnlSidebar.Controls.Add(lblLogo);
         pnlSidebar.Controls.Add(btnTemporaryResidence);
         pnlSidebar.Controls.Add(btnAddress);
+        pnlSidebar.Controls.Add(btnCivilStatus);
         pnlSidebar.Dock = DockStyle.Left;
         pnlSidebar.Location = new Point(0, 0);
         pnlSidebar.Name = "pnlSidebar";
@@ -299,6 +301,20 @@ partial class MainForm {
         btnTemporaryResidence.UseVisualStyleBackColor = true;
         btnTemporaryResidence.Click += btnTemporaryResidence_Click;
         // 
+        // btnCivilStatus
+        // 
+        btnCivilStatus.FlatStyle = FlatStyle.Flat;
+        btnCivilStatus.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+        btnCivilStatus.ForeColor = Color.White;
+        btnCivilStatus.Location = new Point(10, 575);
+        btnCivilStatus.Name = "btnCivilStatus";
+        btnCivilStatus.Size = new Size(200, 45);
+        btnCivilStatus.TabIndex = 13;
+        btnCivilStatus.Text = "Civil Status";
+        btnCivilStatus.TextAlign = ContentAlignment.MiddleLeft;
+        btnCivilStatus.UseVisualStyleBackColor = true;
+        btnCivilStatus.Click += btnCivilStatus_Click;
+        // 
         // menuStrip1
         // 
         menuStrip1.Dock = DockStyle.Top;
@@ -352,4 +368,5 @@ partial class MainForm {
     private Button btnAddress = null!;
     private Button btnTemporaryResidence = null!;
     private MenuStrip menuStrip1 = null!;
+    private Button btnCivilStatus = null!;
 }

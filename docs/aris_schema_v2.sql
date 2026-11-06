@@ -1,9 +1,10 @@
 /* =====================================================================
    Administrative Residence Information System (ARIS) - DATABASE SCHEMA v2 (final)
-   Target : SQL Server 2019+ (development: SQL Server 2022 Developer in Docker)
+   Target : SQL Server 2022 Developer in Docker
    Run on : an EMPTY database. Batches are separated by GO (SSMS / sqlcmd -I).
             File is ASCII-only on purpose (no encoding issues).
-   Design notes: see database_design_v2.md  (decision log D1..D14)
+   Design notes: see docs/08-crosscutting-concepts.md and
+                 docs/09-architecture-decisions.md (decision log D1..D22).
 
    Layers of protection (cheapest first):
      1. Types / NOT NULL / CHECK        -> bad values can never be stored
@@ -399,6 +400,65 @@ CREATE INDEX IX_TempRes_Citizen ON dbo.TemporaryResidence (CitizenId, Status);
 CREATE INDEX IX_TempRes_Address ON dbo.TemporaryResidence (AddressId, Status);
 GO
 
+/* ---------------------------------------------------------------------
+   13. CivilStatusRecord - birth, death and marriage registration
+       This is a civil-status register, not a residence mutation.
+       Death registration does NOT deactivate the citizen (see CIT-04).
+   --------------------------------------------------------------------- */
+CREATE TABLE dbo.CivilStatusRecord (
+    CivilStatusId     int           IDENTITY(1,1) NOT NULL,
+    RecordType        varchar(20)   NOT NULL,   -- BIRTH, DEATH, MARRIAGE
+    CitizenId         int           NOT NULL,   -- child / deceased / spouse 1
+    RelatedCitizenId  int           NULL,       -- spouse 2 (MARRIAGE only)
+    AddressId         int           NULL,       -- place of event / registration
+    EventDate         date          NOT NULL,   -- date of birth / death / marriage
+    RegistrationDate  date          NOT NULL,   -- date the office registered it
+    DocumentNumber    varchar(30)   NULL,       -- certificate / register number
+    Status            varchar(10)   NOT NULL CONSTRAINT DF_CivilStatus_Status DEFAULT 'ACTIVE',
+    Notes             nvarchar(500) NULL,
+    CreatedBy         int           NOT NULL,
+    CreatedAt         datetime2(3)  NOT NULL CONSTRAINT DF_CivilStatus_CreatedAt DEFAULT SYSUTCDATETIME(),
+    CancelledBy       int           NULL,
+    CancelledAt       datetime2(3)  NULL,
+    CancelReason      nvarchar(300) NULL,
+    RowVersion        rowversion    NOT NULL,
+    CONSTRAINT PK_CivilStatusRecord PRIMARY KEY (CivilStatusId),
+    CONSTRAINT FK_CivilStatus_Citizen     FOREIGN KEY (CitizenId)        REFERENCES dbo.Citizen     (CitizenId),
+    CONSTRAINT FK_CivilStatus_Related     FOREIGN KEY (RelatedCitizenId) REFERENCES dbo.Citizen     (CitizenId),
+    CONSTRAINT FK_CivilStatus_Address     FOREIGN KEY (AddressId)        REFERENCES dbo.Address     (AddressId),
+    CONSTRAINT FK_CivilStatus_CreatedBy   FOREIGN KEY (CreatedBy)        REFERENCES dbo.UserAccount (UserId),
+    CONSTRAINT FK_CivilStatus_CancelledBy FOREIGN KEY (CancelledBy)      REFERENCES dbo.UserAccount (UserId),
+    CONSTRAINT CK_CivilStatus_Type   CHECK (RecordType IN ('BIRTH','DEATH','MARRIAGE')),
+    CONSTRAINT CK_CivilStatus_Status CHECK (Status IN ('ACTIVE','CANCELLED')),
+    CONSTRAINT CK_CivilStatus_Shape CHECK (
+           (RecordType IN ('BIRTH','DEATH') AND RelatedCitizenId IS NULL)
+        OR (RecordType = 'MARRIAGE' AND RelatedCitizenId IS NOT NULL AND RelatedCitizenId <> CitizenId)),
+    CONSTRAINT CK_CivilStatus_Dates CHECK (RegistrationDate >= EventDate),
+    CONSTRAINT CK_CivilStatus_Cancel CHECK (
+           (Status = 'ACTIVE' AND CancelledBy IS NULL AND CancelledAt IS NULL AND CancelReason IS NULL)
+        OR (Status = 'CANCELLED' AND CancelledBy IS NOT NULL AND CancelledAt IS NOT NULL AND CancelReason IS NOT NULL))
+);
+GO
+
+CREATE UNIQUE INDEX UX_CivilStatus_DocumentNumber
+    ON dbo.CivilStatusRecord (DocumentNumber)
+    WHERE DocumentNumber IS NOT NULL;
+
+CREATE UNIQUE INDEX UX_CivilStatus_OneActiveDeath
+    ON dbo.CivilStatusRecord (CitizenId)
+    WHERE RecordType = 'DEATH' AND Status = 'ACTIVE';
+
+-- Marriage is symmetric. The service stores MIN(CitizenId) first, so this
+-- index catches the same pair in either input order.
+CREATE UNIQUE INDEX UX_CivilStatus_OneActiveMarriagePair
+    ON dbo.CivilStatusRecord (CitizenId, RelatedCitizenId)
+    WHERE RecordType = 'MARRIAGE' AND Status = 'ACTIVE';
+
+CREATE INDEX IX_CivilStatus_Citizen    ON dbo.CivilStatusRecord (CitizenId, EventDate);
+CREATE INDEX IX_CivilStatus_Related    ON dbo.CivilStatusRecord (RelatedCitizenId, EventDate)
+    WHERE RelatedCitizenId IS NOT NULL;
+CREATE INDEX IX_CivilStatus_TypeStatus ON dbo.CivilStatusRecord (RecordType, Status, EventDate);
+GO
 
 /* =====================================================================
    TRIGGERS  (D12)

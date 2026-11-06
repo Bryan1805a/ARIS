@@ -1,6 +1,6 @@
 # 8. Crosscutting Concepts
 
-> **arc42 §8** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §8** · ARIS 3.10 · [Documentation hub](README.md)
 
 These rules apply to every module. They are not suggestions; the PR checklist enforces
 them.
@@ -227,6 +227,8 @@ Verification requirements:
   transaction and asserts the view reports `C1`. Without the negative control, a broken
   view could silently "pass" the positive test.
 - Every composite service must be followed by an invariant check in integration tests.
+- `TemporaryResidence`, `CivilStatusRecord`, and `AuditLog` do not participate in the
+  Golden Invariant.
 
 ---
 
@@ -296,6 +298,12 @@ through the configured-connection audit path when the transaction throws. Action
 `CREATE_FIRST_ADMIN`, and login writes `LOGIN` with a `reason` in `Details`. Password
 material never enters `Details` (`CON-SEC-01`).
 
+**Civil status (`CIV-01`–`CIV-03`).** `CivilStatusService` writes
+`REGISTER_CIVIL_STATUS` and `CANCEL_CIVIL_STATUS` inside the same transaction as the
+mutation, with actor, entity ID and safe details. A death registration records the event
+only; it does not deactivate the citizen or close residence, and a death record cannot be
+cancelled.
+
 **Developer mode (`D21`).** The login-screen `DeveloperService` writes `CREATE_ACCOUNT`
 (with `developerMode = true` in `Details`) and `SEED_DEMO_DATA`. It bypasses the
 administrator authorization by design, keeps the success row in the mutation transaction,
@@ -340,6 +348,8 @@ filters against real SQL Server.
   (`IUserSession` or the caller's user ID plus a repository role check), not only by hiding
   navigation buttons.
 - Administration screens are additionally hidden from officers (defence in depth).
+- Civil-status registration, search and cancellation are available to both `OFFICER` and
+  `ADMIN`; the mutating service requires an active actor but no elevated role.
 - **The login-screen Developer mode is the single deliberate exception.** It deliberately
   skips the administrator check to create accounts and seed demo data on a local
   prototype (`D21`). It is confined to `LoginForm`/`DeveloperToolsForm`, labelled as
@@ -458,8 +468,12 @@ Rules:
 - Integration test classes run **sequentially** (`Parallelization(Mode = ParallelMode.None)`)
   because they share one local database. Parallel execution caused cross-test deadlocks
   and let the invariant observe another fixture mid-write.
-- `CitizenServiceTests`, `HouseholdServiceTests` and `TransferServiceTests` run the real
-  services against SQL Server with a recording `IAuditService` double.
+- `CitizenServiceTests`, `HouseholdServiceTests`, `TransferServiceTests` and
+  `CivilStatusServiceTests` run the real services against SQL Server with a recording
+  `IAuditService` double.
+- `CivilStatusValidatorTests` covers record-type shape, spouse requirements and date
+  ordering; `CivilStatusServiceTests` covers registration, marriage normalization and
+  death-cancellation refusal.
 - Destructive tests run inside a transaction that is rolled back.
 - The Golden Invariant suite contains both a positive assertion and a negative control.
 - Administrative audit is proven at both levels: service unit tests with fakes assert the
@@ -473,8 +487,8 @@ Rules:
 - `EndToEndWorkflowTests` runs citizen → household → transfer → rectification → audit,
   then asserts the Golden Invariant is clean (`T4`). WinForms navigation, dialogs and the
   language switch remain covered by the committed checklist in Appendix E.
-- Current totals (2026-11-05): **150 passed / 0 failed / 0 skipped** with
-  `ARIS_TEST_CONNECTION`; **118 passed / 32 skipped** without it. The skipped tests are
+- Current totals (2026-11-06): **157 passed / 0 failed / 0 skipped** with
+  `ARIS_TEST_CONNECTION`; **122 passed / 35 skipped** without it. The skipped tests are
   the integration suite that requires real SQL Server.
 - Never pass `--nologo` to `dotnet test` under Microsoft.Testing.Platform.
 
@@ -501,8 +515,8 @@ git status                 # no secrets, no bin/obj, no .env
 ## 8.15 Documentation and traceability
 
 - Architecture documentation follows arc42; this file owns crosscutting rules.
-- Requirement IDs (`CIT-01`, `HH-04`, `UC-06`, `CON-*`, `D*`, `C1`–`H4`, `510xx`) are
-  stable and appear in code comments, tests, and PR descriptions.
+- Requirement IDs (`CIT-01`, `HH-04`, `CIV-01`, `UC-06`, `CON-*`, `D*`, `C1`–`H4`,
+  `510xx`) are stable and appear in code comments, tests, and PR descriptions.
 - A PR states which requirement IDs it implements and which tests prove them.
 - If implementation and documentation disagree, the DDL wins for schema facts and the
   code wins for behaviour; the other document is corrected in the same PR.

@@ -12,8 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Aris.UI;
 
-public partial class LoginForm : Form
-{
+public partial class LoginForm : Form {
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IUserSession _userSession;
@@ -25,8 +24,7 @@ public partial class LoginForm : Form
      IAuthService authService,
      IServiceProvider serviceProvider,
      IUserSession userSession,
-     IBootstrapService bootstrapService)
-    {
+     IBootstrapService bootstrapService) {
         InitializeComponent();
 
         _authService = authService;
@@ -47,8 +45,7 @@ public partial class LoginForm : Form
         UiTheme.StyleSecondaryButton(_bootstrapButton);
         pnlCard.Controls.Add(_bootstrapButton);
 
-        var languageButton = new Button
-        {
+        var languageButton = new Button {
             Text = LanguageManager.SwitchLabel,
             Location = new Point(360, 428),
             Size = new Size(120, 28)
@@ -77,16 +74,13 @@ public partial class LoginForm : Form
         Shown += async (_, _) => await CheckForBootstrapAsync();
     }
 
-    private async Task CheckForBootstrapAsync()
-    {
-        try
-        {
+    private async Task CheckForBootstrapAsync() {
+        try {
             var hasAccounts = await _bootstrapService.HasAnyAccountsAsync();
 
             _bootstrapButton.Visible = !hasAccounts;
 
-            if (!hasAccounts && !_bootstrapPromptShown)
-            {
+            if (!hasAccounts && !_bootstrapPromptShown) {
                 _bootstrapPromptShown = true;
                 MessageBox.Show(
                     "No accounts exist yet. Create the first administrator to continue.",
@@ -94,9 +88,7 @@ public partial class LoginForm : Form
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _bootstrapButton.Visible = false;
             MessageBox.Show(
                 $"Cannot check the database: {ex.Message}",
@@ -106,12 +98,10 @@ public partial class LoginForm : Form
         }
     }
 
-    private void BootstrapButton_Click(object? sender, EventArgs e)
-    {
+    private void BootstrapButton_Click(object? sender, EventArgs e) {
         using var form = new BootstrapForm(_bootstrapService);
 
-        if (form.ShowDialog(this) == DialogResult.OK)
-        {
+        if (form.ShowDialog(this) == DialogResult.OK) {
             _bootstrapButton.Visible = false;
             txtUsername.Text = form.CreatedUsername ?? string.Empty;
             txtPassword.Clear();
@@ -119,20 +109,17 @@ public partial class LoginForm : Form
         }
     }
 
-    private async void btnLogin_Click(object sender, EventArgs e)
-    {
+    private async void btnLogin_Click(object sender, EventArgs e) {
         string username = txtUsername.Text.Trim();
         string password = txtPassword.Text;
 
-        if (string.IsNullOrWhiteSpace(username))
-        {
+        if (string.IsNullOrWhiteSpace(username)) {
             MessageBox.Show("Please enter your username.");
             txtUsername.Focus();
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(password))
-        {
+        if (string.IsNullOrWhiteSpace(password)) {
             MessageBox.Show("Please enter your password.");
             txtPassword.Focus();
             return;
@@ -140,12 +127,10 @@ public partial class LoginForm : Form
 
         btnLogin.Enabled = false;
 
-        try
-        {
+        try {
             var result = await _authService.LoginAsync(username, password);
 
-            if (result.IsFailure)
-            {
+            if (result.IsFailure) {
                 MessageBox.Show(
                     string.Join("\n", result.Errors),
                     "Login Failed",
@@ -157,8 +142,7 @@ public partial class LoginForm : Form
 
             var user = result.Value;
 
-            if (user is null)
-            {
+            if (user is null) {
                 MessageBox.Show(
                     "Login failed. Please try again.",
                     "Login Failed",
@@ -167,16 +151,14 @@ public partial class LoginForm : Form
                 return;
             }
 
-            if (user.MustChangePassword)
-            {
+            if (user.MustChangePassword) {
                 var accountService =
                     _serviceProvider.GetRequiredService<IAccountService>();
 
                 using var changePasswordForm =
                     new ChangePasswordForm(accountService, user.UserId);
 
-                if (changePasswordForm.ShowDialog(this) != DialogResult.OK)
-                {
+                if (changePasswordForm.ShowDialog(this) != DialogResult.OK) {
                     MessageBox.Show(
                         "You must change your password before continuing.",
                         "Password Change Required",
@@ -199,8 +181,7 @@ public partial class LoginForm : Form
 
             mainForm.SetCurrentUser(user);
 
-            mainForm.FormClosed += (s, e) =>
-            {
+            mainForm.FormClosed += (s, e) => {
                 _userSession.SignOut();
 
                 txtUsername.Clear();
@@ -214,18 +195,14 @@ public partial class LoginForm : Form
 
             mainForm.Show();
 
-        }
-        catch (Exception)
-        {
+        } catch (Exception) {
             MessageBox.Show(
                 "An unexpected error occurred during login.",
                 "Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error
             );
-        }
-        finally
-        {
+        } finally {
             btnLogin.Enabled = true;
         }
     }

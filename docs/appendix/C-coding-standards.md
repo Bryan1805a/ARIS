@@ -1,6 +1,6 @@
 # Appendix C — Coding Standards
 
-> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§8](../08-crosscutting-concepts.md) · [§10](../10-quality-requirements.md)
+> ARIS 3.10 · [Documentation hub](../README.md) · Companion: [§8](../08-crosscutting-concepts.md) · [§10](../10-quality-requirements.md)
 
 This appendix is the house style. It merges the former coding conventions, AI guardrails,
 and PR checklist. The architectural rules themselves live in §8; this page shows how to
@@ -410,6 +410,9 @@ MANDATORY RULES (DO NOT DEVIATE):
 10. The DDL is authoritative. Do not add EF migrations.
 11. C# formatting follows .editorconfig: opening braces stay on the same line
     (if (x) { ... }), and else / catch / finally follow the closing brace.
+12. Civil-status records (`BIRTH`, `DEATH`, `MARRIAGE`) are a separate register.
+    DEATH does NOT deactivate a citizen or close residence; use CIT-04. Cancel only
+    non-death records, with a reason.
 ```
 
 ### Ten hallucination traps
@@ -474,7 +477,7 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Names match the DDL verbatim.
 - [ ] No `Citizen.HouseholdId` or `Household.CurrentAddressId`.
 - [ ] `.HasTrigger(...)` on the five trigger tables.
-- [ ] `.IsRowVersion()` on the ten mutable tables only.
+- [ ] `.IsRowVersion()` on the eleven mutable tables only.
 - [ ] `.HasComputedColumnSql(...)` for `AddressText`.
 - [ ] Composite FKs on `TransferRequestItem`.
 - [ ] No cascade deletes.
@@ -488,6 +491,8 @@ MANDATORY RULES (DO NOT DEVIATE):
 - [ ] Transfer execution is one serializable transaction.
 - [ ] Partial approval leaves rejected members in place.
 - [ ] Emptied source household becomes `INACTIVE` and its address closes.
+- [ ] Civil-status records enforce type/shape/dates; death registration does not mutate
+      residence state, and death records cannot be cancelled.
 
 **Audit and security**
 

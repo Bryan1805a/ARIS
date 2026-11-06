@@ -1,6 +1,6 @@
 # 2. Constraints
 
-> **arc42 §2** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §2** · ARIS 3.10 · [Documentation hub](README.md)
 
 A constraint is a decision that has already been made and cannot be revisited inside
 this project. Each constraint below is normative: code and documentation must conform.
@@ -55,7 +55,7 @@ These are the rules introduced in §1.3 of the hub and detailed in
 | `CON-ARCH-05` | **Maker-checker** on every relocation: `DecidedBy <> RequestedBy`, enforced by `CK_TR_Decision`. |
 | `CON-ARCH-06` | **Relocations execute in one `IsolationLevel.Serializable` transaction.** |
 | `CON-ARCH-07` | **Every mutation is audited.** Success inside the transaction; failure on an independent connection after rollback. |
-| `CON-ARCH-08` | **Optimistic concurrency:** all ten mutable tables map `RowVersion` with `.IsRowVersion()`; conflicts surface as `DbUpdateConcurrencyException`. |
+| `CON-ARCH-08` | **Optimistic concurrency:** all eleven mutable tables map `RowVersion` with `.IsRowVersion()`; conflicts surface as `DbUpdateConcurrencyException`. |
 
 ---
 
