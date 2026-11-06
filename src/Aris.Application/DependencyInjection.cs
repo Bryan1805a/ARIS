@@ -15,6 +15,8 @@ using Aris.Application.TemporaryResidences.Dtos;
 using Aris.Application.TemporaryResidences.Validators;
 using Aris.Application.Transfers.Dtos;
 using Aris.Application.Transfers.Validators;
+using Aris.Application.CivilStatuses.Dtos;
+using Aris.Application.CivilStatuses.Validators;
 
 using FluentValidation;
 
@@ -51,6 +53,9 @@ public static class DependencyInjection {
 
         services.AddScoped<IValidator<RegisterTemporaryResidenceDto>, RegisterTemporaryResidenceValidator>();
         services.AddScoped<IValidator<UpdateTemporaryResidenceDto>, UpdateTemporaryResidenceValidator>();
+
+        services.AddScoped<IValidator<RecordCivilStatusDto>, RecordCivilStatusValidator>();
+        services.AddScoped<IValidator<CancelCivilStatusDto>, CancelCivilStatusValidator>();
 
         return services;
     }

@@ -42,6 +42,8 @@ public sealed class ArisDbContext : DbContext
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<CivilStatusRecord> CivilStatusRecords => Set<CivilStatusRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ArisDbContext).Assembly);

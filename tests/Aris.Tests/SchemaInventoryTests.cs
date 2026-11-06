@@ -5,7 +5,7 @@ using Xunit;
 namespace Aris.Tests;
 
 /// <summary>
-/// Proves <c>T10</c>: the deployed schema still contains the 11 tables, 5 triggers,
+/// Proves <c>T10</c>: the deployed schema still contains the 13 tables, 5 triggers,
 /// 3 views, the <c>aris_app</c> role, and the 4 seed configuration rows.
 /// </summary>
 public sealed class SchemaInventoryTests {
@@ -36,6 +36,7 @@ public sealed class SchemaInventoryTests {
                 "Address",
                 "AuditLog",
                 "Citizen",
+                "CivilStatusRecord",
                 "Household",
                 "HouseholdAddress",
                 "HouseholdMembership",

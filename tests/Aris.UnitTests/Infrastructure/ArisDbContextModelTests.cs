@@ -1,8 +1,10 @@
 using Aris.Domain.Common;
 using Aris.Domain.Entities;
 using Aris.Infrastructure.Persistence;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+
 using Xunit;
 
 namespace Aris.UnitTests.Infrastructure;
@@ -16,10 +18,8 @@ namespace Aris.UnitTests.Infrastructure;
 /// Server enforces anything: triggers, filtered indexes and CHECK constraints are
 /// verified in <c>Aris.Tests</c> against the real database.
 /// </remarks>
-public sealed class ArisDbContextModelTests
-{
-    private static ArisDbContext CreateContext()
-    {
+public sealed class ArisDbContextModelTests {
+    private static ArisDbContext CreateContext() {
         var options = new DbContextOptionsBuilder<ArisDbContext>()
             // Never opened: building the model does not connect.
             .UseSqlServer("Server=localhost,1433;Database=ArisDb;User Id=sa;Password=unused;TrustServerCertificate=True;")
@@ -29,8 +29,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void Model_maps_the_twelve_tables_from_the_DDL()
-    {
+    public void Model_maps_the_thirteen_tables_from_the_DDL() {
         using var context = CreateContext();
 
         var tables = context.Model.GetEntityTypes()
@@ -41,7 +40,7 @@ public sealed class ArisDbContextModelTests
         {
             "UserAccount", "SystemConfiguration", "Citizen", "Address", "Household",
             "TransferRequest", "HouseholdAddress", "HouseholdMembership", "Residence",
-            "TransferRequestItem", "AuditLog", "TemporaryResidence"
+            "TransferRequestItem", "AuditLog", "TemporaryResidence", "CivilStatusRecord"
         };
 
         Assert.Equal(expected.Length, tables.Count);
@@ -50,8 +49,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void RowVersion_is_mapped_on_the_ten_mutable_tables_only()
-    {
+    public void RowVersion_is_mapped_on_the_eleven_mutable_tables_only() {
         using var context = CreateContext();
 
         var tablesWithRowVersion = context.Model.GetEntityTypes()
@@ -59,18 +57,16 @@ public sealed class ArisDbContextModelTests
             .Select(e => e.GetTableName())
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(10, tablesWithRowVersion.Count);
+        Assert.Equal(11, tablesWithRowVersion.Count);
         Assert.DoesNotContain("AuditLog", tablesWithRowVersion);
         Assert.DoesNotContain("SystemConfiguration", tablesWithRowVersion);
     }
 
     [Fact]
-    public void The_five_trigger_tables_declare_their_trigger()
-    {
+    public void The_five_trigger_tables_declare_their_trigger() {
         using var context = CreateContext();
 
-        var expected = new Dictionary<Type, string>
-        {
+        var expected = new Dictionary<Type, string> {
             [typeof(Residence)] = "trg_Residence_Guard",
             [typeof(HouseholdMembership)] = "trg_Membership_Guard",
             [typeof(HouseholdAddress)] = "trg_HouseholdAddress_Guard",
@@ -78,8 +74,7 @@ public sealed class ArisDbContextModelTests
             [typeof(AuditLog)] = "trg_AuditLog_AppendOnly"
         };
 
-        foreach (var (clrType, triggerName) in expected)
-        {
+        foreach (var (clrType, triggerName) in expected) {
             var entityType = context.Model.FindEntityType(clrType);
             Assert.NotNull(entityType);
 
@@ -91,8 +86,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void AddressText_is_a_database_computed_column()
-    {
+    public void AddressText_is_a_database_computed_column() {
         using var context = CreateContext();
 
         var address = context.Model.FindEntityType(typeof(Address));
@@ -107,8 +101,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void TransferRequestItem_has_the_two_composite_foreign_keys()
-    {
+    public void TransferRequestItem_has_the_two_composite_foreign_keys() {
         using var context = CreateContext();
 
         var item = context.Model.FindEntityType(typeof(TransferRequestItem));
@@ -124,8 +117,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void The_composite_foreign_key_targets_have_alternate_keys()
-    {
+    public void The_composite_foreign_key_targets_have_alternate_keys() {
         using var context = CreateContext();
 
         AssertHasAlternateKey(context, typeof(HouseholdMembership), "MembershipId", "CitizenId");
@@ -133,8 +125,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void No_foreign_key_cascades()
-    {
+    public void No_foreign_key_cascades() {
         using var context = CreateContext();
 
         var cascades = context.Model.GetEntityTypes()
@@ -148,8 +139,7 @@ public sealed class ArisDbContextModelTests
     }
 
     [Fact]
-    public void AuditLog_identity_is_bigint()
-    {
+    public void AuditLog_identity_is_bigint() {
         using var context = CreateContext();
 
         var auditLog = context.Model.FindEntityType(typeof(AuditLog));
@@ -160,8 +150,7 @@ public sealed class ArisDbContextModelTests
         Assert.Equal(typeof(long), id.ClrType);
     }
 
-    private static void AssertHasAlternateKey(DbContext context, Type clrType, params string[] properties)
-    {
+    private static void AssertHasAlternateKey(DbContext context, Type clrType, params string[] properties) {
         var entityType = context.Model.FindEntityType(clrType);
         Assert.NotNull(entityType);
 
