@@ -1,6 +1,6 @@
 # Appendix D — Team Workflow and Task Briefs
 
-> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§10](../10-quality-requirements.md) · [Appendix C](C-coding-standards.md) · [§7](../07-deployment-view.md)
+> ARIS 3.10 · [Documentation hub](../README.md) · Companion: [§10](../10-quality-requirements.md) · [Appendix C](C-coding-standards.md) · [§7](../07-deployment-view.md)
 
 ---
 
@@ -9,12 +9,16 @@
 | STT | Họ và tên | MSSV | Vai trò dự án | Phân công phụ trách chính (Form độc lập & Nhiệm vụ) |
 |:---:|---|:---:|---|---|
 | 1 | **Trần Bửu Ngọc** | 231A290130 | **Nhóm trưởng** (Team Leader) | Form Quản lý Chuyển hộ & Động cơ điều chuyển Maker-Checker (`UC-06`, `TransferControl`), Kiến trúc phân tầng, PR gate |
-| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | **Database Designer** / Dev | Form Quản lý Đăng ký Tạm trú (`TEMP-01`..`TEMP-03`, `TemporaryResidenceControl`), Thiết kế CSDL (12 bảng, Triggers, EF Core mappings), MenuStrip + StatusStrip shell (sidebar navigation) |
+| 2 | **Trần Thị Mỹ Quyên** | 231A010586 | **Database Designer** / Dev | Form Quản lý Đăng ký Tạm trú (`TEMP-01`..`TEMP-03`, `TemporaryResidenceControl`), Thiết kế CSDL (13 bảng, Triggers, EF Core mappings), MenuStrip + StatusStrip shell (sidebar navigation) |
 | 3 | **Hồ Ngọc Hân** | 231A290010 | **Coder 1** (Developer) | Form Quản lý Công dân / Nhân khẩu (`CIT-01`..`CIT-04`, `CitizenControl`), Tra cứu danh bạ (`SRCH-01`) |
 | 4 | **Đoàn Thị Thuý Duy** | 231A290035 | **Coder 2** (Developer) | Form Quản lý Hộ gia đình (`HH-01`..`HH-06`, `HouseholdControl`), Theo dõi lịch sử nơi cư trú (`RES-03`, `HIST-01`) |
 | 5 | **Hà Tuyết Trinh** | 231A290045 | **Coder 3** (Developer) | Form Quản lý Tài khoản (`ACC-01`, `AccountManagementControl`), Đăng nhập & Xác thực (`AUTH-01`), Nhật ký kiểm toán (`AUD-01`), Báo cáo thống kê |
 
 > Danh sách phân công 5 thành viên tuân thủ nghiêm ngặt Barem hướng dẫn tiểu luận môn học Lập trình trên Windows: Mỗi thành viên đảm nhận ít nhất 01 Form chức năng độc lập (không tính form Đăng nhập, Giới thiệu và Thống kê).
+>
+> The civil-status screen (`CivilStatusControl`, `CIV-01`–`CIV-03`) is an additional
+> shared feature added after the original five-form allocation. It does not change the
+> primary ownership above.
 
 ---
 
@@ -100,8 +104,8 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 
 > **Historical Phase 1 brief.** It created the eleven entities that existed at the time.
 > `TemporaryResidence` is the twelfth entity/table and was added with `TEMP-01`–`TEMP-03`;
-> current counts are in [Appendix B §B.1](B-database-reference.md#b1-object-inventory) and
-> §D.5.6.
+> `CivilStatusRecord` is the thirteenth and was added with `CIV-01`–`CIV-03`. Current
+> counts are in [Appendix B §B.1](B-database-reference.md#b1-object-inventory) and §D.5.6.
 
 **Goal:** unblock the team with entities, mappings, and audit persistence.
 
@@ -113,7 +117,8 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 
 2. Create the 11 entities that existed in Phase 1 in `src/Aris.Domain/Entities/`. Nine
    derive from `EntityBase`; `SystemConfiguration` and `AuditLog` do not. Use `DateOnly`
-   for `date`. (`TemporaryResidence` is the twelfth entity and was added later.)
+   for `date`. (`TemporaryResidence` is the twelfth entity and `CivilStatusRecord`
+   the thirteenth; both were added later.)
 3. Create `ArisDbContext` with the matching plural `DbSet`s; apply configurations from the assembly.
 4. Create one `IEntityTypeConfiguration<T>` per entity. Implement the seven rules in
    [Appendix B §B.6](B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -128,7 +133,7 @@ Coders 2 and 3 are **not blocked** while `P1-DB2` is in progress:
 - [x] 11 entities at Phase 1 scope; correct `EntityBase` inheritance.
 - [x] Phase 1 `DbSet`s; configurations applied.
 - [x] Five `.HasTrigger(...)` declarations.
-- [x] `.IsRowVersion()` on the mutable tables only (nine at the time; ten today).
+- [x] `.IsRowVersion()` on the mutable tables only (nine at the time; eleven today).
 - [x] Computed `AddressText`.
 - [x] Composite FKs on `TransferRequestItem`.
 - [x] No cascade deletes.
@@ -228,7 +233,7 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | `P6-TL1` | End-to-end integration and negative controls |
 | `P7-TL1` | Concurrency stress, fresh-machine deployment, acceptance |
 
-### D.5.6 Current implementation status (05/11/2026)
+### D.5.6 Current implementation status (06/11/2026)
 
 | Phase | Status |
 |---|---|
@@ -239,11 +244,15 @@ stack traces; hardcoded lockout values; plaintext passwords.
 | Phase 5 — auth, admin, reports | Complete for login/accounts/audit viewer filters and detail/configuration/basic reports, including admin mutation audit and the prototype-only login-screen Developer mode |
 | Phase 6 — integration | Complete |
 | Phase 7 — hardening | Complete; automated end-to-end harness plus the Appendix E smoke checklist |
+| Civil status register (`CIV-01`–`CIV-03`) | Complete; added after Phase 7 as an additional shared slice |
 
-Known functional gaps: none. Vietnamization covers the static UI; service-layer validation
-messages are still English. The suite is **150 passed / 0 failed / 0 skipped** against the
-local container and **118 passed / 32 skipped** without a database. The deployed schema has
-**12 tables, 5 triggers, and 3 views**, and `vw_GoldenInvariantViolations` returns 0 rows.
+Known functional gaps: none beyond `T16` (configuration enforcement) and `T17` (the
+civil-status screen does not expose the service's date-range filter). Vietnamization
+covers the static UI; service-layer
+validation messages are still English. The suite is **157 passed / 0 failed / 0 skipped**
+against the local container and **122 passed / 35 skipped** without a database. The
+deployed schema has **13 tables, 5 triggers, and 3 views**, and
+`vw_GoldenInvariantViolations` returns 0 rows.
 The login-screen Developer mode (`D21`) is a documented prototype exception, not a
 business feature; its missing automated coverage is tracked as `T15`.
 

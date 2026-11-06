@@ -1,6 +1,6 @@
 # 7. Deployment View
 
-> **arc42 §7** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §7** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 7.1 Development topology
 
@@ -243,8 +243,9 @@ docker exec -i aris-sqlserver /opt/mssql-tools18/bin/sqlcmd `
 - **No EF Core migrations.** See `D16` in
   [`09-architecture-decisions.md`](09-architecture-decisions.md).
 - `scripts/add_temporary_residence.sql` is a historical one-off migration. The
-  `TemporaryResidence` table is already part of `aris_schema_v2.sql`; do not apply that
-  script instead of redeploying the canonical DDL (`D16`).
+  `TemporaryResidence` and `CivilStatusRecord` tables are already part of
+  `aris_schema_v2.sql`; do not apply that script instead of redeploying the canonical
+  DDL (`D16`).
 - Each developer owns their local database. There is no shared state to coordinate, so a
   destructive reset is always safe.
 

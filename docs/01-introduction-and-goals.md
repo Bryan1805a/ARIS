@@ -1,14 +1,14 @@
 # 1. Introduction and Goals
 
-> **arc42 §1** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §1** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 1.1 Purpose and vision
 
 ARIS (**Administrative Residence Information System**) is a Windows desktop application
 for local residence-management officers. It records citizens, households, administrative
-addresses, and residency over time, and it processes relocations through a two-person
-maker-checker workflow. Every change is auditable, and no historical fact is ever
-overwritten.
+addresses, residency over time, and civil-status events (birth, death, and marriage), and
+it processes relocations through a two-person maker-checker workflow. Every change is
+auditable, and residency history is never overwritten.
 
 The system exists to solve one concrete problem:
 
@@ -22,6 +22,7 @@ ARIS is a course project for a Windows Programming module. It demonstrates:
 
 - layered desktop application design with .NET 10 and WinForms;
 - relational modelling with temporal (append-only) history;
+- civil-status registration with a bounded lifecycle and database-enforced uniqueness;
 - database-enforced integrity using constraints, filtered indexes, and triggers;
 - EF Core persistence with optimistic concurrency;
 - secure authentication, role-based authorization, and immutable auditing;
@@ -42,7 +43,7 @@ is not part of the business requirements below.
 
 | In scope | Out of scope |
 |---|---|
-| Citizen demographic registry (`UNASSIGNED`, `ACTIVE`, `INACTIVE`) | Birth, death, marriage, and other vital records |
+| Citizen demographic registry (`UNASSIGNED`, `ACTIVE`, `INACTIVE`) and civil-status register (`BIRTH`, `DEATH`, `MARRIAGE`) | Legal adjudication of civil status, divorce, adoption, and other vital-record workflows |
 | Normalized administrative addresses with historic lineage | Issuance or biometric capture of CCCD/passports |
 | Household lifecycle: registration, membership, head assignment | Real-time VNeID or National Population Database APIs |
 | Temporal residency tracking with non-overlapping intervals | Cross-province partitioning or multi-tenant operation |
@@ -106,6 +107,19 @@ Requirement IDs are stable and are used by tests, commits, and the PR checklist.
 | `TEMP-01` | Register a citizen's temporary residence (`CitizenId`, `AddressId`, `StartDate`, `EndDate`, `StayReason`, `HostInfo`). Duration is bounded by law (≤ 2 years). |
 | `TEMP-02` | Search and filter temporary residence records by National ID, citizen name, or status (`ACTIVE`, `EXPIRED`, `CANCELLED`). |
 | `TEMP-03` | Extend end date or update details of an active temporary residence record; cancel registration when citizen departs. |
+
+### Civil status
+
+| ID | Requirement |
+|---|---|
+| `CIV-01` | Register a `BIRTH`, `DEATH`, or `MARRIAGE` civil-status record for a citizen that is not `INACTIVE`, at an active address, with event date, registration date, optional document number and notes. `MARRIAGE` requires a different non-`INACTIVE` spouse; `BIRTH` and `DEATH` must not carry one. |
+| `CIV-02` | Search and inspect records by citizen or spouse National ID/name, record type (`BIRTH`, `DEATH`, `MARRIAGE`), and status (`ACTIVE`, `CANCELLED`); the service also supports event-date bounds. |
+| `CIV-03` | Cancel an `ACTIVE` non-death record with a mandatory reason. A `DEATH` record cannot be cancelled; death registration records the event only and does not deactivate the citizen or close residence (`CIT-04`). |
+
+The database enforces one active `DEATH` per citizen, one active `MARRIAGE` per citizen
+pair (stored with `CitizenId < RelatedCitizenId`), and a unique non-null `DocumentNumber`;
+the service also rejects a second active `BIRTH`. Civil-status records are a separate
+register and do not participate in the Golden Invariant.
 
 ### Search and reporting
 

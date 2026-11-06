@@ -1,6 +1,6 @@
 # Appendix E — End-to-End Smoke-Test Checklist
 
-> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§7](../07-deployment-view.md) · [§10](../10-quality-requirements.md) · [Appendix D](D-team-workflow.md)
+> ARIS 3.10 · [Documentation hub](../README.md) · Companion: [§7](../07-deployment-view.md) · [§10](../10-quality-requirements.md) · [Appendix D](D-team-workflow.md)
 
 This is the committed manual release/demo walkthrough. It mirrors
 [`tests/Aris.Tests/EndToEndWorkflowTests.cs`](../../tests/Aris.Tests/EndToEndWorkflowTests.cs)
@@ -23,7 +23,7 @@ Run the automated gates first; complete this checklist only when they are green.
 
   ```powershell
   .\scripts\create_aris_test_connection.ps1
-  dotnet test Aris.slnx          # 150 passed, 0 failed, 0 skipped
+  dotnet test Aris.slnx          # 157 passed, 0 failed, 0 skipped
   .\scripts\delete_aris_test_connection.ps1
   ```
 
@@ -196,7 +196,36 @@ Use three accounts (Maker A, Checker B, and optionally a third officer).
 
 ---
 
-## E.10 Administration, audit, configuration, and reports
+## E.10 Civil status (`CIV-01`–`CIV-03`)
+
+- [ ] Open **Civil status** from the sidebar; the directory shows type, citizen, related
+      citizen, address, event date, registration date, document number, status and creator.
+- [ ] Register a `BIRTH` for a citizen that is not `INACTIVE`, at an active address, with
+      event date, registration date and an optional document number.
+- [ ] Register a `DEATH`; the warning states that the event is recorded only and that
+      citizen deactivation/residence closure remains in Citizen Management.
+- [ ] Register a `MARRIAGE` with a different spouse that is not `INACTIVE`; the grid shows
+      the pair, and the same pair cannot be registered again in reverse order.
+- [ ] Validation rejects: missing citizen/spouse/address, a registration date before the
+      event date, a death with a related citizen, a marriage without a spouse,
+      self-marriage, a duplicate document number, and a second active birth/death or
+      marriage pair.
+- [ ] Search by National ID or name (citizen or spouse), filter by type and status
+      (`ACTIVE`/`CANCELLED`), and open the read-only detail dialog.
+- [ ] Cancel an active birth or marriage record with a required reason; it becomes
+      `CANCELLED` and cannot be cancelled twice.
+- [ ] A death record cannot be cancelled; the screen explains the administrative
+      correction procedure.
+- [ ] Audit contains `REGISTER_CIVIL_STATUS` and `CANCEL_CIVIL_STATUS` rows with the actor
+      and safe details; no credentials.
+- [ ] `vw_GoldenInvariantViolations` remains at 0 rows after registration/cancellation.
+      Civil status is not part of the invariant.
+- [ ] The screen exposes text/type/status filters; the service also supports event-date
+      bounds, which are not yet exposed in the UI (`T17`).
+
+---
+
+## E.11 Administration, audit, configuration, and reports
 
 - [ ] **Accounts**: create an account (forced password change on first login), lock and
       unlock it, reset its password, and disable/activate it.
@@ -215,7 +244,7 @@ Use three accounts (Maker A, Checker B, and optionally a third officer).
 
 ---
 
-## E.11 Language switch
+## E.12 Language switch
 
 - [ ] The login screen starts in Vietnamese; the **English / Tiếng Việt** button switches
       labels and the button text immediately.
@@ -227,13 +256,13 @@ Use three accounts (Maker A, Checker B, and optionally a third officer).
 
 ---
 
-## E.12 Final checks
+## E.13 Final checks
 
 - [ ] `SELECT * FROM dbo.vw_GoldenInvariantViolations;` returns **0 rows**.
 - [ ] The audit trail contains rows for every action performed above, with correlation
       IDs and no credentials.
 - [ ] `dotnet build Aris.slnx` → 0 errors, 0 warnings.
-- [ ] `dotnet test Aris.slnx` → 150 passed with the local database.
+- [ ] `dotnet test Aris.slnx` → 157 passed with the local database.
 - [ ] `git status` shows no `.env`, secret, `bin/`, `obj/`, or `TestResults/` content
       staged.
 - [ ] The Developer mode warning is visible and the feature is still confined to the

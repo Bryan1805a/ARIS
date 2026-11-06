@@ -1,6 +1,6 @@
 # Appendix A — Domain Model Reference
 
-> ARIS 3.9 · [Documentation hub](../README.md) · Companion: [§5](../05-building-block-view.md) · [Appendix B](B-database-reference.md) · [ERD](../erd_v2.svg)
+> ARIS 3.10 · [Documentation hub](../README.md) · Companion: [§5](../05-building-block-view.md) · [Appendix B](B-database-reference.md) · [ERD](../erd_v2.svg)
 
 This appendix is the entity catalogue. The DDL remains the source of truth for names and
 types; this page explains meaning and relationships.
@@ -9,8 +9,9 @@ types; this page explains meaning and relationships.
 
 ## A.1 Mental model
 
-Six core concepts, deliberately decoupled. `TemporaryResidence` (A.2.12) is an ancillary
-bounded record and does not participate in the Golden Invariant.
+Six core concepts, deliberately decoupled. `TemporaryResidence` (A.2.12) and
+`CivilStatusRecord` (A.2.13) are ancillary bounded records and do not participate in the
+Golden Invariant.
 
 ```mermaid
 graph TD
@@ -283,6 +284,43 @@ Registration of temporary residence for a citizen at an address (`TEMP-01`–`TE
 
 `CK_TempRes_Dates` requires `EndDate >= StartDate`. `CK_TempRes_Status` restricts status to `ACTIVE`, `EXPIRED`, or `CANCELLED`. `EXPIRED` is derived by the service when `EndDate` has passed; the service persists `ACTIVE` on registration and `CANCELLED` on cancellation.
 
+### A.2.13 `CivilStatusRecord`
+
+Birth, death and marriage registration (`CIV-01`–`CIV-03`). It is a civil-status
+register, not a residence mutation; a death registration does not deactivate the citizen.
+
+| Property | Type | Null | Constraints / default | Meaning |
+|---|---|---|:---:|---|
+| `CivilStatusId` | `int` | No | PK, IDENTITY | Surrogate key |
+| `RecordType` | `varchar(20)` | No | `BIRTH`, `DEATH`, `MARRIAGE` | Civil-status event |
+| `CitizenId` | `int` | No | FK → `Citizen` | Child, deceased, or spouse 1 |
+| `RelatedCitizenId` | `int` | Yes | FK → `Citizen`; `MARRIAGE` only | Spouse 2 |
+| `AddressId` | `int` | Yes | FK → `Address` | Place of event / registration |
+| `EventDate` | `date` | No | — | Birth, death, or marriage date |
+| `RegistrationDate` | `date` | No | `>= EventDate` | Date the office registered it |
+| `DocumentNumber` | `varchar(30)` | Yes | UNIQUE when non-null | Certificate / register number |
+| `Status` | `varchar(10)` | No | `ACTIVE`, `CANCELLED`; default `ACTIVE` | Lifecycle |
+| `Notes` | `nvarchar(500)` | Yes | — | Additional notes |
+| `CreatedBy` | `int` | No | FK → `UserAccount` | Actor who registered it |
+| `CreatedAt` | `datetime2(3)` | No | `SYSUTCDATETIME()` | Creation timestamp |
+| `CancelledBy` | `int` | Yes | FK → `UserAccount` | Actor who cancelled it |
+| `CancelledAt` | `datetime2(3)` | Yes | Required iff `CANCELLED` | Cancellation timestamp |
+| `CancelReason` | `nvarchar(300)` | Yes | Required iff `CANCELLED` | Cancellation reason |
+| `RowVersion` | `rowversion` | No | Concurrency token | Optimistic concurrency |
+
+Constraints and indexes:
+
+- `CK_CivilStatus_Type`, `CK_CivilStatus_Status`, `CK_CivilStatus_Shape`,
+  `CK_CivilStatus_Dates`, and `CK_CivilStatus_Cancel` enforce the type/status shape and
+  cancellation fields.
+- `UX_CivilStatus_DocumentNumber` makes a non-null document number unique.
+- `UX_CivilStatus_OneActiveDeath` allows at most one active `DEATH` per citizen.
+- `UX_CivilStatus_OneActiveMarriagePair` allows at most one active `MARRIAGE` per
+  citizen pair; the service stores the lower citizen ID first, so either input order
+  is caught.
+- The service additionally rejects a second active `BIRTH` per citizen, an active death
+  blocking another civil-status event, and a death record being cancelled.
+
 ---
 
 ## A.3 Lifecycle state machines
@@ -333,6 +371,16 @@ stateDiagram-v2
     INACTIVE --> [*]
 ```
 
+### Civil status record
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE: CIV-01 registration
+    ACTIVE --> CANCELLED: CIV-03 cancellation (BIRTH/MARRIAGE only, reason required)
+    ACTIVE --> [*]: DEATH registration is not cancellable
+    CANCELLED --> [*]: frozen
+```
+
 ---
 
 ## A.4 State transition matrix
@@ -351,6 +399,7 @@ Transitions not listed here are prohibited.
 | `TransferRequestItem` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | Mirrors the parent resolution; may be rejected individually | `CK_TRI_Status`, `CK_TRI_Reject` |
 | `UserAccount` | `ACTIVE`, `LOCKED` | Bidirectional | `CK_UserAccount_Status` |
 | `TemporaryResidence` | `ACTIVE`, `EXPIRED`, `CANCELLED` | `ACTIVE → CANCELLED`; `EXPIRED` is derived when the end date passes | `CK_TempRes_Status` |
+| `CivilStatusRecord` | `ACTIVE`, `CANCELLED` | `ACTIVE → CANCELLED` for `BIRTH`/`MARRIAGE` only, with a reason; `DEATH` is not cancellable | `CK_CivilStatus_Status`, `CK_CivilStatus_Cancel`, `rowversion` |
 | `AuditLog` | `SUCCESS`, `FAILURE` rows | Insert only | `trg_AuditLog_AppendOnly` (51030), `DENY UPDATE` |
 
 ---
@@ -364,6 +413,7 @@ Transitions not listed here are prohibited.
 | Household | `Household` | `HouseholdAddress`, `HouseholdMembership` | Register/add/change/deactivate are atomic |
 | Residence | `Residence` | — | Only inside a household or transfer operation |
 | Temporary residence | `TemporaryResidence` | — | Single row; registration, extension/update and cancellation are independent of the Golden Invariant |
+| Civil status | `CivilStatusRecord` | — | Single row; registration and cancellation are independent of the Golden Invariant |
 | Transfer | `TransferRequest` | `TransferRequestItem` | Create request and execute decision are separate transactions; execution touches household and residence aggregates |
 | Account | `UserAccount` | — | Single row |
 | Audit | `AuditLog` | — | Append only; failure path uses an independent connection |

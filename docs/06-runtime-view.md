@@ -1,6 +1,6 @@
 # 6. Runtime View
 
-> **arc42 §6** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §6** · ARIS 3.10 · [Documentation hub](README.md)
 
 This section shows how the important use cases execute across the layers. All sequences
 assume an authenticated session and a working local SQL Server.
@@ -478,6 +478,7 @@ Rules:
 | Address lineage | `AddressDetailForm`, `RetireAddressForm` | `AddressService` | `ArisDbContext` | `Address`, `vw_AddressCanonical` |
 | Rectify tenure | `RectifyTenureForm` | `IRectificationService` | `RectificationService`, `AuditService` | `HouseholdMembership` / `Residence` / `HouseholdAddress`, `AuditLog` |
 | Temporary residence | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | `ITemporaryResidenceService` | `TemporaryResidenceService`, `ArisDbContext`, `AuditService` | `TemporaryResidence`, `Citizen`, `Address`, `AuditLog` |
+| Civil status | `CivilStatusControl`, `RegisterCivilStatusForm`, `CivilStatusDetailForm`, `CancelCivilStatusForm` | `ICivilStatusService` | `CivilStatusService`, `ArisDbContext`, `AuditService` | `CivilStatusRecord`, `Citizen`, `Address`, `AuditLog` |
 | Inspect audit log | `AuditViewerControl` | `AuditQueryService` | `AuditRepository` | `AuditLog`, `UserAccount` |
 | Create/lock account | `AddAccountForm`, `AccountManagementControl` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
 | Change own password | `ChangePasswordForm` | `AccountService` | `UserAccountRepository`, `UnitOfWork`, `AuditService` | `UserAccount`, `AuditLog` |
@@ -538,3 +539,55 @@ Rules:
   is idempotent, and commits data plus audit in one transaction (`T11`).
 - The service is not exposed outside the local desktop client and has no automated
   tests; removing or gating it is a production prerequisite (`R21`, `T15`).
+
+---
+
+## 6.15 Civil status registration and cancellation (`CIV-01`–`CIV-03`)
+
+`CivilStatusService` records birth, death and marriage events. It is a civil-status
+register, not a residence mutation: registering a death does **not** change
+`Citizen.Status`, close a membership, or close a residence; that remains `CIT-04`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor O as Officer
+    participant F as RegisterCivilStatusForm
+    participant S as CivilStatusService
+    participant DB as SQL Server
+
+    O->>F: type, citizen, spouse (marriage), address, dates, document
+    F->>S: RegisterAsync(dto, actor)
+    S->>S: validate shape; actor must be active
+    S->>DB: BEGIN TRANSACTION
+    S->>DB: load citizen (must exist and not be INACTIVE)
+    alt MARRIAGE
+        S->>DB: load spouse (not INACTIVE, different); reject duplicate active pair
+    end
+    S->>DB: reject active death on the citizen (except DEATH), duplicate active birth/death, duplicate document
+    S->>DB: load address (must be ACTIVE)
+    S->>DB: INSERT CivilStatusRecord (ACTIVE)
+    S->>DB: AuditLog SUCCESS (REGISTER_CIVIL_STATUS)
+    S->>DB: COMMIT
+    S-->>F: Result.Success(civilStatusId)
+```
+
+Rules:
+
+- `RecordType` is `BIRTH`, `DEATH`, or `MARRIAGE`. `MARRIAGE` requires a different
+  spouse that is not `INACTIVE` and stores `CitizenId = MIN(...)`,
+  `RelatedCitizenId = MAX(...)`, so the same pair cannot be registered twice in reverse
+  order. Birth and death require `RelatedCitizenId = NULL` (`CK_CivilStatus_Shape`).
+- `RegistrationDate >= EventDate`; `DocumentNumber`, when present, is unique.
+- The database enforces at most one active `DEATH` per citizen and one active `MARRIAGE`
+  per pair; the service also prevents a second active `BIRTH` per citizen.
+- `CancelAsync` changes `ACTIVE` to `CANCELLED` in one transaction with a mandatory
+  reason and audits `CANCEL_CIVIL_STATUS`. A `DEATH` record cannot be cancelled; an
+  existing death is corrected through the administrative correction procedure.
+- Civil-status rows are not append-only and do not participate in the Golden Invariant;
+  the only mutation is cancellation, guarded by `CK_CivilStatus_Cancel` and `rowversion`.
+- `SearchAsync` filters by citizen or spouse National ID/name, record type, status and
+  optional event-date bounds; the WinForms screen exposes text, type and status (`T17`).
+- `CivilStatusServiceTests` proves registration, marriage normalization/duplicate
+  rejection and death-cancellation refusal against real SQL Server; validator tests
+  cover shape and date rules.

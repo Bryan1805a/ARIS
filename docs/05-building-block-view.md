@@ -1,6 +1,6 @@
 # 5. Building Block View
 
-> **arc42 §5** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §5** · ARIS 3.10 · [Documentation hub](README.md)
 
 The view is described at three levels: the system as a whole, the layers and their
 components, and the database objects. Entity columns live in
@@ -64,6 +64,7 @@ flowchart TB
 | Feature view models | Async orchestration, `Result<T>` presentation, no business rules | Partially: controls call Application services directly; no separate view-model layer |
 | `AddressControl`, `AddressDetailForm`, `RetireAddressForm` | Address directory/search, address profile with current households and residents, retire-with-successor flow | Implemented |
 | `TemporaryResidenceControl`, `RegisterTemporaryResidenceForm`, `EditTemporaryResidenceForm` | Temporary residence directory, search, registration, extension and cancellation (`TEMP-01`–`TEMP-03`) | Implemented |
+| `CivilStatusControl`, `RegisterCivilStatusForm`, `CivilStatusDetailForm`, `CancelCivilStatusForm` | Civil-status directory, search, registration and cancellation (`CIV-01`–`CIV-03`) | Implemented |
 | `AboutForm` | Course assignment required team member introduction and task allocation dialog, opened from Help → Team introduction | Implemented |
 | `DeveloperToolsForm` | Login-screen Developer mode: create an `ADMIN`/`OFFICER` account without an administrator session and seed demo data; prototype only (`D21`, `R21`) | Implemented |
 | `RectifyTenureForm` | Void-and-correct dialog for membership, household address and residence rows (`HIST-01`); active rows are limited to start-date corrections | Implemented |
@@ -95,6 +96,7 @@ current shell has no quick-access toolbar.
 | `Transfers/ITransferService` + DTOs | `UC-06` maker and checker phases (implementation in Infrastructure) | Implemented |
 | `TemporaryResidences/ITemporaryResidenceService` + DTOs + validators | `TEMP-01`–`TEMP-03` registration, search, update and cancellation (implementation in Infrastructure) | Implemented |
 | `Rectifications/IRectificationService` + DTOs + validators | `HIST-01` void-and-correct for membership, residence and household address (implementation in Infrastructure) | Implemented |
+| `CivilStatuses/ICivilStatusService` + DTOs + validators | `CIV-01`–`CIV-03` registration, search, detail and cancellation (implementation in Infrastructure) | Implemented |
 | `Authentication/IAuthService` | `AUTH-01`, lockout, password change | Implemented |
 | `Accounts/IAccountService`, `Auditing/IAuditQueryService`, `SystemConfiguration/SystemConfigurationService` | `ACC-01`, `SYS-01`; `AUD-01` search criteria, result filters and row detail; admin mutations return `Result` and audit through `IUnitOfWork` | Implemented |
 | `Accounts/IBootstrapService` | One-time first-admin creation on a fresh database (`R15`, `T6`) | Implemented |
@@ -113,7 +115,7 @@ rollback.
 
 | Component | Responsibility |
 |---|---|
-| `Common/EntityBase` | `RowVersion` for the ten mutable entities |
+| `Common/EntityBase` | `RowVersion` for the eleven mutable entities |
 | `Entities/Citizen` | Person identity and lifecycle (`UNASSIGNED`, `ACTIVE`, `INACTIVE`) |
 | `Entities/Household` | Legal family unit (`ACTIVE`, `INACTIVE`) |
 | `Entities/Address` | Normalized location, validity, successor link, computed text |
@@ -121,6 +123,7 @@ rollback.
 | `Entities/HouseholdMembership` | Append-only citizen–household tenure and role |
 | `Entities/Residence` | Append-only citizen–address tenure |
 | `Entities/TemporaryResidence` | Bounded temporary residence tenure of a citizen at an address |
+| `Entities/CivilStatusRecord` | Birth, death or marriage registration; a civil-status register, not a residence mutation |
 | `Entities/TransferRequest` | Relocation header, maker-checker state |
 | `Entities/TransferRequestItem` | One moving citizen per line, partial approval |
 | `Entities/UserAccount` | Local account, role, lockout, password state |
@@ -134,7 +137,7 @@ The Domain layer contains no EF Core attributes and no database code.
 
 | Component | Responsibility | Status |
 |---|---|---|
-| `Persistence/ArisDbContext` | Twelve `DbSet`s, applies configurations from assembly | Implemented |
+| `Persistence/ArisDbContext` | Thirteen `DbSet`s, applies configurations from assembly | Implemented |
 | `Persistence/Configurations/*Configuration` | Table names, keys, lengths, triggers, row versions, computed column, FKs, delete behaviour | Implemented |
 | `Persistence/UnitOfWork` | Opens the caller's transaction, commits, rolls back and clears the change tracker (`D20`) | Implemented |
 | `Auditing/AuditService` | `LogAsync` in the caller's transaction; `LogFailureIndependentAsync` on a new connection, including the configured-connection overload used by repository-backed services | Implemented |
@@ -149,9 +152,10 @@ The Domain layer contains no EF Core attributes and no database code.
 | `Transfers/TransferService` | Maker-checker request creation, serializable execution, partial approval, cancellation | Implemented |
 | `TemporaryResidences/TemporaryResidenceService` | Temporary residence registration, search, update, cancellation, and transactional auditing | Implemented |
 | `Rectifications/RectificationService` | Void-and-correct transaction, overlap/no-op/pending-transfer guards, two correlated audit rows | Implemented |
+| `CivilStatuses/CivilStatusService` | Civil-status registration, search, detail and cancellation with transactional auditing | Implemented |
 | `Developer/DeveloperService` | Privileged local account creation and demo seeding behind `IDeveloperService`; bypasses the administrator check by design (`D21`) | Implemented |
 | `Resilience/SqlResilience` | Opens connections with exponential backoff and retries only the documented local-container transient list; business errors fail fast | Implemented |
-| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, developer, citizen, address, household, transfer, temporary residence and rectification services | Implemented |
+| `DependencyInjection.AddInfrastructure` | Registers `ArisDbContext`, unit of work, audit, bootstrap/demo, developer, citizen, address, household, transfer, temporary residence, civil status and rectification services | Implemented |
 
 Mapping rules are normative and listed in
 [`appendix/B-database-reference.md`](appendix/B-database-reference.md#b6-ef-core-mapping-requirements).
@@ -160,7 +164,7 @@ Mapping rules are normative and listed in
 
 | Object group | Members |
 |---|---|
-| Mutable tables (10) | `UserAccount`, `Citizen`, `Address`, `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequest`, `TransferRequestItem`, `TemporaryResidence` |
+| Mutable tables (11) | `UserAccount`, `Citizen`, `Address`, `Household`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequest`, `TransferRequestItem`, `TemporaryResidence`, `CivilStatusRecord` |
 | Non-versioned tables (2) | `SystemConfiguration`, `AuditLog` |
 | Enforcement triggers (5) | `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard`, `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly` |
 | Views (3) | `vw_AddressCanonical`, `vw_HouseholdCurrent`, `vw_GoldenInvariantViolations` |
@@ -176,8 +180,9 @@ The table-level structure is owned by the DDL. Read it together with:
 - [`appendix/A-domain-model.md`](appendix/A-domain-model.md) — entities, columns, state machines
 - [`appendix/B-database-reference.md`](appendix/B-database-reference.md) — constraints, triggers, views, error codes, mapping rules
 - [`erd_v2.svg`](erd_v2.svg) — visual entity relationship diagram (predates
-  `TemporaryResidence`; see [Appendix A.2.12](appendix/A-domain-model.md#a212-temporaryresidence)
-  for that table)
+  `TemporaryResidence` and `CivilStatusRecord`; see
+  [Appendix A.2.12](appendix/A-domain-model.md#a212-temporaryresidence) and
+  [Appendix A.2.13](appendix/A-domain-model.md#a213-civilstatusrecord) for those tables)
 
 ```mermaid
 erDiagram
@@ -194,6 +199,9 @@ erDiagram
     HouseholdMembership ||--o{ TransferRequestItem : "source tenure"
     Residence ||--o{ TransferRequestItem : "source residence"
     UserAccount ||--o{ AuditLog : "acts"
+    Citizen ||--o{ CivilStatusRecord : "civil-status subject"
+    Citizen ||--o{ CivilStatusRecord : "related spouse"
+    Address ||--o{ CivilStatusRecord : "event place"
     Address ||--o| Address : "replaced by"
 ```
 
@@ -226,8 +234,9 @@ calls a service.
 
 The documentation describes the **current implementation**. The core vertical slices are
 implemented, including the automated end-to-end harness and the manual smoke checklist.
-No known functional gaps remain; §11 records the accepted limitations (including the
-prototype-only Developer mode) and the technical-debt history.
+No known functional gaps remain beyond the documented configuration (`T16`) and
+civil-status date-filter (`T17`) limitations; §11 records the accepted limitations
+(including the prototype-only Developer mode) and the technical-debt history.
 
 | Area | Implemented | Missing / next |
 |---|---|---|
@@ -239,7 +248,7 @@ prototype-only Developer mode) and the technical-debt history.
 | Login-screen Developer mode (`D21`) | ✔ | Prototype-only; no automated tests (`T15`) |
 | `SqlResilience` | ✔ | — |
 | DI composition | ✔ | — |
-| Domain entities | ✔ | All 12 |
+| Domain entities | ✔ | All 13 |
 | `ArisDbContext` + configurations | ✔ | All |
 | EF Core SQL Server provider | ✔ | — |
 | Citizen slice (`CIT-01`–`CIT-04`, `SRCH-01`) | ✔ | — |
@@ -249,13 +258,15 @@ prototype-only Developer mode) and the technical-debt history.
 | Audit viewer filters and row detail (`AUD-01`) | ✔ | — |
 | Account and configuration mutation auditing (`T14`) | ✔ | — |
 | Address search and retirement (`ADR-02`, `ADR-03`, `SRCH-03`) | ✔ | — |
+| Temporary residence (`TEMP-01`–`TEMP-03`) | ✔ | — |
+| Civil-status register (`CIV-01`–`CIV-03`) | ✔ | Date-range filter not exposed in the UI (`T17`) |
 | Historical rectification (`HIST-01`) | ✔ | — |
 | Vietnamese/English UI switch | ✔ | Service-layer validation messages remain English |
 | Database schema | ✔ deployed by script | — |
 | Golden-invariant integration tests | ✔ | Extend for new rules as they land |
 | Optimistic-concurrency integration test (`T9`) | ✔ | — |
 | Schema-object inventory test (`T10`) | ✔ | — |
-| Service-level tests (citizen, household, transfer, account, configuration) | ✔ | — |
+| Service-level tests (citizen, household, transfer, account, configuration, civil status) | ✔ | — |
 | End-to-end workflow harness (`T4`) | ✔ | WinForms interactions remain covered by the committed smoke checklist (Appendix E) |
 
 The remaining work is tracked in [`appendix/D-team-workflow.md`](appendix/D-team-workflow.md).

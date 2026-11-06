@@ -1,6 +1,6 @@
 # 12. Glossary
 
-> **arc42 §12** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §12** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 12.1 Domain terms
 
@@ -12,6 +12,7 @@
 | **Canonical address** | The terminal address of a lineage chain, as resolved by `vw_AddressCanonical`. |
 | **Checker** | The officer who approves or rejects a transfer request; must differ from the maker. |
 | **Citizen** | An individual managed by the residence office. Identity only; no household or address column. |
+| **Civil status record** | A birth, death, or marriage registration (`CivilStatusRecord`); a civil-status register, not a residence mutation. Death registration does not deactivate a citizen. |
 | **Close-and-open** | The append-only change pattern: close the old row (`EndDate = E - 1`) and open a new one (`StartDate = E`). |
 | **Correlation ID** | A `Guid` shared by every audit row produced by one business action. |
 | **Developer mode** | A prototype-only login-screen dialog that creates an account or seeds demo data without an administrator session (`D21`, `R21`, `T15`). Not a business feature. |
@@ -47,6 +48,8 @@
 | `TransferRequest.Status` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | Decided requests are frozen |
 | `TransferRequestItem.Status` | `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED` | `REJECTED` requires `RejectReason` |
 | `TemporaryResidence.Status` | `ACTIVE`, `EXPIRED`, `CANCELLED` | `EXPIRED` is derived when `EndDate` has passed; persisted rows are `ACTIVE` or `CANCELLED` |
+| `CivilStatusRecord.RecordType` | `BIRTH`, `DEATH`, `MARRIAGE` | Shape enforced by `CK_CivilStatus_Shape` |
+| `CivilStatusRecord.Status` | `ACTIVE`, `CANCELLED` | `DEATH` cannot be cancelled |
 | `UserAccount.Role` | `OFFICER`, `ADMIN` | — |
 | `UserAccount.Status` | `ACTIVE`, `LOCKED` | Bidirectional |
 | `AuditLog.Result` | `SUCCESS`, `FAILURE` | — |
@@ -109,6 +112,7 @@
 | `HH` | Household requirement | `HH-04` change head |
 | `RES` | Residence requirement | `RES-03` view current residence |
 | `TEMP` | Temporary residence requirement | `TEMP-01` register temporary residence |
+| `CIV` | Civil-status requirement | `CIV-01` register a birth, death, or marriage |
 | `HIST` | Historical rectification | `HIST-01` void and correct |
 | `AUTH` | Authentication | `AUTH-01` login |
 | `ACC` | Account administration | `ACC-01` manage accounts |

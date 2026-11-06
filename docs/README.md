@@ -11,17 +11,18 @@ single entry point for design, development, review, and grading.
 
 | | |
 |---|---|
-| **Document version** | 3.9 (aligned with the current implementation) |
-| **Last updated** | 2026-11-05 |
+| **Document version** | 3.10 (aligned with the current implementation) |
+| **Last updated** | 2026-11-06 |
 | **Target platform** | .NET 10 (C#) · WinForms · SQL Server 2022 (local Docker) · EF Core |
 | **Canonical database DDL** | [`aris_schema_v2.sql`](aris_schema_v2.sql) |
-| **ERD** | [`erd_v2.svg`](erd_v2.svg) · [`erd_v2.png`](erd_v2.png) |
+| **ERD** | [`erd_v2.svg`](erd_v2.svg) · [`erd_v2.png`](erd_v2.png) — predates `TemporaryResidence` and `CivilStatusRecord` |
 
-> **Revision 2026-11-05.** Aligned the counts with the deployed schema (12 tables and
-> entities, 10 `rowversion` tables), refreshed the test totals (150 with a database;
-> 118 passed + 32 skipped without), documented the prototype-only Developer mode
-> (`D21`, `R21`, `T15`) and the configuration-enforcement gap (`T16`), and completed
-> Appendix E's end-to-end walkthrough.
+> **Revision 2026-11-06.** Added the civil-status register (`CivilStatusRecord`, `D22`,
+> `CIV-01`–`CIV-03`), aligned the counts with the deployed schema (13 tables and
+> entities, 11 `rowversion` tables), refreshed the test totals (157 with a database;
+> 122 passed + 35 skipped without), and documented the prototype-only Developer mode
+> (`D21`, `R21`, `T15`), the configuration-enforcement gap (`T16`), and the civil-status
+> date-filter gap (`T17`).
 
 ---
 
@@ -111,8 +112,8 @@ mechanisms.
 
 - **The DDL is the single source of truth for the schema.** If a document and
   `aris_schema_v2.sql` disagree, the DDL is correct and the document must be fixed.
-- **Requirement IDs are stable.** `CIT-01`, `HH-04`, `UC-06`, `CON-SEC-02`, `D14`,
-  `C3`, `51011` — do not renumber them. They are referenced by tests, commits, and
+- **Requirement IDs are stable.** `CIT-01`, `HH-04`, `CIV-01`, `UC-06`, `CON-SEC-02`,
+  `D14`, `C3`, `51011` — do not renumber them. They are referenced by tests, commits, and
   the PR checklist.
 - **One fact, one home.** Section 8 owns crosscutting rules; Section 9 owns rationale;
   Appendix A owns entity columns; Appendix B owns database objects. Link instead of
@@ -132,9 +133,9 @@ dotnet build Aris.slnx              # 0 errors, 0 warnings
 dotnet test  Aris.slnx              # never pass --nologo
 ```
 
-Current verification snapshot (2026-11-05): build 0 errors / 0 warnings; **150 tests
-passed, 0 failed, 0 skipped** against the local container, and **118 passed / 32 skipped**
-without `ARIS_TEST_CONNECTION`; deployed schema **12 tables, 5 triggers, 3 views**;
+Current verification snapshot (2026-11-06): build 0 errors / 0 warnings; **157 tests
+passed, 0 failed, 0 skipped** against the local container, and **122 passed / 35 skipped**
+without `ARIS_TEST_CONNECTION`; deployed schema **13 tables, 5 triggers, 3 views**;
 `vw_GoldenInvariantViolations` returns **0 rows**.
 
 After every committed business operation:

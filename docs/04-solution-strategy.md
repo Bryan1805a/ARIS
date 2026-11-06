@@ -1,6 +1,6 @@
 # 4. Solution Strategy
 
-> **arc42 §4** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §4** · ARIS 3.10 · [Documentation hub](README.md)
 
 The architecture rests on a small number of ideas. Everything else is a consequence.
 
@@ -136,7 +136,7 @@ drift.
 
 ### 9. Optimistic concurrency everywhere
 
-All ten mutable tables carry `rowversion`, mapped with `.IsRowVersion()`. A stale
+All eleven mutable tables carry `rowversion`, mapped with `.IsRowVersion()`. A stale
 `SaveChanges` raises `DbUpdateConcurrencyException`; the UI must reload and retry.
 
 **Why:** officers may work concurrently. Last-write-wins would silently discard a

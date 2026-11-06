@@ -1,6 +1,6 @@
 # Appendix B — Database Reference
 
-> ARIS 3.9 · [Documentation hub](../README.md) · Canonical DDL: [`../aris_schema_v2.sql`](../aris_schema_v2.sql) · Companion: [Appendix A](A-domain-model.md) · [§8](../08-crosscutting-concepts.md)
+> ARIS 3.10 · [Documentation hub](../README.md) · Canonical DDL: [`../aris_schema_v2.sql`](../aris_schema_v2.sql) · Companion: [Appendix A](A-domain-model.md) · [§8](../08-crosscutting-concepts.md)
 
 **Engine:** Microsoft SQL Server 2022 Developer Edition, local Docker container,
 `localhost,1433`, database `ArisDb`.
@@ -11,8 +11,8 @@
 
 | Object type | Count | Objects |
 |---|:---:|---|
-| Tables | 12 | `UserAccount`, `SystemConfiguration`, `Citizen`, `Address`, `Household`, `TransferRequest`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequestItem`, `AuditLog`, `TemporaryResidence` |
-| Mutable tables with `rowversion` | 10 | All except `SystemConfiguration` and `AuditLog` |
+| Tables | 13 | `UserAccount`, `SystemConfiguration`, `Citizen`, `Address`, `Household`, `TransferRequest`, `HouseholdAddress`, `HouseholdMembership`, `Residence`, `TransferRequestItem`, `AuditLog`, `TemporaryResidence`, `CivilStatusRecord` |
+| Mutable tables with `rowversion` | 11 | All except `SystemConfiguration` and `AuditLog` |
 | Triggers | 5 | `trg_Residence_Guard`, `trg_Membership_Guard`, `trg_HouseholdAddress_Guard`, `trg_TransferRequest_Frozen`, `trg_AuditLog_AppendOnly` |
 | Views | 3 | `vw_AddressCanonical`, `vw_HouseholdCurrent`, `vw_GoldenInvariantViolations` |
 | Roles | 1 | `aris_app` |
@@ -21,7 +21,7 @@
 Verification:
 
 ```sql
-SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo');       -- 12
+SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo');       -- 13
 SELECT COUNT(*) FROM sys.triggers WHERE parent_class = 1;                 -- 5
 SELECT COUNT(*) FROM sys.views WHERE schema_id = SCHEMA_ID('dbo');        -- 3
 SELECT * FROM dbo.SystemConfiguration;                                    -- 4 rows
@@ -49,6 +49,7 @@ against the deployed database (`T10`).
 | `TransferRequestItem` | Moving citizens in a request | Unique per request/citizen; one open item per citizen; composite FKs to source tenure |
 | `AuditLog` | Immutable audit trail | Actor required; result check; JSON check; insert-only |
 | `TemporaryResidence` | Temporary residence registrations | Dates check (`EndDate >= StartDate`); status check (`ACTIVE`, `EXPIRED`, `CANCELLED`); FK to `Citizen`, `Address`, `UserAccount` |
+| `CivilStatusRecord` | Birth, death and marriage register | Type/status/shape/date/cancel checks; unique document number when non-null; one active death per citizen; one active marriage pair; the service prevents a second active birth; FK to `Citizen`, `Address`, `UserAccount` |
 
 ### Filtered unique indexes
 
@@ -59,8 +60,14 @@ against the deployed database (`T10`).
 | `UX_HM_OneActiveHeadPerHousehold` | `HouseholdMembership` | `Status = 'ACTIVE' AND Role = 'HEAD'` | One active head per household |
 | `UX_Res_OneActivePerCitizen` | `Residence` | `Status = 'ACTIVE'` | One active residence per citizen |
 | `UX_TRI_OneOpenPerCitizen` | `TransferRequestItem` | `Status = 'PENDING'` | One open transfer item per citizen |
+| `UX_CivilStatus_DocumentNumber` | `CivilStatusRecord` | `DocumentNumber IS NOT NULL` | Unique certificate/register number |
+| `UX_CivilStatus_OneActiveDeath` | `CivilStatusRecord` | `RecordType = 'DEATH' AND Status = 'ACTIVE'` | One active death per citizen |
+| `UX_CivilStatus_OneActiveMarriagePair` | `CivilStatusRecord` | `RecordType = 'MARRIAGE' AND Status = 'ACTIVE'` | One active marriage per citizen pair |
 
-These indexes are the reason **close-before-open** ordering matters in EF Core (§B.6).
+The tenure indexes (`UX_HA_OneActivePerHousehold`, `UX_HM_OneActivePerCitizen`,
+`UX_HM_OneActiveHeadPerHousehold`, and `UX_Res_OneActivePerCitizen`) are the reason
+**close-before-open** ordering matters in EF Core (§B.6). The civil-status indexes enforce
+the register's uniqueness independently of tenure history.
 
 ### Composite foreign keys on `TransferRequestItem`
 
@@ -127,6 +134,8 @@ Applies to `Residence`, `HouseholdMembership`, and `HouseholdAddress`:
 | `51040` | 16 | `trg_TransferRequest_Frozen` | Update of a decided transfer request | Create a new request |
 
 Handlers map these codes to friendly messages; they are never retried.
+`CivilStatusRecord` has no trigger; its CHECK constraints and filtered unique indexes are
+the database backstop for the civil-status lifecycle.
 
 ---
 
@@ -166,7 +175,8 @@ Returns one row per violation, or zero rows when the system is consistent.
 | `H3` | `HOUSEHOLD_ACTIVE_NO_VALID_ADDRESS` | Active household with no active/canonical address |
 | `H4` | `HOUSEHOLD_INACTIVE_HAS_MEMBERS` | Inactive household with active members |
 
-The view is the acceptance test for every composite operation.
+The view is the acceptance test for every composite operation. `TemporaryResidence`,
+`CivilStatusRecord`, and `AuditLog` are outside the Golden Invariant.
 
 ---
 
@@ -211,7 +221,7 @@ builder.ToTable("TransferRequest",     t => t.HasTrigger("trg_TransferRequest_Fr
 builder.ToTable("AuditLog",            t => t.HasTrigger("trg_AuditLog_AppendOnly"));
 ```
 
-### 2. `rowversion` on the ten mutable tables only
+### 2. `rowversion` on the eleven mutable tables only
 
 ```csharp
 builder.Property(e => e.RowVersion).IsRowVersion();

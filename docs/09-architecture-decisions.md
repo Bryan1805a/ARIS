@@ -1,6 +1,6 @@
 # 9. Architecture Decisions
 
-> **arc42 §9** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §9** · ARIS 3.10 · [Documentation hub](README.md)
 
 Each decision records the context, the choice, and the consequences we accept. IDs are
 stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
@@ -28,6 +28,7 @@ stable. `Status` is one of **Accepted**, **Superseded**, or **Withdrawn**.
 | `D19` | Rectification uses VOID-and-replace with guarded current state | Accepted |
 | `D20` | Minimal `IUnitOfWork` for repository-backed Application services | Accepted |
 | `D21` | Prototype-only Developer mode on the login screen | Accepted (prototype exception) |
+| `D22` | Civil status register as a bounded ancillary aggregate | Accepted |
 
 ---
 
@@ -243,7 +244,7 @@ returns zero rows.
 **Context.** Multiple officers may edit the same record. Last-write-wins silently loses
 data; pessimistic locking holds transactions across think time.
 
-**Decision.** Add `rowversion` to all ten mutable tables and map it with
+**Decision.** Add `rowversion` to all eleven mutable tables and map it with
 `.IsRowVersion()`. Surface conflicts as `DbUpdateConcurrencyException`.
 
 **Consequences.**
@@ -437,3 +438,33 @@ The service deliberately skips the administrator authorization used by
 - The feature has no automated tests and must be removed or gated before any non-academic
   deployment. It must not be copied by another screen or extended into a remote
   administration channel.
+
+---
+
+## D22 — Civil status register as a bounded ancillary aggregate
+
+**Context.** The original scope excluded vital records. The implemented prototype now
+records `BIRTH`, `DEATH`, and `MARRIAGE` events for citizens, which the course demo and
+the civil-status screen need. These events are civil-status facts, not residence
+mutations: a death registration must not silently deactivate a citizen or close a
+residence, because those actions have separate controls (`CIT-04`) and audit semantics.
+
+**Decision.** Add one `CivilStatusRecord` table (the thirteenth table, eleventh with
+`rowversion`), `ICivilStatusService`/`CivilStatusService`, validators, DTOs and a WinForms
+screen. `RecordType` is `BIRTH`, `DEATH`, or `MARRIAGE`; `Status` is `ACTIVE` or
+`CANCELLED`; cancellation requires a reason and is forbidden for death. Marriage is
+stored with `CitizenId < RelatedCitizenId`. Filtered unique indexes enforce one active
+death per citizen, one active marriage pair, and a unique non-null document number; the
+service additionally prevents a second active birth per citizen. The service audits
+`REGISTER_CIVIL_STATUS` / `CANCEL_CIVIL_STATUS` inside the transaction. The table has no
+trigger and does not participate in the Golden Invariant.
+
+**Consequences.**
+
+- The scope now includes a civil-status register; legal adjudication, divorce, adoption,
+  and other vital-record workflows remain out of scope.
+- Death registration and citizen deactivation are deliberately separate operations.
+- The deployed schema is 13 tables / 11 `rowversion` / 5 triggers / 3 views; no new view
+  or trigger was required.
+- Cancellation is an in-place status update guarded by a CHECK constraint and
+  `rowversion`, not append-only history.

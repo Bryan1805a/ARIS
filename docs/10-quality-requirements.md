@@ -1,6 +1,6 @@
 # 10. Quality Requirements
 
-> **arc42 §10** · ARIS 3.9 · [Documentation hub](README.md)
+> **arc42 §10** · ARIS 3.10 · [Documentation hub](README.md)
 
 ## 10.1 Quality tree
 
@@ -60,6 +60,7 @@ proven, not how it is hoped for.
 | `Q-INT-06` | An address is retired with a successor. | Historical residences still resolve to an active canonical address. | `C3`/`C5`/`H3` absent. | `AddressCanonicalTests` query on `vw_AddressCanonical` |
 | `Q-INT-07` | An erroneous tenure row is corrected. | The source becomes `VOID`; a linked replacement is inserted with the corrected values. | One `Corrects...Id` link; no overlap; Golden Invariant still holds. | `RectificationTests` |
 | `Q-INT-08` | Two contexts update the same citizen. | The first save commits; the second raises `DbUpdateConcurrencyException` and does not overwrite. | Original `RowVersion` in `WHERE`; zero rows affected. | `OptimisticConcurrencyTests` |
+| `Q-INT-09` | A birth, death, or marriage civil-status record is registered. | The record is `ACTIVE`; marriage stores the pair in canonical order; duplicate active birth/death, duplicate marriage pair, and duplicate document number are rejected. | One row; service preconditions and CHECK/unique constraints hold; Golden Invariant unchanged. | `CivilStatusServiceTests`, `CivilStatusValidatorTests` |
 
 ### Security
 
@@ -83,9 +84,11 @@ proven, not how it is hoped for.
 | `Q-AUD-05` | A tenure row is rectified. | One `VOID_*` and one `CORRECT_*` audit row share the use-case correlation ID. | Same `CorrelationId` across both rows. | `RectificationTests` |
 | `Q-AUD-06` | An administrator creates, locks, unlocks, resets a password, or edits configuration, or a user changes their own password. | A `SUCCESS` row names the actor and stores the relevant metadata without credentials. | Row present; no plaintext or hash in `Details`. | `AdministrationAuditTests`, `AccountServiceTests`, `SystemConfigurationServiceTests` |
 | `Q-AUD-07` | An administrator filters audit entries by date, actor, entity, action, or result and inspects one row. | Only matching rows return, newest first, with read-only IDs, correlation ID and details. | Filters and limit are validated; unknown-user rows use `AttemptedUsername`. | `AuditQueryFilterTests`, `AuditQueryServiceTests` |
+| `Q-AUD-08` | A civil-status record is registered or cancelled. | A `SUCCESS` row names the actor and action with safe details; cancellation requires a reason; a death record cannot be cancelled. | `REGISTER_CIVIL_STATUS` / `CANCEL_CIVIL_STATUS` row present; no credentials. | `CivilStatusServiceTests` |
 
 > `Q-AUD-01` is met for every implemented mutation path, including citizen, household,
-> transfer, address, rectification, account, password and system-configuration changes.
+> transfer, address, rectification, temporary residence, civil status, account, password
+> and system-configuration changes.
 
 ### Maintainability and testability
 
@@ -109,7 +112,7 @@ proven, not how it is hoped for.
 | `Q-USA-03` | An officer lacks the admin role. | Admin navigation is absent and the service rejects the call. | Hidden button + `Result.Failure`. | UI + service test |
 | `Q-OPS-01` | A new developer sets up the project. | Database and schema are running from a clean machine. | ≤ 15 minutes excluding the first image pull. | Onboarding dry run |
 | `Q-OPS-02` | The local database is corrupted. | It can be reset without affecting anyone else. | `docker compose down -v` + deploy succeeds. | Manual drill |
-| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 12 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
+| `Q-OPS-03` | The DDL is applied to an empty `ArisDb`. | 13 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows. | Counts match. | `SchemaInventoryTests` + deployment verification query |
 | `Q-OPS-04` | SQL Server or the container restarts during a connection attempt. | Only documented connection/login/lock errors are retried; Azure service-tier and business errors fail fast. | Error-number table matches `SqlResilience.IsTransientErrorNumber`. | `SqlResilienceTests` |
 
 ---
@@ -159,7 +162,7 @@ A feature is done only when all of the following hold.
 | Unit tests | `dotnet test Aris.slnx` | Yes — any failure |
 | Integration tests with local DB | `ARIS_TEST_CONNECTION` set, then `dotnet test` | Yes — before merging to `main` |
 | Golden Invariant | `SELECT * FROM dbo.vw_GoldenInvariantViolations;` | Yes — any row |
-| Schema object inventory | `SchemaInventoryTests`: 12 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
+| Schema object inventory | `SchemaInventoryTests`: 13 tables, 5 triggers, 3 views, `aris_app`, 4 seed rows | Yes |
 | Secret scan | `git status`, reviewer inspection | Yes |
 | Developer mode review | Warning is visible; scope stays login-screen-only; `D21`/`R21`/`T15` are current | Yes for release |
 | Layer scan | no EF Core/SQL under `src/Aris.UI` | Yes |
